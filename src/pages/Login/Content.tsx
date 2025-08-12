@@ -49,7 +49,7 @@ const Content = () => {
         const alwaysOnTop =
           localStorage.getItem("slitenting-alwaysOnTop") === "true";
         getCurrentWindow().setAlwaysOnTop(alwaysOnTop);
-        navigate("/dashboard");
+        navigate("/schoice");
       }
     } catch (e) {
       error(`Error signing in: ${e}`);

@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import useSchoiceStore from "../../../store/Schoice.store";
-import { supabase } from "../../../supabase";
+import { supabase } from "../../../tools/supabase";
 
 const CloudSync: React.FC = () => {
   const [updateAt, setUpdateAt] = useState("N/A");
