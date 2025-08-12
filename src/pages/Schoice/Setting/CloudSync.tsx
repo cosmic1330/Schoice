@@ -28,14 +28,14 @@ const CloudSync: React.FC = () => {
       user_id: user?.id,
       prompt_type: "bulls",
       prompt_name: item.name,
-      conditions: JSON.stringify(item.value),
+      conditions: JSON.stringify(item.conditions),
     }));
     // 組裝 bears
     const bearArr = Object.values(bears).map((item) => ({
       user_id: user?.id,
       prompt_type: "bears",
       prompt_name: item.name,
-      conditions: JSON.stringify(item.value),
+      conditions: JSON.stringify(item.conditions),
     }));
 
     // 推送到 supabase 的 user_prompts table

@@ -28,12 +28,12 @@ export default function PromptAdd() {
     const id = await increase(
       name,
       prompts,
-      promptType === "bulls" ? PromptType.BULLS : PromptType.BEAR
+      promptType === "bull" ? PromptType.BULL : PromptType.BEAR
     );
     if (id)
       selectObj(
         id,
-        promptType === "bulls" ? PromptType.BULLS : PromptType.BEAR
+        promptType === "bull" ? PromptType.BULL : PromptType.BEAR
       );
     navigate("/schoice");
   };

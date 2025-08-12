@@ -3,7 +3,7 @@ import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
 import { Box, Button, Chip, Stack, Tooltip, Typography } from "@mui/material";
 import { useMemo } from "react";
 import useSWR from "swr";
-import { tauriFetcher } from "../../../../../api/http_cache";
+import { tauriFetcher } from "../../../../../tools/http";
 import useDetailWebviewWindow from "../../../../../hooks/useDetailWebviewWindow";
 import useMarketAnalysis from "../../../../../hooks/useMarketAnalysis";
 import { FutureIds, UrlTaPerdOptions, UrlType } from "../../../../../types";

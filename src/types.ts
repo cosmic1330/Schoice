@@ -11,7 +11,7 @@ export type TaType = {
 }[];
 
 export enum PromptType {
-  BULLS = "bulls",
+  BULL = "bull",
   BEAR = "bear",
 }
 
@@ -33,7 +33,7 @@ export type PromptValue = {
 
 export type PromptItem = {
   name: string;
-  value: PromptValue;
+  conditions: PromptValue;
   index: null | number;
 };
 

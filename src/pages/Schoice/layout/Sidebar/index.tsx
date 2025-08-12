@@ -5,14 +5,13 @@ import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import QueryStatsIcon from "@mui/icons-material/QueryStats";
 import SettingsIcon from "@mui/icons-material/Settings";
+import SmartButtonIcon from "@mui/icons-material/SmartButton";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import { Box, IconButton, Stack, styled, Tooltip } from "@mui/material";
 import { useNavigate } from "react-router";
-import InsertRuleButton from "../../../../components/InsertRuleButton";
-import useSchoiceStore from "../../../../store/Schoice.store";
-import useStocksStore from "../../../../store/Stock.store";
-import SmartButtonIcon from "@mui/icons-material/SmartButton";
 import LanguageSwitcher from "../../../../components/LanguageSwitcher";
+import useSchoiceStore from "../../../../store/Schoice.store";
+import InsertRuleButton from "./InsertRuleButton";
 
 const GridItem = styled(Box)`
   width: 70px;
@@ -35,7 +34,6 @@ const GridItem = styled(Box)`
 export default function SideBar() {
   const navigate = useNavigate();
   const { theme, changeTheme } = useSchoiceStore();
-  const { reload } = useStocksStore();
 
   const toSetting = () => {
     navigate("/schoice/setting");
@@ -64,7 +62,6 @@ export default function SideBar() {
           <Tooltip title="自選股" arrow placement="right">
             <IconButton
               onClick={() => {
-                reload();
                 navigate("/schoice/favorite");
               }}
             >

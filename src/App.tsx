@@ -24,7 +24,8 @@ function App() {
       <Box sx={{ height: "100vh", width: "100%" }}>
         <BrowserRouter>
           <Routes>
-            <Route index element={<Login />} />
+            <Route index element={<Navigate to="/login" />} />
+            <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
             <Route path="schoice" element={<Schoice />}>
               <Route index element={<PromptList />} />

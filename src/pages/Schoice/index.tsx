@@ -7,11 +7,9 @@ import {
 } from "@mui/material";
 import CssBaseline from "@mui/material/CssBaseline";
 import { useEffect, useMemo } from "react";
-import { Outlet } from "react-router";
-import { DatabaseContext } from "../../context/DatabaseContext";
-import useDatabase from "../../hooks/useDatabase";
-import useDatabaseDates from "../../hooks/useDatabaseDates";
+import { Outlet, useNavigate } from "react-router";
 import useSchoiceStore from "../../store/Schoice.store";
+import { supabase } from "../../tools/supabase";
 import Header from "./layout/Header";
 import SideBar from "./layout/Sidebar";
 
@@ -39,10 +37,8 @@ const Main = styled(Box)`
 `;
 
 function Schoice() {
-  const db = useDatabase();
+  const navigate = useNavigate();
   const { reload, theme } = useSchoiceStore();
-  const { dates, fetchDates } = useDatabaseDates(db);
-
   useEffect(() => {
     reload();
   }, []);
@@ -61,17 +57,27 @@ function Schoice() {
     [prefersDarkMode, theme]
   );
 
+  useEffect(() => {
+    // 檢測是否登入
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
+        navigate("/login");
+      }
+    }).catch(() => {
+      // 如果檢測失敗，則重定向到登入
+      navigate("/login");
+    });
+  }, []);
+
   return (
-    <DatabaseContext.Provider value={{ db, dates, fetchDates }}>
-      <ThemeProvider theme={themeConfig}>
-        <CssBaseline />
-        <Main>
-          <SideBar />
-          <Header />
-          <Outlet />
-        </Main>
-      </ThemeProvider>
-    </DatabaseContext.Provider>
+    <ThemeProvider theme={themeConfig}>
+      <CssBaseline />
+      <Main>
+        <SideBar />
+        <Header />
+        <Outlet />
+      </Main>
+    </ThemeProvider>
   );
 }
 export default Schoice;

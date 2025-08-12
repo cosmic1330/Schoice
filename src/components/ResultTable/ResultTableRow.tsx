@@ -9,7 +9,6 @@ import { open } from "@tauri-apps/plugin-shell";
 import { forwardRef } from "react";
 import { toast } from "react-toastify";
 import useDetailWebviewWindow from "../../hooks/useDetailWebviewWindow";
-import useStocksStore from "../../store/Stock.store";
 import DailyUltraTinyLineChart from "./Charts/DailyUltraTinyLineChart";
 import HourlyUltraTinyLineChart from "./Charts/HourlyUltraTinyLineChart";
 import WeeklyUltraTinyLineChart from "./Charts/WeeklyUltraTinyLineChart";
@@ -51,7 +50,7 @@ export default forwardRef(function ResultTableRow(
   },
   ref: React.Ref<HTMLTableRowElement>
 ) {
-  const { increase, reload, remove } = useStocksStore();
+  // const { increase, reload, remove } = useStocksStore();
   const { openDetailWindow } = useDetailWebviewWindow({
     id: row.stock_id,
     name: row.name,
@@ -59,20 +58,20 @@ export default forwardRef(function ResultTableRow(
   });
 
   const handleAddToWatchList = async () => {
-    await reload();
-    await increase({
-      group: row.industry_group,
-      id: row.stock_id,
-      name: row.name,
-      type: row.market_type,
-    });
+    // await reload();
+    // await increase({
+    //   group: row.industry_group,
+    //   id: row.stock_id,
+    //   name: row.name,
+    //   type: row.market_type,
+    // });
     await emit("stock-added", { stockNumber: row.stock_id });
     toast.success(`Add ${row.name} Success!`);
   };
 
   const handleRemoveToWatchList = async () => {
-    await reload();
-    await remove(row.stock_id);
+    // await reload();
+    // await remove(row.stock_id);
     await emit("stock-removed", { stockNumber: row.stock_id });
     toast.success(`Remove ${row.name} Success!`);
   };

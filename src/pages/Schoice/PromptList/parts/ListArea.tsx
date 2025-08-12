@@ -17,8 +17,8 @@ export default function ListArea() {
     <Stack px={1} boxShadow={"2px 0px 4px rgba(0, 0, 0, 0.25)"} spacing={2}>
       <Tabs value={using} onChange={handleChange} variant="fullWidth">
         <Tab
-          label="BULLS"
-          value={PromptType.BULLS}
+          label="BULL"
+          value={PromptType.BULL}
           icon={<TrendingUpRoundedIcon />}
         />
         <Tab
@@ -28,14 +28,14 @@ export default function ListArea() {
         />
       </Tabs>
       <Box width={300}>
-        {using === PromptType.BULLS
+        {using === PromptType.BULL
           ? Object.keys(bulls).map((id, index) => (
               <ListItem
                 key={index}
                 index={index}
                 id={id}
                 name={bulls[id].name}
-                promptType={PromptType.BULLS}
+                promptType={PromptType.BULL}
               />
             ))
           : Object.keys(bears).map((id, index) => (
@@ -54,7 +54,7 @@ export default function ListArea() {
         onClick={() => {
           navigate(
             "/schoice/add?promptType=" +
-              (using === PromptType.BULLS ? PromptType.BULLS : PromptType.BEAR)
+              (using === PromptType.BULL ? PromptType.BULL : PromptType.BEAR)
           );
         }}
       >

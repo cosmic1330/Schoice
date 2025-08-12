@@ -25,7 +25,7 @@ import { SetStateAction, useCallback, useContext, useState } from "react";
 import { toast } from "react-toastify";
 import { DatabaseContext } from "../../../context/DatabaseContext";
 import useSchoiceStore from "../../../store/Schoice.store";
-import useStocksStore from "../../../store/Stock.store";
+import { supabase } from "../../../tools/supabase";
 import { PromptItem } from "../../../types";
 import shuffleArray from "../../../utils/shuffleArray";
 import BacktestResult from "./BacktestResult";
@@ -39,7 +39,6 @@ enum Status {
 }
 
 export default function Backtest() {
-  const { stocks } = useStocksStore();
   const { bulls, bears, filterStocks, setBacktestPersent } = useSchoiceStore();
   const { dates } = useContext(DatabaseContext);
   const [ctx, setCtx] = useState<Context>();
@@ -72,7 +71,7 @@ export default function Backtest() {
 
   const get = useBacktestFunc();
 
-  const createContext = useCallback(() => {
+  const createContext = useCallback(async () => {
     setBacktestPersent(0);
     if (!selectedBull.length || !selectedBear.length) {
       toast.error("請選擇多空策略");
@@ -95,7 +94,12 @@ export default function Backtest() {
       .map((date) => dateFormat(date, Mode.StringToNumber));
 
     // 隨機排列
-    let stocksValue = selectedStocks === "filterStocks" ? filterStocks : stocks;
+    const { data, error } = await supabase.from("stocks").select("*");
+    if (error) {
+      toast.error("無法取得股票資料");
+      return;
+    }
+    let stocksValue = selectedStocks === "filterStocks" ? filterStocks : data;
     if (isRandom && stocksValue) {
       stocksValue = shuffleArray(stocksValue);
     }
@@ -118,7 +122,6 @@ export default function Backtest() {
     selectedBear,
     selectedStocks,
     filterStocks,
-    stocks,
     dates,
     get,
     options,

@@ -9,7 +9,7 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [isPaid, setIsPaid] = useState(true);
+  const [isPaid, setIsPaid] = useState(false);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -18,7 +18,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('plan_tier')
-          .eq('id', user.id)
+          .eq('user_id', user.id)
           .single();
 
         if (error) {
