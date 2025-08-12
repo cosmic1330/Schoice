@@ -1,0 +1,43 @@
+{
+  "Pages": {
+    "Login": {
+      "rememberMe": "Remember me",
+      "register":"Register",
+      "signIn":"Sign In",
+      "email":"Email",
+      "password":"Password"
+    },
+    "Register": {
+      "register": "Register",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "haveAccount": "Already have an account? Sign In"
+    },
+    "Add":{
+      "close":"Close",
+      "add":"Add",
+      "download":"Downloading...",
+      "notFoundOptions":"No options? Click me to load",
+      "selectStock":"Select stock to add",
+      "required": "Stock code is required",
+      "pattern": "Stock code format is incorrect",
+      "noStock":"Please enter stock code"
+    },
+    "Schoice": {
+      "Trash": {
+        "name": "Name",
+        "type": "Type",
+        "time": "Time",
+        "action": "Action",
+        "empty": "The trash is empty",
+        "remove": "Remove",
+        "recover": "Recover",
+        "promptDetails": "Prompt Details",
+        "hourly": "Hourly",
+        "daily": "Daily",
+        "weekly": "Weekly"
+      }
+    }
+  }
+}

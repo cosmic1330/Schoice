@@ -1,0 +1,43 @@
+{
+  "Pages": {
+    "Login": {
+      "rememberMe": "記住我",
+      "register": "註冊",
+      "signIn": "登入",
+      "email": "電子郵件",
+      "password": "密碼"
+    },
+    "Register": {
+      "register": "註冊",
+      "email": "電子郵件",
+      "password": "密碼",
+      "confirmPassword": "確認密碼",
+      "haveAccount": "已經有帳號了？登入"
+    },
+    "Add": {
+      "close": "關閉",
+      "add": "加入",
+      "download": "下載中...",
+      "notFoundOptions": "沒有選項嗎? 點我載入",
+      "selectStock": "選擇加入股票",
+      "required": "股票代號是必填項目",
+      "pattern": "股票代號格式不正確",
+      "noStock": "請輸入股票代碼"
+    },
+    "Schoice": {
+      "Trash": {
+        "name": "策略名稱",
+        "type": "策略類型",
+        "time": "刪除時間",
+        "action": "操作",
+        "empty": "垃圾桶是空的",
+        "remove": "刪除",
+        "recover": "恢復",
+        "promptDetails": "策略詳情",
+        "hourly": "小時線",
+        "daily": "日線",
+        "weekly": "周線"
+      }
+    }
+  }
+}
