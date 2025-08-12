@@ -1,52 +1,51 @@
 
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { Session, User } from '@supabase/supabase-js';
+import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { supabase } from '../tools/supabase';
 
 interface UserContextType {
-  isPaid: boolean;
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [isPaid, setIsPaid] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('plan_tier')
-          .eq('user_id', user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching profile:', error);
-        } else if (profile) {
-          // setIsPaid(profile.plan_tier === 'premium');
-          setIsPaid(true);
-        }
-      }
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
     };
 
-    fetchUserProfile();
+    getSession();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        fetchUserProfile();
-      } else if (event === 'SIGNED_OUT') {
-        setIsPaid(false);
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
       }
-    });
+    );
 
     return () => {
       authListener.subscription.unsubscribe();
     };
   }, []);
 
+  const value = {
+    session,
+    user,
+    loading,
+  };
+
   return (
-    <UserContext.Provider value={{ isPaid }}>
+    <UserContext.Provider value={value}>
       {children}
     </UserContext.Provider>
   );

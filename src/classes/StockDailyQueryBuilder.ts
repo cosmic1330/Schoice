@@ -33,9 +33,11 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
     obv5: { key: "obv5", group: "_day_ago_sk" },
   };
 
-  protected getSpecificOptions(): Record<string, readonly string[]> {
+  static getSpecificOptions(): Record<string, readonly string[]> {
     return {
       days: ["今天", "昨天", "前天", "3天前", "4天前", "5天前", "自定義數值"],
+      indicators: Object.keys(new StockDailyQueryBuilder().mapping),
+      operators: [">", "<", ">=", "<=", "=", "!="],
     };
   }
 
@@ -86,12 +88,8 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
     const dayJoins = Array.from({ length: daysRange }, (_, i) => i + 1)
       .map(
         (number) => `
-          JOIN daily_deal "${number}_day_ago" ON "0_day_ago".stock_id = "${number}_day_ago".stock_id AND "${number}_day_ago".t = "${
-          dates[number]
-        }"
-          JOIN daily_skills "${number}_day_ago_sk" ON "0_day_ago".stock_id = "${number}_day_ago_sk".stock_id AND "${number}_day_ago_sk".t = "${
-          dates[number]
-        }"
+          JOIN daily_deal "${number}_day_ago" ON "0_day_ago".stock_id = "${number}_day_ago".stock_id AND "${number}_day_ago".t = "${dates[number]}"
+          JOIN daily_skills "${number}_day_ago_sk" ON "0_day_ago".stock_id = "${number}_day_ago_sk".stock_id AND "${number}_day_ago_sk".t = "${dates[number]}"
         `
       )
       .join("");

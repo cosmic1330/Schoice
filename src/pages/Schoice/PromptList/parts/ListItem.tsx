@@ -2,6 +2,7 @@ import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import TourRoundedIcon from "@mui/icons-material/TourRounded";
 import { Box, Stack as MuiStack, Typography, styled } from "@mui/material";
 import { useState } from "react";
+import { useUser } from "../../../../context/UserContext";
 import useSchoiceStore from "../../../../store/Schoice.store";
 import { PromptType } from "../../../../types";
 const Stack = styled(MuiStack)<{ select: string }>`
@@ -46,10 +47,13 @@ export default function ListItem({
 }) {
   const [hover, setHover] = useState(false);
   const { remove, reload, selectObj, select } = useSchoiceStore();
+  const { user } = useUser();
   const handleDelete = (event: React.SyntheticEvent) => {
     event.stopPropagation();
-    remove(id, promptType);
-    reload();
+    if (user) {
+      remove(id, promptType, user.id);
+      reload();
+    }
   };
 
   const handleSelect = () => {

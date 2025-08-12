@@ -34,7 +34,7 @@ export type PromptValue = {
 export type PromptItem = {
   name: string;
   conditions: PromptValue;
-  index: null | number;
+  index: number;
 };
 
 export type PromptsMap = {

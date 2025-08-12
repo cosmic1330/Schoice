@@ -30,25 +30,25 @@ function ExpressionGenerator({
   const [selects, setSelects] = useState<StorePrompt>({
     day1:
       timeFrame === "hour"
-        ? StockHourlyQueryBuilder.options.hours[0]
+        ? StockHourlyQueryBuilder.getSpecificOptions().hours[0]
         : timeFrame === "day"
-        ? StockDailyQueryBuilder.options.days[0]
-        : StockWeeklyQueryBuilder.options.weeks[0],
+        ? StockDailyQueryBuilder.getSpecificOptions().days[0]
+        : StockWeeklyQueryBuilder.getSpecificOptions().weeks[0],
     indicator1:
       timeFrame === "hour"
-        ? StockHourlyQueryBuilder.options.indicators[0]
-        : StockDailyQueryBuilder.options.indicators[0],
-    operator: StockDailyQueryBuilder.options.operators[0],
+        ? StockHourlyQueryBuilder.getSpecificOptions().indicators[0]
+        : StockDailyQueryBuilder.getSpecificOptions().indicators[0],
+    operator: StockDailyQueryBuilder.getSpecificOptions().operators[0],
     day2:
       timeFrame === "hour"
-        ? StockHourlyQueryBuilder.options.hours[0]
+        ? StockHourlyQueryBuilder.getSpecificOptions().hours[0]
         : timeFrame === "day"
-        ? StockDailyQueryBuilder.options.days[0]
-        : StockWeeklyQueryBuilder.options.weeks[0],
+        ? StockDailyQueryBuilder.getSpecificOptions().days[0]
+        : StockWeeklyQueryBuilder.getSpecificOptions().weeks[0],
     indicator2:
       timeFrame === "hour"
-        ? StockHourlyQueryBuilder.options.indicators[0]
-        : StockDailyQueryBuilder.options.indicators[0],
+        ? StockHourlyQueryBuilder.getSpecificOptions().indicators[0]
+        : StockDailyQueryBuilder.getSpecificOptions().indicators[0],
   });
 
   const handleTimeFrameChange = (
@@ -61,28 +61,28 @@ function ExpressionGenerator({
         ...prev,
         day1:
           newTimeFrame === "hour"
-            ? StockHourlyQueryBuilder.options.hours[0]
+            ? StockHourlyQueryBuilder.getSpecificOptions().hours[0]
             : newTimeFrame === "day"
-            ? StockDailyQueryBuilder.options.days[0]
-            : StockWeeklyQueryBuilder.options.weeks[0],
+            ? StockDailyQueryBuilder.getSpecificOptions().days[0]
+            : StockWeeklyQueryBuilder.getSpecificOptions().weeks[0],
         day2:
           newTimeFrame === "hour"
-            ? StockHourlyQueryBuilder.options.hours[0]
+            ? StockHourlyQueryBuilder.getSpecificOptions().hours[0]
             : newTimeFrame === "day"
-            ? StockDailyQueryBuilder.options.days[0]
-            : StockWeeklyQueryBuilder.options.weeks[0],
+            ? StockDailyQueryBuilder.getSpecificOptions().days[0]
+            : StockWeeklyQueryBuilder.getSpecificOptions().weeks[0],
         indicator1:
           newTimeFrame === "hour"
-            ? StockHourlyQueryBuilder.options.indicators[0]
+            ? StockHourlyQueryBuilder.getSpecificOptions().indicators[0]
             : newTimeFrame === "day"
-            ? StockDailyQueryBuilder.options.indicators[0]
-            : StockWeeklyQueryBuilder.options.indicators[0],
+            ? StockDailyQueryBuilder.getSpecificOptions().indicators[0]
+            : StockWeeklyQueryBuilder.getSpecificOptions().indicators[0],
         indicator2:
           newTimeFrame === "hour"
-            ? StockHourlyQueryBuilder.options.indicators[0]
+            ? StockHourlyQueryBuilder.getSpecificOptions().indicators[0]
             : newTimeFrame === "day"
-            ? StockDailyQueryBuilder.options.indicators[0]
-            : StockWeeklyQueryBuilder.options.indicators[0],
+            ? StockDailyQueryBuilder.getSpecificOptions().indicators[0]
+            : StockWeeklyQueryBuilder.getSpecificOptions().indicators[0],
       }));
     }
   };
@@ -105,19 +105,19 @@ function ExpressionGenerator({
 
   const timeOptions =
     timeFrame === "hour"
-      ? StockHourlyQueryBuilder.options.hours
+      ? StockHourlyQueryBuilder.getSpecificOptions().hours
       : timeFrame === "day"
-      ? StockDailyQueryBuilder.options.days
-      : StockWeeklyQueryBuilder.options.weeks;
+      ? StockDailyQueryBuilder.getSpecificOptions().days
+      : StockWeeklyQueryBuilder.getSpecificOptions().weeks;
 
   const indicators =
     timeFrame === "hour"
-      ? StockHourlyQueryBuilder.options.indicators
+      ? StockHourlyQueryBuilder.getSpecificOptions().indicators
       : timeFrame === "day"
-      ? StockDailyQueryBuilder.options.indicators
-      : StockWeeklyQueryBuilder.options.indicators;
+      ? StockDailyQueryBuilder.getSpecificOptions().indicators
+      : StockWeeklyQueryBuilder.getSpecificOptions().indicators;
 
-  const operators = StockDailyQueryBuilder.options.operators;
+  const operators = StockDailyQueryBuilder.getSpecificOptions().operators;
 
   return (
     <Box>

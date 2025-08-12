@@ -40,8 +40,9 @@ interface SchoiceState {
   select: {
     id: string;
     name: string;
-    value: PromptValue;
+    conditions: PromptValue;
     type: PromptType;
+    index: number;
   } | null;
   theme: string;
   chartType: ChartType;
@@ -49,15 +50,20 @@ interface SchoiceState {
   filterStocks?: FilterStock[];
   filterConditions?: Prompts;
   backtestPersent: number;
-  addAlarm: (alarm: PromptItem, id: string, index: number) => void;
-  removeAlarm: (id: string, index: number) => void;
+  addAlarm: (
+    alarm: PromptItem,
+    id: string,
+    index: number,
+    userId: string
+  ) => void;
+  removeAlarm: (id: string, index: number, userId: string) => void;
   setBacktestPersent: (persent: number) => void;
   addFilterStocks: (
     stocks: FilterStock[] | undefined,
     prompts: Prompts | undefined
   ) => void;
   removeFilterStocks: () => void;
-  recover: (id: string) => Promise<void>;
+  recover: (id: string, userId: string) => Promise<void>;
   changeChartType: (type: ChartType) => void;
   changeTheme: (theme: string) => void;
   changeDataCount: (count: number) => void;
@@ -65,16 +71,18 @@ interface SchoiceState {
   increase: (
     name: string,
     prompts: PromptValue,
-    type: PromptType
+    type: PromptType,
+    userId: string
   ) => Promise<string | undefined>;
   edit: (
     id: string,
     name: string,
     prompts: PromptValue,
-    type: PromptType
+    type: PromptType,
+    userId: string
   ) => void;
-  remove: (name: string, type: PromptType) => void;
-  removeFromTrash: (index: number, id: string) => void;
+  remove: (name: string, type: PromptType, userId: string) => void;
+  removeFromTrash: (index: number, id: string, userId: string) => void;
   reload: () => void;
   clear: () => void;
   clearSeleted: () => void;
@@ -98,15 +106,19 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
   filterConditions: undefined,
   filterStocks: undefined,
   backtestPersent: 0,
-  addAlarm: async (alarm: PromptItem, id: string, index: number) => {
+  addAlarm: async (
+    alarm: PromptItem,
+    id: string,
+    index: number,
+    userId: string
+  ) => {
     try {
-      const user_id = (await supabase.auth.getUser()).data.user?.id;
       const { error } = await supabase
         .from("user_prompts")
         .update({ alarm: true })
         .eq("prompt_id", id)
         .eq("index", index)
-        .eq("user_id", user_id);
+        .eq("user_id", userId);
       if (error) {
         handleError(error, "addAlarm");
         return;
@@ -123,15 +135,14 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
       handleError(err, "addAlarm");
     }
   },
-  removeAlarm: async (id: string, index: number) => {
+  removeAlarm: async (id: string, index: number, userId: string) => {
     try {
-      const user_id = (await supabase.auth.getUser()).data.user?.id;
       const { error } = await supabase
         .from("user_prompts")
         .update({ alarm: true })
         .eq("prompt_id", id)
         .eq("index", index)
-        .eq("user_id", user_id);
+        .eq("user_id", userId);
       if (error) {
         handleError(error, "removeAlarm");
         return;
@@ -160,24 +171,22 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
       filterConditions: undefined,
     });
   },
-  recover: async (id: string) => {
+  recover: async (id: string, userId: string) => {
     const trash = get().trash;
     const index = trash.findIndex((item) => item.id === id);
     if (index !== -1) {
       const { id, type, value } = trash[index];
-      const user_id = (await supabase.auth.getUser()).data.user?.id;
       await supabase
         .from("user_prompts")
         .update({ trash: false })
         .eq("prompt_id", id)
-        .eq("user_id", user_id);
+        .eq("user_id", userId);
       switch (type) {
         case PromptType.BULL:
           set((state) => ({
             bulls: {
               ...state.bulls,
               [id]: value,
-
             },
           }));
           break;
@@ -210,12 +219,16 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
   changeUsing: (type: PromptType) => {
     set({ using: type });
   },
-  increase: async (name: string, prompts: PromptValue, type: PromptType) => {
+  increase: async (
+    name: string,
+    prompts: PromptValue,
+    type: PromptType,
+    userId: string
+  ) => {
     try {
       const id = nanoid();
-      const user_id = (await supabase.auth.getUser()).data.user?.id;
       const { data, error } = await supabase.from("user_prompts").insert({
-        user_id,
+        user_id: userId,
         prompt_type: type,
         prompt_name: name,
         conditions: JSON.stringify(prompts),
@@ -227,7 +240,7 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
         handleError(error, "increase");
         return undefined;
       }
-      const index = data;
+      const index = 123;
       switch (type) {
         case PromptType.BULL:
           set((state) => ({
@@ -265,10 +278,10 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
     id: string,
     name: string,
     prompts: PromptValue,
-    type: PromptType
+    type: PromptType,
+    userId: string
   ) => {
     try {
-      const user_id = (await supabase.auth.getUser()).data.user?.id;
       const { error } = await supabase
         .from("user_prompts")
         .update({
@@ -276,7 +289,7 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
           conditions: JSON.stringify(prompts),
         })
         .eq("prompt_id", id)
-        .eq("user_id", user_id);
+        .eq("user_id", userId);
       if (error) {
         handleError(error, "edit");
         return;
@@ -317,14 +330,13 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
       handleError(err, "edit");
     }
   },
-  remove: async (id: string, type: PromptType) => {
+  remove: async (id: string, type: PromptType, userId: string) => {
     try {
-      const user_id = (await supabase.auth.getUser()).data.user?.id;
       const { error } = await supabase
         .from("user_prompts")
         .update({ trash: true })
         .eq("prompt_id", id)
-        .eq("user_id", user_id);
+        .eq("user_id", userId);
       if (error) {
         handleError(error, "remove");
         return;
@@ -367,15 +379,14 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
       handleError(err, "remove");
     }
   },
-  removeFromTrash: async (index: number, id: string) => {
+  removeFromTrash: async (index: number, id: string, userId: string) => {
     try {
-      const user_id = (await supabase.auth.getUser()).data.user?.id;
       const { error } = await supabase
         .from("user_prompts")
         .delete()
         .eq("index", index)
         .eq("prompt_id", id)
-        .eq("user_id", user_id);
+        .eq("user_id", userId);
       if (error) {
         handleError(error, "removeFromTrash");
         return;
@@ -480,7 +491,8 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
             id,
             type,
             name: selectBulls.name,
-            value: selectBulls.conditions,
+            conditions: selectBulls.conditions,
+            index: selectBulls.index,
           },
         });
         break;
@@ -491,7 +503,8 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
             id,
             type,
             name: selectBears.name,
-            value: selectBears.conditions,
+            conditions: selectBears.conditions,
+            index: selectBears.index,
           },
         });
         break;

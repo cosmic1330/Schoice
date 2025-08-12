@@ -13,6 +13,7 @@ import {
 } from "@tauri-apps/plugin-notification";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
+import { useUser } from "../../../../../context/UserContext";
 import useSchoiceStore from "../../../../../store/Schoice.store";
 import { PromptType, PromptValue } from "../../../../../types";
 import Summary from "./Summary";
@@ -23,11 +24,13 @@ export default function RuleContent({
   select: {
     id: string;
     name: string;
-    value: PromptValue;
+    conditions: PromptValue;
     type: PromptType;
+    index: number; 
   };
 }) {
   const { remove, reload, clearSeleted, addAlarm, alarms, removeAlarm } = useSchoiceStore();
+  const { user } = useUser();
   const navigate = useNavigate();
 
   const handleCopy = async () => {
@@ -48,13 +51,18 @@ export default function RuleContent({
 
   const handleDelete = () => {
     clearSeleted();
-    remove(select.id, select.type);
-    reload();
+    if (user) {
+      remove(select.id, select.type, user.id);
+      reload();
+    }
   };
 
   const handleAddNotification = async () => {
+    if (!user) {
+      return;
+    }
     try {
-      await addAlarm({ name: select.name, value: select.value }, select.id);
+      await addAlarm({ name: select.name, conditions: select.conditions, index: select.index }, select.id, select.index, user.id);
       toast.success("加入告警偵測成功");
     } catch (error) {
       console.error(error);
@@ -63,8 +71,11 @@ export default function RuleContent({
   };
 
   const handleRemoveNotification = async () => {
+    if (!user) {
+      return;
+    }
     try {
-      await removeAlarm(select.id);
+      await removeAlarm(select.id, select.index, user.id);
       toast.success("移除告警偵測成功");
     } catch (error) {
       console.error(error);

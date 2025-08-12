@@ -14,8 +14,9 @@ export default function Result({
   select: {
     id: string;
     name: string;
-    value: PromptValue;
+    conditions: PromptValue;
     type: PromptType;
+    index: number;
   };
 }) {
   const { getPromptSqlScripts, getCombinedSqlScript, getStocksData } =

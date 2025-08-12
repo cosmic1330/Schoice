@@ -2,6 +2,21 @@ import { QueryBuilderMappingItem, StorePrompt } from "../types";
 import { BaseQueryBuilder } from "./BaseQueryBuilder";
 
 export class StockHourlyQueryBuilder extends BaseQueryBuilder {
+  static getSpecificOptions(): Record<string, readonly string[]> {
+    return {
+      hours: [
+        "現在",
+        "1小時前",
+        "2小時前",
+        "3小時前",
+        "4小時前",
+        "5小時前",
+        "自定義數值",
+      ],
+      indicators: Object.keys(new StockHourlyQueryBuilder().mapping),
+      operators: [">", "<", ">=", "<=", "=", "!="],
+    };
+  }
   protected mapping: Record<string, QueryBuilderMappingItem> = {
     收盤價: { key: "c", group: "_hour_ago" },
     開盤價: { key: "o", group: "_hour_ago" },
@@ -94,12 +109,8 @@ export class StockHourlyQueryBuilder extends BaseQueryBuilder {
     const hourJoins = Array.from({ length: hoursRange }, (_, i) => i + 1)
       .map(
         (number) => `
-          JOIN hourly_deal "${number}_hour_ago" ON "0_hour_ago".stock_id = "${number}_hour_ago".stock_id AND "${number}_hour_ago".ts = "${
-          dates[number]
-        }"
-          JOIN hourly_skills "${number}_hour_ago_sk" ON "0_hour_ago".stock_id = "${number}_hour_ago_sk".stock_id AND "${number}_hour_ago_sk".ts = "${
-          dates[number]
-        }"
+          JOIN hourly_deal "${number}_hour_ago" ON "0_hour_ago".stock_id = "${number}_hour_ago".stock_id AND "${number}_hour_ago".ts = "${dates[number]}"
+          JOIN hourly_skills "${number}_hour_ago_sk" ON "0_hour_ago".stock_id = "${number}_hour_ago_sk".stock_id AND "${number}_hour_ago_sk".ts = "${dates[number]}"
         `
       )
       .join("");

@@ -17,10 +17,12 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import useSchoiceStore from "../../../store/Schoice.store";
 import { t } from "i18next";
+import { useUser } from "../../../context/UserContext";
 
 export default function CollapseRow({ item }: { item: TrashPrompt }) {
   const [open, setOpen] = useState(false);
   const { recover, removeFromTrash } = useSchoiceStore();
+  const { user } = useUser();
   return (
     <>
       <TableRow>
@@ -41,7 +43,11 @@ export default function CollapseRow({ item }: { item: TrashPrompt }) {
             variant="outlined"
             color="error"
             size="small"
-            onClick={() => removeFromTrash(item.id)}
+            onClick={() => {
+              if (user) {
+                removeFromTrash(item.value.index, item.id, user.id);
+              }
+            }}
             sx={{ mr: 1 }}
           >
             {t("Pages.Schoice.Trash.remove")}
@@ -50,7 +56,11 @@ export default function CollapseRow({ item }: { item: TrashPrompt }) {
             variant="contained"
             color="primary"
             size="small"
-            onClick={() => recover(item.id)}
+            onClick={() => {
+              if (user) {
+                recover(item.id, user.id);
+              }
+            }}
             sx={{ mr: 1 }}
           >
             {t("Pages.Schoice.Trash.recover")}

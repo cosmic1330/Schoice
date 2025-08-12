@@ -12,7 +12,7 @@ export default function Summary({
   select: {
     id: string;
     name: string;
-    value: PromptValue;
+    conditions: PromptValue;
     type: PromptType;
   };
 }) {
@@ -27,7 +27,7 @@ export default function Summary({
             <Typography variant="h6" gutterBottom>
               小時線
             </Typography>
-            {select.value.hourly?.map((prompt, index) => (
+            {select.conditions.hourly?.map((prompt, index) => (
               <Typography key={index} variant="body1">
                 {index + 1}.
                 {prompt.day1 +
@@ -42,7 +42,7 @@ export default function Summary({
             <Typography variant="h6" gutterBottom>
               日線
             </Typography>
-            {select.value.daily?.map((prompt, index) => (
+            {select.conditions.daily?.map((prompt, index) => (
               <Typography key={index} variant="body1">
                 {index + 1}.
                 {prompt.day1 +
@@ -57,7 +57,7 @@ export default function Summary({
             <Typography variant="h6" gutterBottom>
               週線
             </Typography>
-            {select.value.weekly?.map((prompt, index) => (
+            {select.conditions.weekly?.map((prompt, index) => (
               <Typography key={index} variant="body1">
                 {index + 1}.
                 {prompt.day1 +

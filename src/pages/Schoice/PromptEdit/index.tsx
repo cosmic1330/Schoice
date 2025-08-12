@@ -1,6 +1,7 @@
 import { Box, Button, Container, Grid, Stack, Typography } from "@mui/material";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import { useUser } from "../../../context/UserContext";
 import useSchoiceStore from "../../../store/Schoice.store";
 import { Prompts } from "../../../types";
 import ExpressionGenerator from "../parts/ExpressionGenerator";
@@ -9,6 +10,7 @@ import PromptName from "../parts/PromptName";
 export default function PromptEdit() {
   const { id } = useParams();
   const { edit, select, selectObj } = useSchoiceStore();
+  const { user } = useUser();
   const [dailyPrompts, setDailyPrompts] = useState<Prompts>(
     select?.value.daily || []
   );
@@ -22,7 +24,7 @@ export default function PromptEdit() {
   const navigate = useNavigate();
 
   const handleEdit = async () => {
-    if (id && select) {
+    if (id && select && user) {
       await edit(
         id,
         name,
@@ -31,7 +33,8 @@ export default function PromptEdit() {
           weekly: weekPrompts,
           hourly: hourlyPrompts,
         },
-        select.type
+        select.type,
+        user.id
       );
       selectObj(id, select.type);
       navigate("/schoice");
