@@ -10,7 +10,7 @@ import {
   FundamentalTableType,
   SkillsTableOptions,
   SkillsTableType,
-  StockStoreType,
+  StockTableType,
   TaType,
   TimeSharingDealTableOptions,
   TimeSharingDealTableType,
@@ -103,7 +103,7 @@ export default class SqliteDataManager {
 
   async timeSharingProcessor(
     ta: TaType,
-    stock: StockStoreType,
+    stock: StockTableType,
     options: {
       dealType: TimeSharingDealTableOptions;
       skillsType: TimeSharingSkillsTableOptions;
@@ -205,7 +205,9 @@ export default class SqliteDataManager {
       }
 
       await this.saveTimeSharingDealTable(deals, options.dealType, stock);
-      info(`save ${options.dealType} db: ${stock.stock_id} ${deals.length} records`);
+      info(
+        `save ${options.dealType} db: ${stock.stock_id} ${deals.length} records`
+      );
       await this.saveTimeSharingSkillsTable(skills, options.skillsType, stock);
       info(
         `save ${options.skillsType} db: ${stock.stock_id} ${skills.length} records`
@@ -220,7 +222,7 @@ export default class SqliteDataManager {
 
   async processor(
     ta: TaType,
-    stock: StockStoreType,
+    stock: StockTableType,
     options: {
       dealType: DealTableOptions;
       skillsType: SkillsTableOptions;
@@ -321,7 +323,9 @@ export default class SqliteDataManager {
         }
       }
       await this.saveDealTable(deals, options.dealType, stock);
-      info(`save ${options.dealType} db: ${stock.stock_id} ${deals.length} records`);
+      info(
+        `save ${options.dealType} db: ${stock.stock_id} ${deals.length} records`
+      );
       await this.saveSkillsTable(skills, options.skillsType, stock).then(() => {
         info(
           `save ${options.skillsType} db: ${stock.stock_id} ${skills.length} records`
@@ -335,11 +339,16 @@ export default class SqliteDataManager {
   }
 
   // Base
-  async saveStockTable(stock: StockStoreType) {
+  async saveStockTable(stock: StockTableType) {
     try {
       await this.db.execute(
         "INSERT OR REPLACE INTO stock (id, name, industry_group, market_type) VALUES ($1, $2, $3, $4)",
-        [stock.stock_id, stock.stock_name, stock.industry_group, stock.market_type]
+        [
+          stock.stock_id,
+          stock.stock_name,
+          stock.industry_group,
+          stock.market_type,
+        ]
       );
       return true;
     } catch (e) {
@@ -372,7 +381,7 @@ export default class SqliteDataManager {
   async saveDealTable(
     deals: DealTableType[],
     table: DealTableOptions,
-    stock: StockStoreType
+    stock: StockTableType
   ) {
     try {
       const sql = `INSERT INTO ${table} (stock_id, t, c, o, h, l, v) VALUES ${deals
@@ -391,7 +400,7 @@ export default class SqliteDataManager {
   async saveSkillsTable(
     skills: SkillsTableType[],
     table: SkillsTableOptions,
-    stock: StockStoreType
+    stock: StockTableType
   ) {
     try {
       const sql = `INSERT INTO ${table} (stock_id,
@@ -435,7 +444,7 @@ export default class SqliteDataManager {
   async saveTimeSharingDealTable(
     deal: TimeSharingDealTableType[],
     table: TimeSharingDealTableOptions,
-    stock: StockStoreType
+    stock: StockTableType
   ) {
     try {
       const sql = `INSERT INTO ${table} (stock_id, ts, c, o, h, l, v) VALUES ${deal
@@ -454,7 +463,7 @@ export default class SqliteDataManager {
   async saveTimeSharingSkillsTable(
     skills: TimeSharingSkillsTableType[],
     table: TimeSharingSkillsTableOptions,
-    stock: StockStoreType
+    stock: StockTableType
   ) {
     try {
       const sql = `INSERT INTO ${table} (stock_id,
@@ -495,7 +504,7 @@ export default class SqliteDataManager {
   }
 
   async getStockDates(
-    stock: StockStoreType,
+    stock: StockTableType,
     table: SkillsTableOptions | DealTableOptions
   ) {
     try {
@@ -510,7 +519,7 @@ export default class SqliteDataManager {
   }
 
   async getStockTimeSharing(
-    stock: StockStoreType,
+    stock: StockTableType,
     table: TimeSharingDealTableOptions | TimeSharingSkillsTableOptions
   ) {
     try {

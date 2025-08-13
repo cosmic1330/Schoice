@@ -9,6 +9,7 @@ import {
   PromptsMap,
   PromptType,
   PromptValue,
+  StockTableType,
   TrashPrompt,
 } from "../types";
 
@@ -50,6 +51,10 @@ interface SchoiceState {
   filterStocks?: FilterStock[];
   filterConditions?: Prompts;
   backtestPersent: number;
+  menu: StockTableType[];
+  watchStocks: StockTableType[];
+  removeFromWatchList: (stockId: string, userId: string) => void;
+  addToWatchList: (stock: StockTableType, userId: string) => void;
   addAlarm: (
     alarm: PromptItem,
     id: string,
@@ -106,6 +111,45 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
   filterConditions: undefined,
   filterStocks: undefined,
   backtestPersent: 0,
+  menu: [],
+  watchStocks: [],
+  removeFromWatchList: async (stockId: string, userId: string) => {
+    try {
+      const { error } = await supabase
+        .from("watch_stock")
+        .delete()
+        .eq("stock_id", stockId)
+        .eq("user_id", userId);
+      if (error) {
+        handleError(error, "removeFromWatchList");
+        return;
+      }
+      set((state) => ({
+        watchStocks: state.watchStocks?.filter(
+          (stock) => stock.stock_id !== stockId
+        ),
+      }));
+    } catch (err) {
+      handleError(err, "removeFromWatchList");
+    }
+  },
+  addToWatchList: async (stock: StockTableType, userId: string) => {
+    try {
+      const { error } = await supabase.from("watch_stock").insert({
+        stock_id: stock.stock_id,
+        user_id: userId,
+      });
+      if (error) {
+        handleError(error, "addToWatchList");
+        return;
+      }
+      set((state) => ({
+        watchStocks: [...state.watchStocks, stock],
+      }));
+    } catch (err) {
+      handleError(err, "addToWatchList");
+    }
+  },
   addAlarm: async (
     alarm: PromptItem,
     id: string,
@@ -227,15 +271,18 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
   ) => {
     try {
       const id = nanoid();
-      const { data, error } = await supabase.from("user_prompts").insert({
-        user_id: userId,
-        prompt_type: type,
-        prompt_name: name,
-        conditions: JSON.stringify(prompts),
-        prompt_id: id,
-        trash: false,
-        alarm: false,
-      }).select('index');
+      const { data, error } = await supabase
+        .from("user_prompts")
+        .insert({
+          user_id: userId,
+          prompt_type: type,
+          prompt_name: name,
+          conditions: JSON.stringify(prompts),
+          prompt_id: id,
+          trash: false,
+          alarm: false,
+        })
+        .select("index");
       if (error) {
         handleError(error, "increase");
         return undefined;
@@ -458,11 +505,20 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
           }
         }
       }
+      const { data: menu } = await supabase.from("stock").select("*");
+      const { data: watchStocksData } = await supabase
+        .from("watch_stock")
+        .select("*,stock(*)")
+        .eq("user_id", userId);
+      const watchStocks: StockTableType[] =
+        watchStocksData?.map((item) => item.stock) || [];
       set(() => ({
         bulls,
         bears,
         alarms,
         trash,
+        menu: menu || [],
+        watchStocks: watchStocks || [],
       }));
     } catch (error) {
       handleError(error, "reload");

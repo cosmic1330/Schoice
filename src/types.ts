@@ -53,20 +53,19 @@ export type QueryBuilderMappingItem = {
   group: string;
 };
 
-export type StockStoreType = {
+/****
+ * Supabase
+ ****/
+export type StockTableType = {
   stock_id: string;
   stock_name: string;
   industry_group: string;
   market_type: string;
 };
 
-export type StockTableType = {
-  id: string;
-  name: string;
-  industry_group: string;
-  market_type: string;
-};
-
+/****
+ * Sqlite
+ ****/
 export type DealTableType = {
   stock_id: string;
   t: string;
@@ -153,6 +152,9 @@ export type TimeSharingSkillsTableType = {
   obv5: number;
 };
 
+/****
+ * Enum Types
+ ****/
 export enum DealTableOptions {
   DailyDeal = "daily_deal",
   WeeklyDeal = "weekly_deal",

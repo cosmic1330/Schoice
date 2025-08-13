@@ -8,11 +8,10 @@ import { toast } from "react-toastify";
 import SqliteDataManager from "../classes/SqliteDataManager";
 import { DatabaseContext } from "../context/DatabaseContext";
 import useSchoiceStore from "../store/Schoice.store";
-import { supabase } from "../tools/supabase";
 import {
   DealTableOptions,
   SkillsTableOptions,
-  StockStoreType,
+  StockTableType,
   TaType,
   TimeSharingDealTableOptions,
   TimeSharingSkillsTableOptions,
@@ -66,11 +65,10 @@ type StockProfile = {
 
 export default function useHighConcurrencyDeals() {
   const [downloaded, setDownloaded] = useState(0);
-  const [menu, setMenu] = useState<StockStoreType[]>([]);
   const [status, setStatus] = useState(Status.Idle);
   const abortControllerRef = useRef<AbortController | null>(null);
   const { db, fetchDates, dates } = useContext(DatabaseContext);
-  const { changeDataCount } = useSchoiceStore();
+  const { menu, changeDataCount } = useSchoiceStore();
 
   // 通用重試函式
   async function withRetry<T>(fn: () => Promise<T>, retries = 5): Promise<T> {
@@ -93,7 +91,7 @@ export default function useHighConcurrencyDeals() {
   const getFundamentalFetch = useCallback(
     async (
       signal: AbortSignal,
-      stock: StockStoreType,
+      stock: StockTableType,
       sqliteDataManager: SqliteDataManager
     ) => {
       return withRetry(async () => {
@@ -140,7 +138,7 @@ export default function useHighConcurrencyDeals() {
   const getIndicatorFetch = useCallback(
     async (
       signal: AbortSignal,
-      stock: StockStoreType,
+      stock: StockTableType,
       perd: UrlTaPerdOptions
     ): Promise<TaType> => {
       return withRetry(async () => {
@@ -220,14 +218,6 @@ export default function useHighConcurrencyDeals() {
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
     const { signal } = abortController;
-    const { data, error: err } = await supabase.from("stock").select("*");
-
-    if (err) {
-      error(`Failed to fetch stocks: ${err.message}`);
-      setStatus(Status.Idle);
-      return;
-    }
-    setMenu(data || []);
 
     // 取得設定
     const reverse = localStorage.getItem("schoice:fetch:reverse");
@@ -240,7 +230,9 @@ export default function useHighConcurrencyDeals() {
       dates[0] === dateFormat(new Date().getTime(), Mode.TimeStampToString)
     ) {
       info(`Previous downloaded stock ID: ${previousDownloaded}`);
-      const index = menu.findIndex((stock) => stock.stock_id === previousDownloaded);
+      const index = menu.findIndex(
+        (stock) => stock.stock_id === previousDownloaded
+      );
       if (reverse === "false") {
         menu.splice(0, index + 1);
       } else {
@@ -297,7 +289,9 @@ export default function useHighConcurrencyDeals() {
 
       // 隨機等待
       const delay = Math.floor(Math.random() * (3000 - 1000 + 1)) + 1000;
-      console.log(`等待 ${delay}ms 後請求 ${stock.stock_id} ${stock.stock_name}...`);
+      console.log(
+        `等待 ${delay}ms 後請求 ${stock.stock_id} ${stock.stock_name}...`
+      );
       await new Promise((resolve) => setTimeout(resolve, delay));
 
       // case 1-4: 寫入股票代號資料
@@ -326,7 +320,10 @@ export default function useHighConcurrencyDeals() {
         const taiwanTime = new Date().toLocaleString("en-US", {
           timeZone: "Asia/Taipei",
         });
-        localStorage.setItem(`schoice:fetch:time:${stock.stock_id}`, taiwanTime);
+        localStorage.setItem(
+          `schoice:fetch:time:${stock.stock_id}`,
+          taiwanTime
+        );
 
         // daily
         if (daily.status === "fulfilled") {
@@ -466,7 +463,9 @@ export default function useHighConcurrencyDeals() {
           }
         }
       } catch (e) {
-        error(`Error fetching data for stock ${stock.stock_id} ${stock.stock_name}: ${e}`);
+        error(
+          `Error fetching data for stock ${stock.stock_id} ${stock.stock_name}: ${e}`
+        );
       }
       setDownloaded((prev) => prev + 1);
       changeDataCount(i + 1);
@@ -480,7 +479,7 @@ export default function useHighConcurrencyDeals() {
     });
 
     setStatus(Status.Idle);
-  }, [db, status, dates, fetchDates]);
+  }, [db, status, dates, fetchDates, menu]);
 
   const persent = useMemo(() => {
     if (downloaded === 0) return 0;

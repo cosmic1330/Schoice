@@ -11,9 +11,9 @@ import { useEffect, useState } from "react";
 import useDatabaseQuery from "../../../hooks/useDatabaseQuery";
 import useFindStocksByPrompt from "../../../hooks/useFindStocksByPrompt";
 import useSchoiceStore from "../../../store/Schoice.store";
-import { StockStoreType } from "../../../types";
+import { StockTableType } from "../../../types";
 
-export default function Alarm({ stocks }: { stocks: StockStoreType[] }) {
+export default function Alarm({ stocks }: { stocks: StockTableType[] }) {
   const { alarms } = useSchoiceStore();
   const { getPromptSqlScripts, getCombinedSqlScript } = useFindStocksByPrompt();
   const query = useDatabaseQuery();
@@ -67,7 +67,8 @@ export default function Alarm({ stocks }: { stocks: StockStoreType[] }) {
           {stocks
             .filter(
               (stock) =>
-                stockAlarmMap[stock.stock_id] && stockAlarmMap[stock.stock_id].length > 0
+                stockAlarmMap[stock.stock_id] &&
+                stockAlarmMap[stock.stock_id].length > 0
             )
             .map((stock) => (
               <Grid key={stock.stock_id} size={3}>

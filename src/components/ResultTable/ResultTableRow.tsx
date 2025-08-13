@@ -4,17 +4,18 @@ import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import { Box, IconButton, Tooltip, Typography } from "@mui/material";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
-import { emit } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-shell";
-import { forwardRef } from "react";
+import React, { forwardRef } from "react";
 import { toast } from "react-toastify";
+import { useUser } from "../../context/UserContext";
 import useDetailWebviewWindow from "../../hooks/useDetailWebviewWindow";
+import useSchoiceStore from "../../store/Schoice.store";
+import { FundamentalTableType } from "../../types";
 import DailyUltraTinyLineChart from "./Charts/DailyUltraTinyLineChart";
 import HourlyUltraTinyLineChart from "./Charts/HourlyUltraTinyLineChart";
 import WeeklyUltraTinyLineChart from "./Charts/WeeklyUltraTinyLineChart";
 import RowChart from "./RowChart";
 import { ActionButtonType } from "./types";
-import { FundamentalTableType } from "../../types";
 
 function TooltipContent({ row }: { row: FundamentalTableType }) {
   return (
@@ -50,30 +51,43 @@ export default forwardRef(function ResultTableRow(
   },
   ref: React.Ref<HTMLTableRowElement>
 ) {
-  // const { increase, reload, remove } = useStocksStore();
   const { openDetailWindow } = useDetailWebviewWindow({
     id: row.stock_id,
     name: row.name,
     group: row.market_type,
   });
+  const { user } = useUser();
+  const { addToWatchList, removeFromWatchList } = useSchoiceStore();
+
+  const [addLoading, setAddLoading] = React.useState(false);
+  const [removeLoading, setRemoveLoading] = React.useState(false);
 
   const handleAddToWatchList = async () => {
-    // await reload();
-    // await increase({
-    //   group: row.industry_group,
-    //   id: row.stock_id,
-    //   name: row.name,
-    //   type: row.market_type,
-    // });
-    await emit("stock-added", { stockNumber: row.stock_id });
-    toast.success(`Add ${row.name} Success!`);
+    if (!user) {
+      toast.error("Please login first!");
+      return;
+    }
+    setAddLoading(true);
+    try {
+      await addToWatchList(row, user.id);
+      toast.success(`Add ${row.name} Success!`);
+    } finally {
+      setAddLoading(false);
+    }
   };
 
   const handleRemoveToWatchList = async () => {
-    // await reload();
-    // await remove(row.stock_id);
-    await emit("stock-removed", { stockNumber: row.stock_id });
-    toast.success(`Remove ${row.name} Success!`);
+    if (!user) {
+      toast.error("Please login first!");
+      return;
+    }
+    setRemoveLoading(true);
+    try {
+      await removeFromWatchList(row.stock_id, user.id);
+      toast.success(`Remove ${row.name} Success!`);
+    } finally {
+      setRemoveLoading(false);
+    }
   };
 
   return (
@@ -142,12 +156,15 @@ export default forwardRef(function ResultTableRow(
           <InfoIcon />
         </IconButton>
         {type === ActionButtonType.Increase && (
-          <IconButton onClick={handleAddToWatchList}>
+          <IconButton onClick={handleAddToWatchList} disabled={addLoading}>
             <PostAddIcon />
           </IconButton>
         )}
         {type === ActionButtonType.Decrease && (
-          <IconButton onClick={handleRemoveToWatchList}>
+          <IconButton
+            onClick={handleRemoveToWatchList}
+            disabled={removeLoading}
+          >
             <RemoveCircleOutlineIcon />
           </IconButton>
         )}

@@ -1,11 +1,20 @@
-import { Boll, dateFormat, Kd, Ma, Macd, Obv, ObvEma, Rsi } from "@ch20026103/anysis";
+import {
+  Boll,
+  dateFormat,
+  Kd,
+  Ma,
+  Macd,
+  Obv,
+  ObvEma,
+  Rsi,
+} from "@ch20026103/anysis";
 import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
 import {
   DealTableOptions,
   DealTableType,
   SkillsCsvDataType,
   SkillsTableOptions,
-  StockStoreType,
+  StockTableType,
   TaType,
 } from "../types";
 
@@ -23,7 +32,7 @@ export default class CsvDataManager {
   }
   async gererateDealCsvDataByTa(
     ta: TaType,
-    stock: StockStoreType,
+    stock: StockTableType,
     type: DealTableOptions
   ) {
     const data: DealTableType[] = ta.map((item) => ({
@@ -38,7 +47,7 @@ export default class CsvDataManager {
 
   async gererateSkillsCsvDataByTa(
     ta: TaType,
-    stock: StockStoreType,
+    stock: StockTableType,
     type: SkillsTableOptions
   ) {
     if (!ta || ta.length === 0) return;
