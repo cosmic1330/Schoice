@@ -11,6 +11,7 @@ import {
 import React, { useEffect, useState } from "react";
 import useSchoiceStore from "../../../store/Schoice.store";
 import { supabase } from "../../../tools/supabase";
+import { PromptType } from "../../../types";
 
 const CloudSync: React.FC = () => {
   const [updateAt, setUpdateAt] = useState("N/A");
@@ -26,14 +27,14 @@ const CloudSync: React.FC = () => {
     // 組裝 bulls
     const bullArr = Object.values(bulls).map((item) => ({
       user_id: user?.id,
-      prompt_type: "bulls",
+      prompt_type: PromptType.BULL,
       prompt_name: item.name,
       conditions: JSON.stringify(item.conditions),
     }));
     // 組裝 bears
     const bearArr = Object.values(bears).map((item) => ({
       user_id: user?.id,
-      prompt_type: "bears",
+      prompt_type: PromptType.BEAR,
       prompt_name: item.name,
       conditions: JSON.stringify(item.conditions),
     }));

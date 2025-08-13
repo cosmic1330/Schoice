@@ -3,9 +3,9 @@ import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
 import { Box, Button, Chip, Stack, Tooltip, Typography } from "@mui/material";
 import { useMemo } from "react";
 import useSWR from "swr";
-import { tauriFetcher } from "../../../../../tools/http";
 import useDetailWebviewWindow from "../../../../../hooks/useDetailWebviewWindow";
 import useMarketAnalysis from "../../../../../hooks/useMarketAnalysis";
+import { tauriFetcher } from "../../../../../tools/http";
 import { FutureIds, UrlTaPerdOptions, UrlType } from "../../../../../types";
 import analyzeIndicatorsData, {
   IndicatorsDateTimeType,
@@ -39,8 +39,8 @@ export default function MarketSentiment() {
 
   return (
     <Stack direction="row" alignItems="center" spacing={3} fontWeight={700}>
-      <Typography variant="body2">
-        市場情緒：
+      <Stack direction="row" alignItems="center">
+        <Typography variant="body2">市場情緒：</Typography>
         <Tooltip
           title={
             <Box>
@@ -77,10 +77,9 @@ export default function MarketSentiment() {
             fontSize: 14,
           }}
         />
-      </Typography>
-
-      <Typography variant="body2">
-        台指期(h):
+      </Stack>
+      <Stack direction="row" alignItems="center">
+        <Typography variant="body2">台指期(h):</Typography>
         <Button variant="text" onClick={openDetailWindow} size="small">
           {ta[ta.length - 1]?.c}
         </Button>
@@ -102,7 +101,7 @@ export default function MarketSentiment() {
           ).toFixed(2)}
           %)
         </Typography>
-      </Typography>
+      </Stack>
     </Stack>
   );
 }

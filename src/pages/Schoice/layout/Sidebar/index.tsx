@@ -3,6 +3,7 @@ import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import FastRewindIcon from "@mui/icons-material/FastRewind";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import LightModeIcon from "@mui/icons-material/LightMode";
+import LogoutIcon from "@mui/icons-material/Logout";
 import QueryStatsIcon from "@mui/icons-material/QueryStats";
 import SettingsIcon from "@mui/icons-material/Settings";
 import SmartButtonIcon from "@mui/icons-material/SmartButton";
@@ -11,6 +12,7 @@ import { Box, IconButton, Stack, styled, Tooltip } from "@mui/material";
 import { useNavigate } from "react-router";
 import LanguageSwitcher from "../../../../components/LanguageSwitcher";
 import useSchoiceStore from "../../../../store/Schoice.store";
+import { supabase } from "../../../../tools/supabase";
 import InsertRuleButton from "./InsertRuleButton";
 
 const GridItem = styled(Box)`
@@ -33,6 +35,7 @@ const GridItem = styled(Box)`
 `;
 export default function SideBar() {
   const navigate = useNavigate();
+
   const { theme, changeTheme } = useSchoiceStore();
 
   const toSetting = () => {
@@ -42,6 +45,11 @@ export default function SideBar() {
   const onThemeChange = () => {
     if (theme === "light") changeTheme("dark");
     else changeTheme("light");
+  };
+
+  const onLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/login");
   };
 
   return (
@@ -88,6 +96,11 @@ export default function SideBar() {
             </IconButton>
           </Tooltip>
           <InsertRuleButton />
+          <Tooltip title="登出" arrow placement="right">
+            <IconButton onClick={onLogout}>
+              <LogoutIcon />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="設定" arrow placement="right">
             <IconButton onClick={toSetting}>
               <SettingsIcon />

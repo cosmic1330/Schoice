@@ -16,6 +16,17 @@
     "core:window:allow-set-title",
     "core:webview:allow-create-webview-window",
     "core:window:allow-set-always-on-top",
-    "http:default"
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "https://**"
+        },
+        {
+          "url": "http://**"
+        }
+      ]
+    },
+    "sql:default"
   ]
 }

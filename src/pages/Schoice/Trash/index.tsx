@@ -13,6 +13,7 @@ import CollapseRow from "./CollapseRow";
 import { t } from "i18next";
 export default function TrashTable() {
   const { trash } = useSchoiceStore();
+  console.log("trash", trash);
 
   return (
     <Container maxWidth="lg" sx={{ mt: 2 }}>

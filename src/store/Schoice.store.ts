@@ -83,7 +83,7 @@ interface SchoiceState {
   ) => void;
   remove: (name: string, type: PromptType, userId: string) => void;
   removeFromTrash: (index: number, id: string, userId: string) => void;
-  reload: () => void;
+  reload: (userId: string) => void;
   clear: () => void;
   clearSeleted: () => void;
   selectObj: (id: string, type: PromptType) => void;
@@ -402,9 +402,12 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
       handleError(err, "removeFromTrash");
     }
   },
-  reload: async () => {
+  reload: async (userId: string) => {
     try {
-      const { data, error } = await supabase.from("user_prompts").select();
+      const { data, error } = await supabase
+        .from("user_prompts")
+        .select("*")
+        .eq("user_id", userId);
       if (error) {
         handleError(error, "reload");
         return;
@@ -413,50 +416,46 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
       const bulls: PromptsMap = {};
       const bears: PromptsMap = {};
       const alarms: PromptsMap = {};
-
-      for (const item of data) {
-        try {
-          if (item.trash) {
-            trash.push({
-              id: item.id,
-              type: item.prompt_type as PromptType,
-              value: {
-                name: item.prompt_name,
-                conditions: JSON.parse(item.conditions),
-                index: item.index || null,
-              },
-              time: item.updated_at,
-            });
-          } else {
-            if (item.alarm) {
-              alarms[item.id] = {
+      for (let i = 0; i < data.length; i++) {
+        const item = data[i];
+        if (item.trash) {
+          trash.push({
+            id: item.prompt_id,
+            type: item.prompt_type as PromptType,
+            value: {
+              name: item.prompt_name,
+              conditions: JSON.parse(item.conditions),
+              index: item.index || null,
+            },
+            time: item.updated_at,
+          });
+        } else {
+          if (item.alarm) {
+            alarms[item.prompt_id] = {
+              name: item.prompt_name,
+              conditions: JSON.parse(item.conditions),
+              index: item.index || null,
+            };
+          }
+          switch (item.prompt_type) {
+            case PromptType.BULL:
+              bulls[item.prompt_id] = {
                 name: item.prompt_name,
                 conditions: JSON.parse(item.conditions),
                 index: item.index || null,
               };
-            }
-            switch (item.prompt_type) {
-              case PromptType.BULL:
-                bulls[item.id] = {
-                  name: item.prompt_name,
-                  conditions: JSON.parse(item.conditions),
-                  index: item.index || null,
-                };
-                break;
-              case PromptType.BEAR:
-                bears[item.id] = {
-                  name: item.prompt_name,
-                  conditions: JSON.parse(item.conditions),
-                  index: item.index || null,
-                };
-                break;
-              default:
-                console.warn(`未知的 prompt_type: ${item.prompt_type}`);
-                break;
-            }
+              break;
+            case PromptType.BEAR:
+              bears[item.prompt_id] = {
+                name: item.prompt_name,
+                conditions: JSON.parse(item.conditions),
+                index: item.index || null,
+              };
+              break;
+            default:
+              console.warn(`未知的 prompt_type: ${item.prompt_type}`);
+              break;
           }
-        } catch (itemErr) {
-          handleError(itemErr, "reload:item");
         }
       }
       set(() => ({

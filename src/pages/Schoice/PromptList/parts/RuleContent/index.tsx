@@ -53,7 +53,7 @@ export default function RuleContent({
     clearSeleted();
     if (user) {
       remove(select.id, select.type, user.id);
-      reload();
+      reload(user.id);
     }
   };
 

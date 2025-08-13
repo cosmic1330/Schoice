@@ -55,7 +55,7 @@ function App() {
   return (
     <UserProvider>
       <CssBaseline />
-      <Box sx={{ height: "100vh", width: "100%" }}>
+      <Box sx={{ minHeight: "100vh", width: "100%" }}>
         <AppRoutes />
         <ToastContainer
           position="top-right"

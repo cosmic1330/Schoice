@@ -52,7 +52,7 @@ export default function ListItem({
     event.stopPropagation();
     if (user) {
       remove(id, promptType, user.id);
-      reload();
+      reload(user.id);
     }
   };
 

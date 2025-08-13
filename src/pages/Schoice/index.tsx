@@ -8,14 +8,18 @@ import {
 import CssBaseline from "@mui/material/CssBaseline";
 import { useEffect, useMemo } from "react";
 import { Outlet, useNavigate } from "react-router";
+import { useUser } from "../../context/UserContext";
+import useDatabase from "../../hooks/useDatabase";
+import useDatabaseDates from "../../hooks/useDatabaseDates";
 import useSchoiceStore from "../../store/Schoice.store";
 import { supabase } from "../../tools/supabase";
 import Header from "./layout/Header";
 import SideBar from "./layout/Sidebar";
+import { DatabaseContext } from "../../context/DatabaseContext";
 
 const Main = styled(Box)`
   width: 100%;
-  height: 100vh;
+  min-height: 100vh;
   position: relative;
   display: grid;
   grid-template-columns: auto 1fr;
@@ -37,10 +41,15 @@ const Main = styled(Box)`
 `;
 
 function Schoice() {
+  const db = useDatabase();
   const navigate = useNavigate();
+  const { user } = useUser();
+  const { dates, fetchDates } = useDatabaseDates(db);
   const { reload, theme } = useSchoiceStore();
   useEffect(() => {
-    reload();
+    if (user) {
+      reload(user.id);
+    }
   }, []);
 
   // 監聽系統的深色模式設定
@@ -59,25 +68,30 @@ function Schoice() {
 
   useEffect(() => {
     // 檢測是否登入
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) {
+    supabase.auth
+      .getUser()
+      .then(({ data: { user } }) => {
+        if (!user) {
+          navigate("/login");
+        }
+      })
+      .catch(() => {
+        // 如果檢測失敗，則重定向到登入
         navigate("/login");
-      }
-    }).catch(() => {
-      // 如果檢測失敗，則重定向到登入
-      navigate("/login");
-    });
+      });
   }, []);
 
   return (
-    <ThemeProvider theme={themeConfig}>
-      <CssBaseline />
-      <Main>
-        <SideBar />
-        <Header />
-        <Outlet />
-      </Main>
-    </ThemeProvider>
+    <DatabaseContext.Provider value={{ db, dates, fetchDates }}>
+      <ThemeProvider theme={themeConfig}>
+        <CssBaseline />
+        <Main>
+          <SideBar />
+          <Header />
+          <Outlet />
+        </Main>
+      </ThemeProvider>
+    </DatabaseContext.Provider>
   );
 }
 export default Schoice;
