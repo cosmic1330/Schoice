@@ -163,7 +163,7 @@ export default class SqliteDataManager {
 
         if (sets.lose_deal_set.has(value.t)) {
           deals.push({
-            stock_id: stock.id,
+            stock_id: stock.stock_id,
             ts: value.t,
             c: value.c,
             o: value.o,
@@ -175,7 +175,7 @@ export default class SqliteDataManager {
 
         if (sets.lose_skills_set.has(value.t)) {
           skills.push({
-            stock_id: stock.id,
+            stock_id: stock.stock_id,
             ts: value.t,
             ma5: ma5_data.ma,
             ma5_ded: ma5_data.exclusionValue["d-1"],
@@ -205,15 +205,15 @@ export default class SqliteDataManager {
       }
 
       await this.saveTimeSharingDealTable(deals, options.dealType, stock);
-      info(`save ${options.dealType} db: ${stock.id} ${deals.length} records`);
+      info(`save ${options.dealType} db: ${stock.stock_id} ${deals.length} records`);
       await this.saveTimeSharingSkillsTable(skills, options.skillsType, stock);
       info(
-        `save ${options.skillsType} db: ${stock.id} ${skills.length} records`
+        `save ${options.skillsType} db: ${stock.stock_id} ${skills.length} records`
       );
 
       return true;
     } catch (e) {
-      error(`${stock.name}: timeSharingProcessor error: ${e}`);
+      error(`${stock.stock_name}: timeSharingProcessor error: ${e}`);
       return false;
     }
   }
@@ -280,7 +280,7 @@ export default class SqliteDataManager {
 
         if (sets.lose_deal_set.has(t)) {
           deals.push({
-            stock_id: stock.id,
+            stock_id: stock.stock_id,
             t,
             c: value.c,
             o: value.o,
@@ -292,7 +292,7 @@ export default class SqliteDataManager {
 
         if (sets.lose_skills_set.has(t)) {
           skills.push({
-            stock_id: stock.id,
+            stock_id: stock.stock_id,
             t,
             ma5: ma5_data.ma,
             ma5_ded: ma5_data.exclusionValue["d-1"],
@@ -321,15 +321,15 @@ export default class SqliteDataManager {
         }
       }
       await this.saveDealTable(deals, options.dealType, stock);
-      info(`save ${options.dealType} db: ${stock.id} ${deals.length} records`);
+      info(`save ${options.dealType} db: ${stock.stock_id} ${deals.length} records`);
       await this.saveSkillsTable(skills, options.skillsType, stock).then(() => {
         info(
-          `save ${options.skillsType} db: ${stock.id} ${skills.length} records`
+          `save ${options.skillsType} db: ${stock.stock_id} ${skills.length} records`
         );
       });
       return true;
     } catch (e) {
-      error(`${stock.name}: processor error: ${e}`);
+      error(`${stock.stock_name}: processor error: ${e}`);
       return false;
     }
   }
@@ -339,11 +339,11 @@ export default class SqliteDataManager {
     try {
       await this.db.execute(
         "INSERT OR REPLACE INTO stock (id, name, industry_group, market_type) VALUES ($1, $2, $3, $4)",
-        [stock.id, stock.name, stock.group, stock.type]
+        [stock.stock_id, stock.stock_name, stock.industry_group, stock.market_type]
       );
       return true;
     } catch (e) {
-      throw new Error(`${stock.name}:${e}`);
+      throw new Error(`${stock.stock_name}:${e}`);
     }
   }
 
@@ -384,7 +384,7 @@ export default class SqliteDataManager {
       await this.db.execute(sql);
       return true;
     } catch (e) {
-      throw new Error(`${stock.name}:${e}`);
+      throw new Error(`${stock.stock_name}:${e}`);
     }
   }
 
@@ -427,7 +427,7 @@ export default class SqliteDataManager {
       await this.db.execute(sql);
       return true;
     } catch (e) {
-      throw new Error(`${stock.name}:${e}`);
+      throw new Error(`${stock.stock_name}:${e}`);
     }
   }
 
@@ -447,7 +447,7 @@ export default class SqliteDataManager {
       await this.db.execute(sql);
       return true;
     } catch (e) {
-      throw new Error(`${stock.name}:${e}`);
+      throw new Error(`${stock.stock_name}:${e}`);
     }
   }
 
@@ -490,7 +490,7 @@ export default class SqliteDataManager {
       await this.db.execute(sql);
       return true;
     } catch (e) {
-      throw new Error(`${stock.name}:${e}`);
+      throw new Error(`${stock.stock_name}:${e}`);
     }
   }
 
@@ -500,11 +500,11 @@ export default class SqliteDataManager {
   ) {
     try {
       const result: [{ t: string }] = await this.db.select(
-        `SELECT t FROM ${table} WHERE stock_id = ${stock.id};`
+        `SELECT t FROM ${table} WHERE stock_id = ${stock.stock_id};`
       );
       return result;
     } catch (e) {
-      error(`${stock.name}:${e}`);
+      error(`${stock.stock_name}:${e}`);
       return [];
     }
   }
@@ -515,11 +515,11 @@ export default class SqliteDataManager {
   ) {
     try {
       const result: [{ ts: number }] = await this.db.select(
-        `SELECT ts FROM ${table} WHERE stock_id = ${stock.id};`
+        `SELECT ts FROM ${table} WHERE stock_id = ${stock.stock_id};`
       );
       return result;
     } catch (e) {
-      error(`${stock.name}:${e}`);
+      error(`${stock.stock_name}:${e}`);
       return [];
     }
   }

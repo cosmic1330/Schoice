@@ -235,12 +235,12 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
         prompt_id: id,
         trash: false,
         alarm: false,
-      });
+      }).select('index');
       if (error) {
         handleError(error, "increase");
         return undefined;
       }
-      const index = 123;
+      const index = data[0].index;
       switch (type) {
         case PromptType.BULL:
           set((state) => ({

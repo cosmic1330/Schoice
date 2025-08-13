@@ -12,13 +12,13 @@ export default function PromptEdit() {
   const { edit, select, selectObj } = useSchoiceStore();
   const { user } = useUser();
   const [dailyPrompts, setDailyPrompts] = useState<Prompts>(
-    select?.value.daily || []
+    select?.conditions.daily || []
   );
   const [weekPrompts, setWeekPrompts] = useState<Prompts>(
-    select?.value.weekly || []
+    select?.conditions.weekly || []
   );
   const [hourlyPrompts, setHourlyPrompts] = useState<Prompts>(
-    select?.value.hourly || []
+    select?.conditions.hourly || []
   );
   const [name, setName] = useState(select?.name || "");
   const navigate = useNavigate();

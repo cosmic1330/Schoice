@@ -28,14 +28,14 @@ export default function Alarm({ stocks }: { stocks: StockStoreType[] }) {
     async function fetchData() {
       setLoading(true);
       const stocksObj = stocks.reduce((acc, stock) => {
-        acc[stock.id] = [];
+        acc[stock.stock_id] = [];
         return acc;
       }, {} as Record<string, string[]>);
       for (let key of Object.keys(alarms)) {
         const promptItem = alarms[key];
         const sqls = await getPromptSqlScripts(
           promptItem,
-          stocks.map((stock) => stock.id)
+          stocks.map((stock) => stock.stock_id)
         );
         const conbineSql = getCombinedSqlScript(sqls);
         const ids = (await query(conbineSql)) as { stock_id: string }[];
@@ -67,10 +67,10 @@ export default function Alarm({ stocks }: { stocks: StockStoreType[] }) {
           {stocks
             .filter(
               (stock) =>
-                stockAlarmMap[stock.id] && stockAlarmMap[stock.id].length > 0
+                stockAlarmMap[stock.stock_id] && stockAlarmMap[stock.stock_id].length > 0
             )
             .map((stock) => (
-              <Grid key={stock.id} size={3}>
+              <Grid key={stock.stock_id} size={3}>
                 <Card sx={{ borderRadius: 2, minHeight: 120, boxShadow: 3 }}>
                   <CardContent>
                     <Typography
@@ -78,13 +78,13 @@ export default function Alarm({ stocks }: { stocks: StockStoreType[] }) {
                       fontWeight="bold"
                       gutterBottom
                     >
-                      {stock.id} {stock.name}
+                      {stock.stock_id} {stock.stock_name}
                     </Typography>
                     {loading ? (
                       <Typography color="text.secondary">載入中...</Typography>
                     ) : (
                       <Stack direction="row" spacing={1} flexWrap="wrap">
-                        {stockAlarmMap[stock.id].map((alarm, idx) => (
+                        {stockAlarmMap[stock.stock_id].map((alarm, idx) => (
                           <Chip
                             key={idx}
                             label={alarm}

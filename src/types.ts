@@ -54,10 +54,10 @@ export type QueryBuilderMappingItem = {
 };
 
 export type StockStoreType = {
-  id: string;
-  name: string;
-  group: string;
-  type: string;
+  stock_id: string;
+  stock_name: string;
+  industry_group: string;
+  market_type: string;
 };
 
 export type StockTableType = {

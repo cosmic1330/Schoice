@@ -28,7 +28,7 @@ export default class CsvDataManager {
   ) {
     const data: DealTableType[] = ta.map((item) => ({
       ...item,
-      stock_id: stock.id,
+      stock_id: stock.stock_id,
       t: dateFormat(item.t, Mode.NumberToString),
     }));
     if (type === DealTableOptions.DailyDeal) this.dailydeal.push(...data);
@@ -66,7 +66,7 @@ export default class CsvDataManager {
     let obv_data = obv.init(init);
     let obvEma_data = obvEma.init(obv_data.obv, 5);
     data.push({
-      stock_id: stock.id,
+      stock_id: stock.stock_id,
       t,
       ma5: ma5_data.ma,
       ma5_ded: ma5_data.exclusionValue["d-1"],
@@ -110,7 +110,7 @@ export default class CsvDataManager {
       obvEma_data = obvEma.next(obv_data.obv, obvEma_data, 5);
 
       data.push({
-        stock_id: stock.id,
+        stock_id: stock.stock_id,
         t,
         ma5: ma5_data.ma,
         ma5_ded: ma5_data.exclusionValue["d-1"],

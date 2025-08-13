@@ -40,7 +40,7 @@ export default function Favorite() {
     if (dates?.length === 0) return;
     getStocksData(
       dates[todayDate],
-      stocks.map((r: StockStoreType) => r.id)
+      stocks.map((r: StockStoreType) => r.stock_id)
     ).then((result) => {
       if (result) setResult(result);
     });

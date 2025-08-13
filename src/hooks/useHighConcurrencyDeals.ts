@@ -8,7 +8,7 @@ import { toast } from "react-toastify";
 import SqliteDataManager from "../classes/SqliteDataManager";
 import { DatabaseContext } from "../context/DatabaseContext";
 import useSchoiceStore from "../store/Schoice.store";
-import useStocksStore from "../store/Stock.store";
+import { supabase } from "../tools/supabase";
 import {
   DealTableOptions,
   SkillsTableOptions,
@@ -24,7 +24,6 @@ import analyzeIndicatorsData, {
 } from "../utils/analyzeIndicatorsData";
 import checkTimeRange from "../utils/checkTimeRange";
 import generateDealDataDownloadUrl from "../utils/generateDealDataDownloadUrl";
-import useDownloadStocks from "./useDownloadStocks";
 
 export enum Status {
   Download = "Download",
@@ -66,12 +65,11 @@ type StockProfile = {
 };
 
 export default function useHighConcurrencyDeals() {
-  const { handleDownloadMenu } = useDownloadStocks();
   const [downloaded, setDownloaded] = useState(0);
+  const [menu, setMenu] = useState<StockStoreType[]>([]);
   const [status, setStatus] = useState(Status.Idle);
   const abortControllerRef = useRef<AbortController | null>(null);
   const { db, fetchDates, dates } = useContext(DatabaseContext);
-  const { menu } = useStocksStore();
   const { changeDataCount } = useSchoiceStore();
 
   // 通用重試函式
@@ -102,7 +100,7 @@ export default function useHighConcurrencyDeals() {
         try {
           const year = new Date().getFullYear();
           const response = await fetch(
-            `https://statementdog.com/api/v2/fundamentals/${stock.id}/${year}/${year}/cf`,
+            `https://statementdog.com/api/v2/fundamentals/${stock.stock_id}/${year}/${year}/cf`,
             {
               method: "GET",
               signal,
@@ -118,7 +116,7 @@ export default function useHighConcurrencyDeals() {
           const LatestValuationData = LatestValuation.data as StockFundamentals;
           const StockInfoData = StockInfo.data as StockProfile;
           await sqliteDataManager.saveFundamentalTable({
-            stock_id: stock.id,
+            stock_id: stock.stock_id,
             pe: parseFloat(LatestValuationData.PE),
             pb: parseFloat(LatestValuationData.PB),
             dividend_yield: parseFloat(LatestValuationData.CashYield),
@@ -150,7 +148,7 @@ export default function useHighConcurrencyDeals() {
           const response = await fetch(
             generateDealDataDownloadUrl({
               type: UrlType.Indicators,
-              id: stock.id,
+              id: stock.stock_id,
               perd,
             }),
             {
@@ -222,9 +220,14 @@ export default function useHighConcurrencyDeals() {
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
     const { signal } = abortController;
-    if (menu.length === 0) {
-      await handleDownloadMenu();
+    const { data, error: err } = await supabase.from("stock").select("*");
+
+    if (err) {
+      error(`Failed to fetch stocks: ${err.message}`);
+      setStatus(Status.Idle);
+      return;
     }
+    setMenu(data || []);
 
     // 取得設定
     const reverse = localStorage.getItem("schoice:fetch:reverse");
@@ -237,7 +240,7 @@ export default function useHighConcurrencyDeals() {
       dates[0] === dateFormat(new Date().getTime(), Mode.TimeStampToString)
     ) {
       info(`Previous downloaded stock ID: ${previousDownloaded}`);
-      const index = menu.findIndex((stock) => stock.id === previousDownloaded);
+      const index = menu.findIndex((stock) => stock.stock_id === previousDownloaded);
       if (reverse === "false") {
         menu.splice(0, index + 1);
       } else {
@@ -266,15 +269,15 @@ export default function useHighConcurrencyDeals() {
 
       // 上次是在盤中請求則刪除前筆資料
       const preFetchTime = localStorage.getItem(
-        `schoice:fetch:time:${stock.id}`
+        `schoice:fetch:time:${stock.stock_id}`
       );
       const isInTime = checkTimeRange(preFetchTime);
       if (isInTime || !preFetchTime) {
         info(
-          `Delete latest daily deal for stock ${stock.id} ${stock.name}: ${dates[1]}`
+          `Delete latest daily deal for stock ${stock.stock_id} ${stock.stock_name}: ${dates[1]}`
         );
         await sqliteDataManager.deleteLatestDailyDeal({
-          stock_id: stock.id,
+          stock_id: stock.stock_id,
           t: dates[1],
         });
       }
@@ -294,7 +297,7 @@ export default function useHighConcurrencyDeals() {
 
       // 隨機等待
       const delay = Math.floor(Math.random() * (3000 - 1000 + 1)) + 1000;
-      console.log(`等待 ${delay}ms 後請求 ${stock.id} ${stock.name}...`);
+      console.log(`等待 ${delay}ms 後請求 ${stock.stock_id} ${stock.stock_name}...`);
       await new Promise((resolve) => setTimeout(resolve, delay));
 
       // case 1-4: 寫入股票代號資料
@@ -323,7 +326,7 @@ export default function useHighConcurrencyDeals() {
         const taiwanTime = new Date().toLocaleString("en-US", {
           timeZone: "Asia/Taipei",
         });
-        localStorage.setItem(`schoice:fetch:time:${stock.id}`, taiwanTime);
+        localStorage.setItem(`schoice:fetch:time:${stock.stock_id}`, taiwanTime);
 
         // daily
         if (daily.status === "fulfilled") {
@@ -463,11 +466,11 @@ export default function useHighConcurrencyDeals() {
           }
         }
       } catch (e) {
-        error(`Error fetching data for stock ${stock.id} ${stock.name}: ${e}`);
+        error(`Error fetching data for stock ${stock.stock_id} ${stock.stock_name}: ${e}`);
       }
       setDownloaded((prev) => prev + 1);
       changeDataCount(i + 1);
-      localStorage.setItem("schoice:update:downloaded", stock.id);
+      localStorage.setItem("schoice:update:downloaded", stock.stock_id);
     }
 
     toast.success("Update Success ! 🎉");
@@ -477,7 +480,7 @@ export default function useHighConcurrencyDeals() {
     });
 
     setStatus(Status.Idle);
-  }, [db, menu, status, dates, fetchDates]);
+  }, [db, status, dates, fetchDates]);
 
   const persent = useMemo(() => {
     if (downloaded === 0) return 0;

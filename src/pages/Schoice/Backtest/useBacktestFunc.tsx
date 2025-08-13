@@ -81,9 +81,9 @@ export default function useBacktestFunc() {
       try {
         if (!select) throw new Error("select is null");
         if (
-          select.value.daily.length === 0 &&
-          select.value.weekly.length === 0 &&
-          select.value.hourly.length === 0
+          select.conditions.daily.length === 0 &&
+          select.conditions.weekly.length === 0 &&
+          select.conditions.hourly.length === 0
         ) {
           throw new Error("No conditions provided");
         }
@@ -145,8 +145,8 @@ export default function useBacktestFunc() {
           (type === BacktestType.Sell && sell_memory.current === null)
         ) {
           let dailySQL = "";
-          if (select.value.daily.length > 0) {
-            const customDailyConditions = select.value.daily.map((prompt) =>
+          if (select.conditions.daily.length > 0) {
+            const customDailyConditions = select.conditions.daily.map((prompt) =>
               stockDailyQueryBuilder.generateExpression(prompt).join(" ")
             );
             const sqlDailyQuery = stockDailyQueryBuilder.generateSqlQuery({
@@ -157,8 +157,8 @@ export default function useBacktestFunc() {
           }
 
           let weeklySQL = "";
-          if (select.value.weekly.length > 0) {
-            const customWeeklyConditions = select.value.weekly.map((prompt) =>
+          if (select.conditions.weekly.length > 0) {
+            const customWeeklyConditions = select.conditions.weekly.map((prompt) =>
               stockWeeklyQueryBuilder.generateExpression(prompt).join(" ")
             );
             const weeklyDateResults = await getWeekDates(dates[date_index]);
@@ -173,8 +173,8 @@ export default function useBacktestFunc() {
           }
 
           let hourlySQL = "";
-          if (select.value.hourly?.length > 0) {
-            const customHourlyConditions = select.value.hourly.map((prompt) =>
+          if (select.conditions.hourly?.length > 0) {
+            const customHourlyConditions = select.conditions.hourly.map((prompt) =>
               stockHourlyQueryBuilder.generateExpression(prompt).join(" ")
             );
             const hourlyDateResults = await getHourDates(dates[date_index]);
