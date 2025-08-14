@@ -27,7 +27,7 @@ export default function InsertFavorite() {
         console.error("User not logged in");
         return;
       }
-      await addToWatchList(stock, user.id);
+      await addToWatchList(stock.stock_id, user.id);
       reset();
     },
     [reset, user]

@@ -28,7 +28,7 @@ const WeeklyKdLineChart = ({
       const formatData = res.reverse();
       setData(formatData);
     });
-  }, [stock_id]);
+  }, [stock_id, t]);
   return (
     <Tooltip title={<ChartTooltip value={KdIndicatorColor} />} arrow>
       <Box>

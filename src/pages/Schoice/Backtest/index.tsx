@@ -26,7 +26,8 @@ import { toast } from "react-toastify";
 import { DatabaseContext } from "../../../context/DatabaseContext";
 import useCloudStore from "../../../store/Cloud.store";
 import useSchoiceStore from "../../../store/Schoice.store";
-import { PromptItem } from "../../../types";
+import { supabase } from "../../../tools/supabase";
+import { PromptItem, StockTableType } from "../../../types";
 import shuffleArray from "../../../utils/shuffleArray";
 import BacktestResult from "./BacktestResult";
 import Options from "./options";
@@ -84,7 +85,10 @@ export default function Backtest() {
       return;
     }
 
-    let stocksValue = watchStocks;
+    let stocksValue = (await supabase
+      .from("stock")
+      .select("*")
+      .in("stock_id", watchStocks)) as unknown as StockTableType[];
     if (selectedStocks === SelectedStocks.FilterStocks && filterStocks) {
       stocksValue = filterStocks;
     }

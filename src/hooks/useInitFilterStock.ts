@@ -20,7 +20,6 @@ export default function useInitFilterStock() {
     });
     query(sqlQuery).then((res) => {
       if (res) {
-        console.log("Filtered Stocks:", res);
         supabase
           .from("stock")
           .select("*")
@@ -29,7 +28,6 @@ export default function useInitFilterStock() {
             res.map((r) => r.stock_id)
           )
           .then(({ data }) => {
-            console.log("Filtered Stocks:", data);
             setFilterStocks(data || null);
           });
       }

@@ -19,10 +19,10 @@ interface CloudState {
   trash: TrashPrompt[];
   fundamentalCondition: Prompts | null;
   menu: StockTableType[];
-  watchStocks: StockTableType[];
+  watchStocks: string[];
   setFundamentalCondition: (condition: Prompts | null, userId: string) => void;
   removeFromWatchList: (stockId: string, userId: string) => Promise<void>;
-  addToWatchList: (stock: StockTableType, userId: string) => Promise<void>;
+  addToWatchList: (stockId: string, userId: string) => Promise<void>;
   addAlarm: (alarm: PromptItem, id: string, userId: string) => Promise<void>;
   removeAlarm: (id: string, userId: string) => Promise<void>;
   recover: (id: string, userId: string) => Promise<void>;
@@ -87,17 +87,17 @@ const useCloudStore = create<CloudState>((set, get) => ({
       }
       set((state) => ({
         watchStocks: state.watchStocks?.filter(
-          (stock) => stock.stock_id !== stockId
+          (stock_id) => stock_id !== stockId
         ),
       }));
     } catch (err) {
       handleError(err, "removeFromWatchList");
     }
   },
-  addToWatchList: async (stock: StockTableType, userId: string) => {
+  addToWatchList: async (stockId: string, userId: string) => {
     try {
       const { error } = await supabase.from("watch_stock").insert({
-        stock_id: stock.stock_id,
+        stock_id: stockId,
         user_id: userId,
       });
       if (error) {
@@ -105,7 +105,7 @@ const useCloudStore = create<CloudState>((set, get) => ({
         return;
       }
       set((state) => ({
-        watchStocks: [...state.watchStocks, stock],
+        watchStocks: [...state.watchStocks, stockId],
       }));
     } catch (err) {
       handleError(err, "addToWatchList");
@@ -439,10 +439,10 @@ const useCloudStore = create<CloudState>((set, get) => ({
       const { data: menu } = await supabase.from("stock").select("*");
       const { data: watchStocksData } = await supabase
         .from("watch_stock")
-        .select("*,stock(*)")
+        .select("stock_id")
         .eq("user_id", userId);
-      const watchStocks: StockTableType[] =
-        watchStocksData?.map((item) => item.stock) || [];
+      const watchStocks: string[] =
+        watchStocksData?.map((item) => item.stock_id) || [];
 
       const { data: fundamentalCondition } = await supabase
         .from("fundamental_condition")
@@ -454,8 +454,9 @@ const useCloudStore = create<CloudState>((set, get) => ({
         alarms,
         trash,
         menu: menu || [],
-        watchStocks: watchStocks || [],
-        fundamentalCondition: JSON.parse(fundamentalCondition?.[0].conditions) || null,
+        watchStocks: watchStocks,
+        fundamentalCondition:
+          JSON.parse(fundamentalCondition?.[0].conditions) || null,
       }));
     } catch (error) {
       handleError(error, "reload");

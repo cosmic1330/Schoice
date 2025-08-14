@@ -9,13 +9,13 @@ import React, { forwardRef } from "react";
 import { toast } from "react-toastify";
 import { useUser } from "../../context/UserContext";
 import useDetailWebviewWindow from "../../hooks/useDetailWebviewWindow";
+import useCloudStore from "../../store/Cloud.store";
 import { FundamentalTableType } from "../../types";
 import DailyUltraTinyLineChart from "./Charts/DailyUltraTinyLineChart";
 import HourlyUltraTinyLineChart from "./Charts/HourlyUltraTinyLineChart";
 import WeeklyUltraTinyLineChart from "./Charts/WeeklyUltraTinyLineChart";
 import RowChart from "./RowChart";
 import { ActionButtonType } from "./types";
-import useCloudStore from "../../store/Cloud.store";
 
 function TooltipContent({ row }: { row: FundamentalTableType }) {
   return (
@@ -69,7 +69,7 @@ export default forwardRef(function ResultTableRow(
     }
     setAddLoading(true);
     try {
-      await addToWatchList(row, user.id);
+      await addToWatchList(row.stock_id, user.id);
       toast.success(`Add ${row.name} Success!`);
     } finally {
       setAddLoading(false);

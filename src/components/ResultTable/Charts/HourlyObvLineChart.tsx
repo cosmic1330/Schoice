@@ -32,14 +32,19 @@ const HourlyObvLineChart = ({
       const formatData = res.reverse();
       setData(formatData);
     });
-  }, [stock_id]);
+  }, [stock_id, t]);
   return (
     <Tooltip title={<ChartTooltip value={ObvIndicatorColor} />} arrow>
       <Box>
         <LineChart data={data} width={80} height={60}>
           <YAxis domain={["dataMin", "dataMax"]} hide yAxisId="obv" />
           <YAxis domain={["dataMin", "dataMax"]} hide yAxisId="close" />
-          <ReferenceLine y={0} stroke="#d89584" strokeDasharray="3 3" yAxisId="obv"/>
+          <ReferenceLine
+            y={0}
+            stroke="#d89584"
+            strokeDasharray="3 3"
+            yAxisId="obv"
+          />
           {ObvIndicatorColor.map((item, index) => (
             <Line
               key={index}
