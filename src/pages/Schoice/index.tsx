@@ -48,6 +48,7 @@ function Schoice() {
   const { dates, fetchDates } = useDatabaseDates(db);
   const { theme } = useSchoiceStore();
   const { reload } = useCloudStore();
+
   useEffect(() => {
     if (user) {
       reload(user.id);

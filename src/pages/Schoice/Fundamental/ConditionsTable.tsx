@@ -10,35 +10,11 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { useEffect } from "react";
-import { stockFundamentalQueryBuilder } from "../../../classes/StockFundamentalQueryBuilder";
-import useDatabaseQuery from "../../../hooks/useDatabaseQuery";
 import useCloudStore from "../../../store/Cloud.store";
 import useSchoiceStore from "../../../store/Schoice.store";
 export default function ConditionsTable() {
   const { filterStocks } = useSchoiceStore();
   const { fundamentalCondition } = useCloudStore();
-  const query = useDatabaseQuery();
-  const { setFilterStocks } = useSchoiceStore();
-
-  useEffect(() => {
-    if (!fundamentalCondition) return;
-    const conditions = fundamentalCondition.map((prompt) =>
-      stockFundamentalQueryBuilder.generateExpression(prompt).join(" ")
-    );
-    const sqlQuery = stockFundamentalQueryBuilder.generateSqlQuery({
-      conditions,
-    });
-    query(sqlQuery).then((res) => {
-      if (res) {
-        const sql = `SELECT * FROM stock
-          WHERE id IN ('${res.map((r) => r.stock_id).join("','")}')`;
-        query(sql).then((result) => {
-          if (result) setFilterStocks(result);
-        });
-      }
-    });
-  }, [fundamentalCondition]);
 
   return (
     <Box>

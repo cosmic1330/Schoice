@@ -6,6 +6,7 @@ import { useUser } from "../../../context/UserContext";
 import useDatabaseQuery from "../../../hooks/useDatabaseQuery";
 import useCloudStore from "../../../store/Cloud.store";
 import useSchoiceStore from "../../../store/Schoice.store";
+import { supabase } from "../../../tools/supabase";
 import { Prompts, StockTableType } from "../../../types";
 
 export default function ConditionsListResult({
@@ -29,11 +30,16 @@ export default function ConditionsListResult({
     });
     query(sqlQuery).then((res) => {
       if (res) {
-        const sql = `SELECT * FROM stock
-        WHERE id IN ('${res.map((r) => r.stock_id).join("','")}')`;
-        query(sql).then((result) => {
-          if (result) setResults(result);
-        });
+        supabase
+          .from("stock")
+          .select("*")
+          .in(
+            "stock_id",
+            res.map((r) => r.stock_id)
+          )
+          .then(({ data }) => {
+            setResults(data || []);
+          });
       }
     });
   }, [prompts, query]);

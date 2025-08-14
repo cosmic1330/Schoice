@@ -89,18 +89,6 @@ export default class SqliteDataManager {
     }
   }
 
-  async getStocksCount() {
-    try {
-      const result: [{ count: number }] = await this.db.select(
-        "SELECT COUNT(*) as count FROM stock;"
-      );
-      return result[0].count;
-    } catch (e) {
-      error(`${e}`);
-      return 0;
-    }
-  }
-
   async timeSharingProcessor(
     ta: TaType,
     stock: StockTableType,
