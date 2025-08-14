@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "schoice",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "identifier": "schoice",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -22,6 +22,7 @@
     }
   },
   "bundle": {
+    "createUpdaterArtifacts": true,
     "active": true,
     "targets": "all",
     "icon": [
@@ -38,7 +39,7 @@
     },
     "updater": {
       "dialog": true,
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI2RjQ4RjU4OTcwOEQzRDIKUldUUzB3aVhXSS8wSmpCQVJNK1hWdEJTZU5iemVpeXJ6WS82K3BUbjVIZEoxcVF2c2lraGM0R1oK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQzMkZFRURCNDQzNEZFQTUKUldTbC9qUkUyKzR2MHhzdHhxQ2crUk9ST3M0RzA1YmFONWp5WW9LK3B2bmMzcnpZTG1NTU9NSHMK",
       "endpoints": [
         "https://github.com/cosmic1330/Schoice/releases/latest/download/latest.json"
       ]
