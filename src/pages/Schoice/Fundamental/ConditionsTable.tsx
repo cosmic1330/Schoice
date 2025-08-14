@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import useSchoiceStore from "../../../store/Schoice.store";
 export default function ConditionsTable() {
-  const { filterStocks, filterConditions } = useSchoiceStore();
+  const { filterStocks, fundamentalCondition } = useSchoiceStore();
 
   return (
     <Box>
@@ -32,7 +32,7 @@ export default function ConditionsTable() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filterConditions?.map((row, idx) => (
+            {fundamentalCondition?.map((row, idx) => (
               <TableRow key={idx}>
                 <TableCell>{row.indicator1}</TableCell>
                 <TableCell>{row.operator}</TableCell>

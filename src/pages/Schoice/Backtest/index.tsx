@@ -21,11 +21,10 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { SetStateAction, useCallback, useContext, useState } from "react";
+import { useCallback, useContext, useState } from "react";
 import { toast } from "react-toastify";
 import { DatabaseContext } from "../../../context/DatabaseContext";
 import useSchoiceStore from "../../../store/Schoice.store";
-import { supabase } from "../../../tools/supabase";
 import { PromptItem } from "../../../types";
 import shuffleArray from "../../../utils/shuffleArray";
 import BacktestResult from "./BacktestResult";
@@ -38,13 +37,21 @@ enum Status {
   Idle = "idle",
 }
 
+enum SelectedStocks {
+  WatchStock = "watch-stock",
+  FilterStocks = "filter-stocks",
+}
+
 export default function Backtest() {
-  const { bulls, bears, filterStocks, setBacktestPersent } = useSchoiceStore();
+  const { bulls, bears, filterStocks, setBacktestPersent, watchStocks } =
+    useSchoiceStore();
   const { dates } = useContext(DatabaseContext);
   const [ctx, setCtx] = useState<Context>();
   const [selectedBull, setSelectedBull] = useState<string[]>([]);
   const [selectedBear, setSelectedBear] = useState<string[]>([]);
-  const [selectedStocks, setSelectedStocks] = useState("stocks");
+  const [selectedStocks, setSelectedStocks] = useState<SelectedStocks>(
+    SelectedStocks.WatchStock
+  );
   const [status, setStatus] = useState<Status>(Status.Idle);
   const [options, setOptions] = useState<BacktestOptions>({
     capital: 300000,
@@ -63,10 +70,8 @@ export default function Backtest() {
     setSelectedBear(typeof value === "string" ? value.split(",") : value);
   };
 
-  const handleStocksChange = (
-    event: SelectChangeEvent<SetStateAction<string>>
-  ) => {
-    setSelectedStocks(event.target.value);
+  const handleStocksChange = (event: SelectChangeEvent) => {
+    setSelectedStocks(event.target.value as SelectedStocks);
   };
 
   const get = useBacktestFunc();
@@ -94,12 +99,13 @@ export default function Backtest() {
       .map((date) => dateFormat(date, Mode.StringToNumber));
 
     // 隨機排列
-    const { data, error } = await supabase.from("stocks").select("*");
-    if (error) {
-      toast.error("無法取得股票資料");
-      return;
+    let stocksValue = filterStocks;
+    if (selectedStocks === SelectedStocks.WatchStock) {
+      stocksValue = watchStocks.map((stock) => ({
+        id: stock.stock_id,
+        name: stock.stock_name,
+      }));
     }
-    let stocksValue = selectedStocks === "filterStocks" ? filterStocks : data;
     if (isRandom && stocksValue) {
       stocksValue = shuffleArray(stocksValue);
     }
@@ -243,11 +249,11 @@ export default function Backtest() {
               size="small"
               fullWidth
             >
-              <MenuItem value="stocks">
+              <MenuItem value={SelectedStocks.WatchStock}>
                 <em>My Favorite</em>
               </MenuItem>
               {filterStocks && (
-                <MenuItem value="filterStocks">
+                <MenuItem value={SelectedStocks.FilterStocks}>
                   <em>Fundamental Filter</em>
                 </MenuItem>
               )}

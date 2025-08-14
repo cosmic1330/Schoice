@@ -49,7 +49,7 @@ interface SchoiceState {
   chartType: ChartType;
   trash: TrashPrompt[];
   filterStocks?: FilterStock[];
-  filterConditions?: Prompts;
+  fundamentalCondition?: Prompts;
   backtestPersent: number;
   menu: StockTableType[];
   watchStocks: StockTableType[];
@@ -108,7 +108,7 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
     (localStorage.getItem("slitenting-chartType") as ChartType) ||
     ChartType.WEEKLY_BOLL,
   trash: [],
-  filterConditions: undefined,
+  fundamentalCondition: undefined,
   filterStocks: undefined,
   backtestPersent: 0,
   menu: [],
@@ -206,13 +206,13 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
   addFilterStocks: (stocks, prompts) => {
     set({
       filterStocks: stocks,
-      filterConditions: prompts,
+      fundamentalCondition: prompts,
     });
   },
   removeFilterStocks: () => {
     set({
       filterStocks: undefined,
-      filterConditions: undefined,
+      fundamentalCondition: undefined,
     });
   },
   recover: async (id: string, userId: string) => {
@@ -531,7 +531,7 @@ const useSchoiceStore = create<SchoiceState>((set, get) => ({
       alarms: {},
       trash: [],
       filterStocks: undefined,
-      filterConditions: undefined,
+      fundamentalCondition: undefined,
     });
   },
   clearSeleted: () => {
