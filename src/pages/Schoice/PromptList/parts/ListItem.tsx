@@ -47,7 +47,7 @@ export default function ListItem({
   promptType: PromptType;
 }) {
   const [hover, setHover] = useState(false);
-  const { remove, reload } = useCloudStore();
+  const { remove } = useCloudStore();
   const { setSelect, select } = useSchoiceStore();
   const { user } = useUser();
   const handleDelete = (event: React.SyntheticEvent) => {
