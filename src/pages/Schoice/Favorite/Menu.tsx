@@ -3,7 +3,7 @@ import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import { t } from "i18next";
 import { Control, Controller, FieldErrors } from "react-hook-form";
-import useSchoiceStore from "../../../store/Schoice.store";
+import useCloudStore from "../../../store/Cloud.store";
 import { FormData } from "./type";
 
 export default function Menu({
@@ -13,7 +13,7 @@ export default function Menu({
   control: Control<FormData, any, FormData>;
   errors: FieldErrors<FormData>;
 }) {
-  const { menu } = useSchoiceStore();
+  const { menu } = useCloudStore();
 
   return (
     <Box width="100%">

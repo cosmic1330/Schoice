@@ -4,6 +4,7 @@ import ResultTable from "../../../components/ResultTable/ResultTable";
 import { ActionButtonType } from "../../../components/ResultTable/types";
 import { DatabaseContext } from "../../../context/DatabaseContext";
 import useFindStocksByPrompt from "../../../hooks/useFindStocksByPrompt";
+import useCloudStore from "../../../store/Cloud.store";
 import useSchoiceStore from "../../../store/Schoice.store";
 import { StockTableType } from "../../../types";
 import Alarm from "./Alarm";
@@ -13,7 +14,8 @@ export default function Favorite() {
   const { dates } = useContext(DatabaseContext);
   const [result, setResult] = useState<any[]>([]);
   const { getStocksData } = useFindStocksByPrompt();
-  const { todayDate, watchStocks } = useSchoiceStore();
+  const { todayDate } = useSchoiceStore();
+  const { watchStocks } = useCloudStore();
 
   useEffect(() => {
     if (dates?.length === 0) return;

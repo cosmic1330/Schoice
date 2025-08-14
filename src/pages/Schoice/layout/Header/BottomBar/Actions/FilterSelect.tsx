@@ -1,18 +1,27 @@
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import { Box, Button, Typography } from "@mui/material";
 import { toast } from "react-toastify";
+import { useUser } from "../../../../../../context/UserContext";
+import useCloudStore from "../../../../../../store/Cloud.store";
 import useSchoiceStore from "../../../../../../store/Schoice.store";
 export default function FilterSelect() {
-  const { filterStocks, removeFilterStocks } = useSchoiceStore();
+  const { filterStocks, setFilterStocks } = useSchoiceStore();
+  const { user } = useUser();
+  const { setFundamentalCondition } = useCloudStore();
   if (!filterStocks) return <></>;
 
   const handleClick = () => {
-    removeFilterStocks();
+    if (!user) {
+      toast.error("请先登录");
+      return;
+    }
+    setFilterStocks(null);
+    setFundamentalCondition(null, user.id);
     toast.success("已清除基本面塞選");
   };
   return (
     <Button
-    size="small"
+      size="small"
       variant="contained"
       color="inherit"
       onClick={handleClick}

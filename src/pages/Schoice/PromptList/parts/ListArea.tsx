@@ -3,11 +3,13 @@ import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import { Box, Button, Stack, Tab, Tabs } from "@mui/material";
 import { useNavigate } from "react-router";
 import useSchoiceStore from "../../../../store/Schoice.store";
-import ListItem from "./ListItem";
 import { PromptType } from "../../../../types";
+import ListItem from "./ListItem";
+import useCloudStore from "../../../../store/Cloud.store";
 
 export default function ListArea() {
-  const { bulls, bears, using, changeUsing } = useSchoiceStore();
+  const { using, changeUsing } = useSchoiceStore();
+  const { bulls, bears } = useCloudStore();
   const navigate = useNavigate();
   const handleChange = (_: React.SyntheticEvent, newValue: PromptType) => {
     changeUsing(newValue);

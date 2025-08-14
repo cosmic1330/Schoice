@@ -14,22 +14,15 @@ import {
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import { useUser } from "../../../../../context/UserContext";
+import useCloudStore from "../../../../../store/Cloud.store";
 import useSchoiceStore from "../../../../../store/Schoice.store";
-import { PromptType, PromptValue } from "../../../../../types";
+import { PromptType, PromptValue, SelectType } from "../../../../../types";
 import Summary from "./Summary";
 
-export default function RuleContent({
-  select,
-}: {
-  select: {
-    id: string;
-    name: string;
-    conditions: PromptValue;
-    type: PromptType;
-    index: number; 
-  };
-}) {
-  const { remove, reload, clearSeleted, addAlarm, alarms, removeAlarm } = useSchoiceStore();
+export default function RuleContent({ select }: { select: SelectType | null }) {
+  const { remove, addAlarm, alarms, removeAlarm, bulls, bears } =
+    useCloudStore();
+  const { clearSeleted } = useSchoiceStore();
   const { user } = useUser();
   const navigate = useNavigate();
 
@@ -52,17 +45,45 @@ export default function RuleContent({
   const handleDelete = () => {
     clearSeleted();
     if (user) {
-      remove(select.id, select.type, user.id);
-      reload(user.id);
+      if (select?.type === PromptType.BULL) {
+        remove(select.prompt_id, PromptType.BULL, user.id);
+      } else if (select?.type === PromptType.BEAR) {
+        remove(select.prompt_id, PromptType.BEAR, user.id);
+      }
     }
   };
 
   const handleAddNotification = async () => {
-    if (!user) {
+    if (!user || !select) {
       return;
     }
     try {
-      await addAlarm({ name: select.name, conditions: select.conditions, index: select.index }, select.id, select.index, user.id);
+      let name: string;
+      let conditions: PromptValue;
+      let index: number;
+      if (select?.type === PromptType.BULL) {
+        name = bulls[select.prompt_id]?.name || "";
+        conditions = bulls[select.prompt_id]?.conditions;
+        index = bulls[select.prompt_id]?.index || 0;
+      } else {
+        name = bears[select.prompt_id]?.name || "";
+        conditions = bears[select.prompt_id]?.conditions;
+        index = bears[select.prompt_id]?.index || 0;
+      }
+      if (!conditions || !index || !name) {
+        toast.error("無法找到對應的條件或索引");
+        return;
+      }
+
+      await addAlarm(
+        {
+          name,
+          conditions,
+          index,
+        },
+        select.prompt_id,
+        user.id
+      );
       toast.success("加入告警偵測成功");
     } catch (error) {
       console.error(error);
@@ -74,8 +95,12 @@ export default function RuleContent({
     if (!user) {
       return;
     }
+    if (!select || !alarms[select.prompt_id]) {
+      toast.error("沒有找到對應的告警偵測");
+      return;
+    }
     try {
-      await removeAlarm(select.id, select.index, user.id);
+      await removeAlarm(select.prompt_id, user.id);
       toast.success("移除告警偵測成功");
     } catch (error) {
       console.error(error);
@@ -83,13 +108,20 @@ export default function RuleContent({
     }
   };
 
-
   return (
     <Stack spacing={2} alignItems="flex-start" width={"100%"}>
-      <Typography variant="h4">{select && select.name}</Typography>
+      <Typography variant="h4">
+        {select && select.type === PromptType.BULL
+          ? bulls[select.prompt_id]?.name
+          : select && select.type === PromptType.BEAR
+          ? bears[select.prompt_id]?.name
+          : "無選擇的策略條件"}
+      </Typography>
       <Stack direction="row" spacing={2}>
         <Tooltip title="修改策略條件">
-          <IconButton onClick={() => navigate("/schoice/edit/" + select?.id)}>
+          <IconButton
+            onClick={() => navigate("/schoice/edit/" + select?.prompt_id)}
+          >
             <EditRoundedIcon />
           </IconButton>
         </Tooltip>
@@ -103,20 +135,24 @@ export default function RuleContent({
             <DeleteRoundedIcon fontSize="medium" />
           </IconButton>
         </Tooltip>
-        {select.type === PromptType.BEAR && !alarms[select.id] && (
-          <Tooltip title="加入告警偵測">
-            <IconButton onClick={handleAddNotification}>
-              <NotificationAddIcon fontSize="medium" />
-            </IconButton>
-          </Tooltip>
-        )}
-        {select.type === PromptType.BEAR && alarms[select.id] && (
-          <Tooltip title="移除告警偵測">
-            <IconButton onClick={handleRemoveNotification}>
-              <NotificationsOffIcon fontSize="medium" />
-            </IconButton>
-          </Tooltip>
-        )}
+        {select &&
+          select.type === PromptType.BEAR &&
+          !alarms[select.prompt_id] && (
+            <Tooltip title="加入告警偵測">
+              <IconButton onClick={handleAddNotification}>
+                <NotificationAddIcon fontSize="medium" />
+              </IconButton>
+            </Tooltip>
+          )}
+        {select &&
+          select.type === PromptType.BEAR &&
+          alarms[select.prompt_id] && (
+            <Tooltip title="移除告警偵測">
+              <IconButton onClick={handleRemoveNotification}>
+                <NotificationsOffIcon fontSize="medium" />
+              </IconButton>
+            </Tooltip>
+          )}
       </Stack>
 
       <Summary select={select} />

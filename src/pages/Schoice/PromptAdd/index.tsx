@@ -3,6 +3,7 @@ import { nanoid } from "nanoid";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useUser } from "../../../context/UserContext";
+import useCloudStore from "../../../store/Cloud.store";
 import useSchoiceStore from "../../../store/Schoice.store";
 import { Prompts, PromptType } from "../../../types";
 import ExpressionGenerator from "../parts/ExpressionGenerator";
@@ -12,7 +13,8 @@ import PromptName from "../parts/PromptName";
 type PromptCategory = "hourly" | "daily" | "weekly";
 
 export default function PromptAdd() {
-  const { increase, selectObj } = useSchoiceStore();
+  const { setSelect } = useSchoiceStore();
+  const { increase } = useCloudStore();
   const { user } = useUser();
   const [prompts, setPrompts] = useState<Record<PromptCategory, Prompts>>({
     hourly: [],
@@ -37,10 +39,7 @@ export default function PromptAdd() {
       user.id
     );
     if (id)
-      selectObj(
-        id,
-        promptType === "bull" ? PromptType.BULL : PromptType.BEAR
-      );
+      setSelect({ prompt_id: id, type: promptType === "bull" ? PromptType.BULL : PromptType.BEAR });
     navigate("/schoice");
   };
 
@@ -74,11 +73,11 @@ export default function PromptAdd() {
           <ExpressionGenerator
             {...{
               promptType,
-              setHourlyPrompts: (newPrompts:any) =>
+              setHourlyPrompts: (newPrompts: any) =>
                 setPrompts((p) => ({ ...p, hourly: newPrompts(p.hourly) })),
-              setDailyPrompts: (newPrompts:any) =>
+              setDailyPrompts: (newPrompts: any) =>
                 setPrompts((p) => ({ ...p, daily: newPrompts(p.daily) })),
-              setWeekPrompts: (newPrompts:any) =>
+              setWeekPrompts: (newPrompts: any) =>
                 setPrompts((p) => ({ ...p, weekly: newPrompts(p.weekly) })),
             }}
           />

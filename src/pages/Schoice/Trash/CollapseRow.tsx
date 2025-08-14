@@ -1,7 +1,5 @@
-import { TrashPrompt } from "../../../types";
-import Box from "@mui/material/Box";
-import Collapse from "@mui/material/Collapse";
-import { useState } from "react";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import {
   Button,
   IconButton,
@@ -12,16 +10,18 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import formatDateTime from "../../../utils/formatDateTime";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import useSchoiceStore from "../../../store/Schoice.store";
+import Box from "@mui/material/Box";
+import Collapse from "@mui/material/Collapse";
 import { t } from "i18next";
+import { useState } from "react";
 import { useUser } from "../../../context/UserContext";
+import useCloudStore from "../../../store/Cloud.store";
+import { TrashPrompt } from "../../../types";
+import formatDateTime from "../../../utils/formatDateTime";
 
 export default function CollapseRow({ item }: { item: TrashPrompt }) {
   const [open, setOpen] = useState(false);
-  const { recover, removeFromTrash } = useSchoiceStore();
+  const { recover, removeFromTrash } = useCloudStore();
   const { user } = useUser();
   return (
     <>

@@ -9,20 +9,18 @@ import {
   Typography,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import useSchoiceStore from "../../../store/Schoice.store";
+import useCloudStore from "../../../store/Cloud.store";
 import { supabase } from "../../../tools/supabase";
 import { PromptType } from "../../../types";
 
 const CloudSync: React.FC = () => {
   const [updateAt, setUpdateAt] = useState("N/A");
-  const schoiceStore = useSchoiceStore();
+  const { bulls, bears } = useCloudStore();
 
   const handleSync = async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    const bulls = schoiceStore.bulls;
-    const bears = schoiceStore.bears;
 
     // 組裝 bulls
     const bullArr = Object.values(bulls).map((item) => ({

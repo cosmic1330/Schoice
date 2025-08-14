@@ -1,6 +1,6 @@
 import { Box, Menu, MenuItem, Typography } from "@mui/material";
-import useSchoiceStore, { ChartType } from "../../store/Schoice.store";
 import { useState } from "react";
+import useSchoiceStore, { ChartType } from "../../store/Schoice.store";
 
 export default function SelectChartHead() {
   const { chartType, changeChartType } = useSchoiceStore();
@@ -18,8 +18,13 @@ export default function SelectChartHead() {
   };
   return (
     <Box>
-      <Typography component="span" variant="button" onClick={handleClick} sx={{ cursor: "pointer" }}>
-        {chartType}{" "}🔽
+      <Typography
+        component="span"
+        variant="button"
+        onClick={handleClick}
+        sx={{ cursor: "pointer" }}
+      >
+        {chartType} 🔽
       </Typography>
       <Menu
         anchorEl={anchorEl}

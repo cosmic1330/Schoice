@@ -4,18 +4,32 @@ import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import Typography from "@mui/material/Typography";
-import { PromptType, PromptValue } from "../../../../../types";
+import { useEffect, useState } from "react";
+import useCloudStore from "../../../../../store/Cloud.store";
+import { PromptValue, SelectType } from "../../../../../types";
 
-export default function Summary({
-  select,
-}: {
-  select: {
-    id: string;
-    name: string;
-    conditions: PromptValue;
-    type: PromptType;
-  };
-}) {
+export default function Summary({ select }: { select: SelectType | null }) {
+  const { bears, bulls } = useCloudStore();
+  const [conditions, setConditions] = useState<PromptValue>({
+    hourly: [],
+    daily: [],
+    weekly: [],
+  });
+
+  useEffect(() => {
+    if (select) {
+      const bull = bulls[select.prompt_id];
+      const bear = bears[select.prompt_id];
+      if (bull && select.type === "bull") {
+        setConditions(bull.conditions);
+      } else if (bear && select.type === "bear") {
+        setConditions(bear.conditions);
+      } else {
+        setConditions({ hourly: [], daily: [], weekly: [] });
+      }
+    }
+  }, [select, bulls, bears]);
+
   return (
     <Accordion sx={{ width: "100%" }}>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -27,7 +41,7 @@ export default function Summary({
             <Typography variant="h6" gutterBottom>
               小時線
             </Typography>
-            {select.conditions.hourly?.map((prompt, index) => (
+            {conditions.hourly?.map((prompt, index) => (
               <Typography key={index} variant="body1">
                 {index + 1}.
                 {prompt.day1 +
@@ -42,7 +56,7 @@ export default function Summary({
             <Typography variant="h6" gutterBottom>
               日線
             </Typography>
-            {select.conditions.daily?.map((prompt, index) => (
+            {conditions.daily?.map((prompt, index) => (
               <Typography key={index} variant="body1">
                 {index + 1}.
                 {prompt.day1 +
@@ -57,7 +71,7 @@ export default function Summary({
             <Typography variant="h6" gutterBottom>
               週線
             </Typography>
-            {select.conditions.weekly?.map((prompt, index) => (
+            {conditions.weekly?.map((prompt, index) => (
               <Typography key={index} variant="body1">
                 {index + 1}.
                 {prompt.day1 +

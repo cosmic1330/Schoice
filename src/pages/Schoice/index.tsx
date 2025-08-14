@@ -8,14 +8,15 @@ import {
 import CssBaseline from "@mui/material/CssBaseline";
 import { useEffect, useMemo } from "react";
 import { Outlet, useNavigate } from "react-router";
+import { DatabaseContext } from "../../context/DatabaseContext";
 import { useUser } from "../../context/UserContext";
 import useDatabase from "../../hooks/useDatabase";
 import useDatabaseDates from "../../hooks/useDatabaseDates";
+import useCloudStore from "../../store/Cloud.store";
 import useSchoiceStore from "../../store/Schoice.store";
 import { supabase } from "../../tools/supabase";
 import Header from "./layout/Header";
 import SideBar from "./layout/Sidebar";
-import { DatabaseContext } from "../../context/DatabaseContext";
 
 const Main = styled(Box)`
   width: 100%;
@@ -45,7 +46,8 @@ function Schoice() {
   const navigate = useNavigate();
   const { user } = useUser();
   const { dates, fetchDates } = useDatabaseDates(db);
-  const { reload, theme } = useSchoiceStore();
+  const { theme } = useSchoiceStore();
+  const { reload } = useCloudStore();
   useEffect(() => {
     if (user) {
       reload(user.id);

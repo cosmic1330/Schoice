@@ -7,6 +7,7 @@ import { useCallback, useContext, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import SqliteDataManager from "../classes/SqliteDataManager";
 import { DatabaseContext } from "../context/DatabaseContext";
+import useCloudStore from "../store/Cloud.store";
 import useSchoiceStore from "../store/Schoice.store";
 import {
   DealTableOptions,
@@ -68,7 +69,8 @@ export default function useHighConcurrencyDeals() {
   const [status, setStatus] = useState(Status.Idle);
   const abortControllerRef = useRef<AbortController | null>(null);
   const { db, fetchDates, dates } = useContext(DatabaseContext);
-  const { menu, changeDataCount } = useSchoiceStore();
+  const { changeDataCount } = useSchoiceStore();
+  const { menu } = useCloudStore();
 
   // 通用重試函式
   async function withRetry<T>(fn: () => Promise<T>, retries = 5): Promise<T> {

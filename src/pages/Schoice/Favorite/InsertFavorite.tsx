@@ -3,7 +3,7 @@ import { t } from "i18next";
 import { useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { useUser } from "../../../context/UserContext";
-import useSchoiceStore from "../../../store/Schoice.store";
+import useCloudStore from "../../../store/Cloud.store";
 import Menu from "./Menu";
 import { FormData } from "./type";
 
@@ -15,7 +15,7 @@ export default function InsertFavorite() {
     formState: { errors, isSubmitting },
   } = useForm<FormData>();
   const { user } = useUser();
-  const { addToWatchList } = useSchoiceStore();
+  const { addToWatchList } = useCloudStore();
 
   const onSubmit = useCallback(
     async (data: FormData) => {

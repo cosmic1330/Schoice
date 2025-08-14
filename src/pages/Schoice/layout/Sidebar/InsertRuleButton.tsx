@@ -15,7 +15,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useUser } from "../../../../context/UserContext";
-import useSchoiceStore from "../../../../store/Schoice.store";
+import useCloudStore from "../../../../store/Cloud.store";
 import { PromptType, PromptValue } from "../../../../types";
 
 export default function InsertRuleButton() {
@@ -26,7 +26,7 @@ export default function InsertRuleButton() {
   const [value, setValue] = useState<PromptValue>();
   const [type, setType] = useState<PromptType>();
   const [loading, setLoading] = useState(false);
-  const { increase } = useSchoiceStore();
+  const { increase } = useCloudStore();
   const { user } = useUser();
 
   useEffect(() => {
@@ -74,9 +74,7 @@ export default function InsertRuleButton() {
         toast.success("Insert success");
         handleCancel();
       } else {
-        toast.error(
-          `缺少必要欄位，請檢查是否包含 id, name, type, user`
-        );
+        toast.error(`缺少必要欄位，請檢查是否包含 id, name, type, user`);
       }
     } catch (error: any) {
       if (error instanceof SyntaxError) {

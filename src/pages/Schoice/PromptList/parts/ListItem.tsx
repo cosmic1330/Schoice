@@ -3,6 +3,7 @@ import TourRoundedIcon from "@mui/icons-material/TourRounded";
 import { Box, Stack as MuiStack, Typography, styled } from "@mui/material";
 import { useState } from "react";
 import { useUser } from "../../../../context/UserContext";
+import useCloudStore from "../../../../store/Cloud.store";
 import useSchoiceStore from "../../../../store/Schoice.store";
 import { PromptType } from "../../../../types";
 const Stack = styled(MuiStack)<{ select: string }>`
@@ -46,18 +47,18 @@ export default function ListItem({
   promptType: PromptType;
 }) {
   const [hover, setHover] = useState(false);
-  const { remove, reload, selectObj, select } = useSchoiceStore();
+  const { remove, reload } = useCloudStore();
+  const { setSelect, select } = useSchoiceStore();
   const { user } = useUser();
   const handleDelete = (event: React.SyntheticEvent) => {
     event.stopPropagation();
     if (user) {
       remove(id, promptType, user.id);
-      reload(user.id);
     }
   };
 
   const handleSelect = () => {
-    selectObj(id, promptType);
+    setSelect({ prompt_id: id, type: promptType });
   };
   return (
     <Stack
@@ -65,7 +66,7 @@ export default function ListItem({
       spacing={2}
       alignItems="center"
       onClick={handleSelect}
-      select={(select?.id === id).toString() || "false"}
+      select={(select?.prompt_id === id).toString() || "false"}
       mb={0.5}
     >
       <IconArea

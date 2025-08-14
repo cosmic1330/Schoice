@@ -2,18 +2,24 @@ import { Box, Button, Chip, Stack, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { stockFundamentalQueryBuilder } from "../../../classes/StockFundamentalQueryBuilder";
+import { useUser } from "../../../context/UserContext";
 import useDatabaseQuery from "../../../hooks/useDatabaseQuery";
+import useCloudStore from "../../../store/Cloud.store";
 import useSchoiceStore from "../../../store/Schoice.store";
-import { FilterStock, StorePrompt } from "../../../types";
+import { Prompts, StockTableType } from "../../../types";
 
 export default function ConditionsListResult({
   prompts,
 }: {
-  prompts: StorePrompt[];
+  prompts: Prompts;
 }) {
-  const [results, setResults] = useState<FilterStock[]>([]);
-  const { addFilterStocks } = useSchoiceStore();
+  const [results, setResults] = useState<StockTableType[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { setFilterStocks } = useSchoiceStore();
+  const { setFundamentalCondition } = useCloudStore();
+  const { user } = useUser();
   const query = useDatabaseQuery();
+
   useEffect(() => {
     const conditions = prompts.map((prompt) =>
       stockFundamentalQueryBuilder.generateExpression(prompt).join(" ")
@@ -30,11 +36,30 @@ export default function ConditionsListResult({
         });
       }
     });
-  }, [prompts]);
+  }, [prompts, query]);
 
-  const handleClick = () => {
-    addFilterStocks(results, prompts);
-    toast.success("添加基本面塞選成功");
+  const handleClick = async () => {
+    // 檢查是否正在載入中
+    if (isLoading) {
+      return;
+    }
+
+    // 檢查用戶登入狀態
+    if (!user) {
+      toast.error("请先登录");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setFilterStocks(results);
+      await setFundamentalCondition(prompts, user.id);
+      toast.success("添加基本面篩選成功");
+    } catch (error) {
+      toast.error("操作失敗，請重試");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -55,9 +80,9 @@ export default function ConditionsListResult({
         variant="contained"
         color="success"
         onClick={handleClick}
-        disabled={results.length === 0}
+        disabled={isLoading || results.length === 0}
       >
-        確定
+        {isLoading ? "處理中..." : "確定"}
       </Button>
     </Stack>
   );

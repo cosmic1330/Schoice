@@ -13,13 +13,13 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import { StockFundamentalQueryBuilder } from "../../../classes/StockFundamentalQueryBuilder";
-import { StorePrompt } from "../../../types";
+import { Prompts, StorePrompt } from "../../../types";
 import ConditionsList from "./ConditionsList";
 import ConditionsTable from "./ConditionsTable";
 import FundamentalResult from "./FundamentalResult";
 
 export default function Fundamental() {
-  const [prompts, setPrompts] = useState<StorePrompt[]>([]);
+  const [prompts, setPrompts] = useState<Prompts>([]);
   const [selects, setSelects] = useState<StorePrompt>({
     day1: StockFundamentalQueryBuilder.options.days[0],
     indicator1: StockFundamentalQueryBuilder.options.indicators[0],

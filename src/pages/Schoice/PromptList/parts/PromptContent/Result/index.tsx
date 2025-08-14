@@ -1,28 +1,19 @@
-
 import { Box, Typography } from "@mui/material";
 import { useCallback, useContext, useEffect, useState } from "react";
 import ResultTable from "../../../../../../components/ResultTable/ResultTable";
 import { DatabaseContext } from "../../../../../../context/DatabaseContext";
-import useSchoiceStore from "../../../../../../store/Schoice.store";
-import { PromptType, PromptValue } from "../../../../../../types";
 import useDatabaseQuery from "../../../../../../hooks/useDatabaseQuery";
 import useFindStocksByPrompt from "../../../../../../hooks/useFindStocksByPrompt";
+import useCloudStore from "../../../../../../store/Cloud.store";
+import useSchoiceStore from "../../../../../../store/Schoice.store";
+import { SelectType } from "../../../../../../types";
 
-export default function Result({
-  select,
-}: {
-  select: {
-    id: string;
-    name: string;
-    conditions: PromptValue;
-    type: PromptType;
-    index: number;
-  };
-}) {
+export default function Result({ select }: { select: SelectType | null }) {
   const { getPromptSqlScripts, getCombinedSqlScript, getStocksData } =
     useFindStocksByPrompt();
   const { dates } = useContext(DatabaseContext);
   const { todayDate, filterStocks } = useSchoiceStore();
+  const { bulls, bears } = useCloudStore();
 
   const [result, setResult] = useState<any[]>([]);
 
@@ -30,9 +21,13 @@ export default function Result({
 
   const run = useCallback(async () => {
     if (!select) return;
+    const item =
+      select.type === "bull"
+        ? bulls[select.prompt_id]
+        : bears[select.prompt_id];
     const sqls = await getPromptSqlScripts(
-      select,
-      filterStocks?.map((item) => item.id)
+      item,
+      filterStocks?.map((item) => item.stock_id) || []
     );
     if (sqls.length === 0) return;
     // 合併查詢

@@ -1,4 +1,5 @@
 import {
+  Container,
   Table,
   TableBody,
   TableCell,
@@ -6,13 +7,12 @@ import {
   TableHead,
   TableRow,
   Typography,
-  Container,
 } from "@mui/material";
-import useSchoiceStore from "../../../store/Schoice.store";
-import CollapseRow from "./CollapseRow";
 import { t } from "i18next";
+import useCloudStore from "../../../store/Cloud.store";
+import CollapseRow from "./CollapseRow";
 export default function TrashTable() {
-  const { trash } = useSchoiceStore();
+  const { trash } = useCloudStore();
   console.log("trash", trash);
 
   return (

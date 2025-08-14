@@ -199,8 +199,6 @@ export type FundamentalTableType = {
   dividend_yield_5y: number;
 };
 
-export type FilterStock = { id: string; name: string };
-
 export enum UrlType {
   Indicators = "indicators",
   Ta = "ta",
@@ -231,3 +229,8 @@ export enum DivergenceSignalType {
   BEARISH_DIVERGENCE = "頂背離",
   BULLISH_DIVERGENCE = "底背離",
 }
+
+export type SelectType = {
+  prompt_id: string;
+  type: PromptType;
+};

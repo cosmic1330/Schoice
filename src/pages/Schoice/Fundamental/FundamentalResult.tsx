@@ -16,7 +16,7 @@ export default function FundamentalResult() {
     if (dates?.length === 0 || filterStocks?.length === 0) return;
     getStocksData(
       dates[todayDate],
-      filterStocks.map((r) => r.id)
+      filterStocks.map((r) => r.stock_id)
     ).then((result) => {
       if (result) setResult(result);
     });

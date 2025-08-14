@@ -1,7 +1,8 @@
 import { Box, Button, Container, Grid, Stack, Typography } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useUser } from "../../../context/UserContext";
+import useCloudStore from "../../../store/Cloud.store";
 import useSchoiceStore from "../../../store/Schoice.store";
 import { Prompts } from "../../../types";
 import ExpressionGenerator from "../parts/ExpressionGenerator";
@@ -9,18 +10,13 @@ import PromptName from "../parts/PromptName";
 
 export default function PromptEdit() {
   const { id } = useParams();
-  const { edit, select, selectObj } = useSchoiceStore();
+  const { select, setSelect } = useSchoiceStore();
+  const { edit, bears, bulls } = useCloudStore();
   const { user } = useUser();
-  const [dailyPrompts, setDailyPrompts] = useState<Prompts>(
-    select?.conditions.daily || []
-  );
-  const [weekPrompts, setWeekPrompts] = useState<Prompts>(
-    select?.conditions.weekly || []
-  );
-  const [hourlyPrompts, setHourlyPrompts] = useState<Prompts>(
-    select?.conditions.hourly || []
-  );
-  const [name, setName] = useState(select?.name || "");
+  const [dailyPrompts, setDailyPrompts] = useState<Prompts>([]);
+  const [weekPrompts, setWeekPrompts] = useState<Prompts>([]);
+  const [hourlyPrompts, setHourlyPrompts] = useState<Prompts>([]);
+  const [name, setName] = useState("");
   const navigate = useNavigate();
 
   const handleEdit = async () => {
@@ -36,7 +32,7 @@ export default function PromptEdit() {
         select.type,
         user.id
       );
-      selectObj(id, select.type);
+      setSelect({ prompt_id: id, type: select.type });
       navigate("/schoice");
     }
   };
@@ -58,12 +54,26 @@ export default function PromptEdit() {
   const handleCancel = () => {
     navigate("/schoice");
   };
-  if (!select)
-    return (
-      <Typography variant="h5" gutterBottom>
-        找不到資料
-      </Typography>
-    );
+  useEffect(() => {
+    if (select) {
+      if (select.type === "bull") {
+        setName(bulls[select.prompt_id]?.name || "");
+        setDailyPrompts(bulls[select.prompt_id]?.conditions.daily || []);
+        setWeekPrompts(bulls[select.prompt_id]?.conditions.weekly || []);
+        setHourlyPrompts(bulls[select.prompt_id]?.conditions.hourly || []);
+      } else if (select.type === "bear") {
+        setName(bears[select.prompt_id]?.name || "");
+        setDailyPrompts(bears[select.prompt_id]?.conditions.daily || []);
+        setWeekPrompts(bears[select.prompt_id]?.conditions.weekly || []);
+        setHourlyPrompts(bears[select.prompt_id]?.conditions.hourly || []);
+      }
+    }
+  }, [select, bulls, bears]);
+
+  if (!select) {
+    return <Typography variant="h6">No prompt selected</Typography>;
+  }
+
   return (
     <Grid container>
       <Grid size={6}>

@@ -10,11 +10,11 @@ import {
 import { useEffect, useState } from "react";
 import useDatabaseQuery from "../../../hooks/useDatabaseQuery";
 import useFindStocksByPrompt from "../../../hooks/useFindStocksByPrompt";
-import useSchoiceStore from "../../../store/Schoice.store";
+import useCloudStore from "../../../store/Cloud.store";
 import { StockTableType } from "../../../types";
 
 export default function Alarm({ stocks }: { stocks: StockTableType[] }) {
-  const { alarms } = useSchoiceStore();
+  const { alarms } = useCloudStore();
   const { getPromptSqlScripts, getCombinedSqlScript } = useFindStocksByPrompt();
   const query = useDatabaseQuery();
 

@@ -24,6 +24,7 @@ import {
 import { useCallback, useContext, useState } from "react";
 import { toast } from "react-toastify";
 import { DatabaseContext } from "../../../context/DatabaseContext";
+import useCloudStore from "../../../store/Cloud.store";
 import useSchoiceStore from "../../../store/Schoice.store";
 import { PromptItem } from "../../../types";
 import shuffleArray from "../../../utils/shuffleArray";
@@ -43,8 +44,8 @@ enum SelectedStocks {
 }
 
 export default function Backtest() {
-  const { bulls, bears, filterStocks, setBacktestPersent, watchStocks } =
-    useSchoiceStore();
+  const { filterStocks, setBacktestPersent } = useSchoiceStore();
+  const { bulls, bears, watchStocks } = useCloudStore();
   const { dates } = useContext(DatabaseContext);
   const [ctx, setCtx] = useState<Context>();
   const [selectedBull, setSelectedBull] = useState<string[]>([]);
@@ -83,6 +84,11 @@ export default function Backtest() {
       return;
     }
 
+    let stocksValue = watchStocks;
+    if (selectedStocks === SelectedStocks.FilterStocks && filterStocks) {
+      stocksValue = filterStocks;
+    }
+
     const genStrategyMethod = (
       select: PromptItem,
       type: BacktestType
@@ -99,20 +105,16 @@ export default function Backtest() {
       .map((date) => dateFormat(date, Mode.StringToNumber));
 
     // 隨機排列
-    let stocksValue = filterStocks;
-    if (selectedStocks === SelectedStocks.WatchStock) {
-      stocksValue = watchStocks.map((stock) => ({
-        id: stock.stock_id,
-        name: stock.stock_name,
-      }));
-    }
     if (isRandom && stocksValue) {
       stocksValue = shuffleArray(stocksValue);
     }
 
     const ctx = new Context({
       dates: contextDates,
-      stocks: stocksValue,
+      stocks: stocksValue.map((stock) => ({
+        id: stock.stock_id,
+        name: stock.stock_name,
+      })),
       buy: selectedBull.map((key) =>
         genStrategyMethod(bulls[key], BacktestType.Buy)
       ),
