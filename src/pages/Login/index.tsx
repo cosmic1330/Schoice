@@ -1,14 +1,14 @@
 import {
-  Container as MuiContainer,
   createTheme,
   styled,
-  ThemeProvider
+  ThemeProvider,
+  Box
 } from "@mui/material";
 import Version from "../../components/Version";
 import Content from "./Content";
 
-const Container = styled(MuiContainer)`
-  height: 100%;
+const Container = styled(Box)`
+  min-height: 100vh;
   width: 100%;
   display: flex;
   align-items: center;
@@ -28,7 +28,7 @@ const Login = () => {
         },
       })}
     >
-      <Container maxWidth="xl">
+      <Container>
         <Version />
         <Content />
       </Container>

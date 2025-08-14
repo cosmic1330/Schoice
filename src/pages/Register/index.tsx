@@ -1,14 +1,14 @@
 import {
   createTheme,
-  Container as MuiContainer,
+  Box,
   styled,
   ThemeProvider,
 } from "@mui/material";
 import Version from "../../components/Version";
 import Content from "./Content";
 
-const Container = styled(MuiContainer)`
-  height: 100vh;
+const Container = styled(Box)`
+  min-height: 100vh;
   width: 100%;
   display: flex;
   align-items: center;
@@ -31,7 +31,7 @@ const Register = () => {
         },
       })}
     >
-      <Container maxWidth="xl">
+      <Container>
         <Version />
         <Content />
       </Container>
