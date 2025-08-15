@@ -90,53 +90,6 @@ export default function useHighConcurrencyDeals() {
     throw lastError;
   }
 
-  const getFundamentalFetch = useCallback(
-    async (
-      signal: AbortSignal,
-      stock: StockTableType,
-      sqliteDataManager: SqliteDataManager
-    ) => {
-      return withRetry(async () => {
-        try {
-          const year = new Date().getFullYear();
-          const response = await fetch(
-            `https://statementdog.com/api/v2/fundamentals/${stock.stock_id}/${year}/${year}/cf`,
-            {
-              method: "GET",
-              signal,
-            }
-          );
-          if (!response.ok) {
-            throw new Error(
-              `getFundamentalFetch error! status: ${response.status}`
-            );
-          }
-          const json = await response.json();
-          const { LatestValuation, StockInfo } = json.common;
-          const LatestValuationData = LatestValuation.data as StockFundamentals;
-          const StockInfoData = StockInfo.data as StockProfile;
-          await sqliteDataManager.saveFundamentalTable({
-            stock_id: stock.stock_id,
-            pe: parseFloat(LatestValuationData.PE),
-            pb: parseFloat(LatestValuationData.PB),
-            dividend_yield: parseFloat(LatestValuationData.CashYield),
-            yoy: parseFloat(StockInfoData.latest_yoy_monthly_revenue),
-            eps: parseFloat(StockInfoData.latest_eps4q),
-            dividend_yield_3y: parseFloat(LatestValuationData.CashYield3Y),
-            dividend_yield_5y: parseFloat(LatestValuationData.CashYield5Y),
-          });
-          return true;
-        } catch (error: any) {
-          if (error?.message?.indexOf("Request canceled") !== -1) {
-            throw new Error("Cancel");
-          }
-          throw error;
-        }
-      });
-    },
-    []
-  );
-
   const getIndicatorFetch = useCallback(
     async (
       signal: AbortSignal,
@@ -303,12 +256,10 @@ export default function useHighConcurrencyDeals() {
 
       // case 1-4: 寫入交易資料與基本面資料
       try {
-        const [daily, weekly, hourly, _] = await Promise.allSettled([
+        const [daily, weekly, hourly] = await Promise.allSettled([
           limit(() => getIndicatorFetch(signal, stock, UrlTaPerdOptions.Day)),
           limit(() => getIndicatorFetch(signal, stock, UrlTaPerdOptions.Week)),
           limit(() => getIndicatorFetch(signal, stock, UrlTaPerdOptions.Hour)),
-          // 基本面資料
-          limit(() => getFundamentalFetch(signal, stock, sqliteDataManager)),
         ]);
         if (
           daily.status === "rejected" &&

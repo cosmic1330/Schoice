@@ -1,3 +1,16 @@
+CREATE TABLE financial_metric (
+  stock_id TEXT PRIMARY KEY REFERENCES stock(stock_id) ON DELETE CASCADE,  -- 股票代號，主鍵並外鍵
+  pe FLOAT,                                -- 本益比
+  dividend_yield FLOAT,                    -- 殖利率
+  gross_profit_margin FLOAT,               -- 營業毛利率
+  operating_margin FLOAT,                  -- 營業利益率
+  pre_tax_profit_margin FLOAT,             -- 稅前淨利率
+  roa FLOAT,                               -- 資產報酬率
+  roe FLOAT,                               -- 股東權益報酬率
+  book_value_per_share FLOAT,              -- 每股淨值
+  updated_at TIMESTAMP DEFAULT NOW()       -- 更新時間
+);
+
 CREATE TABLE fundamental_condition (
   user_id uuid PRIMARY KEY references auth.users(id),
   conditions text
