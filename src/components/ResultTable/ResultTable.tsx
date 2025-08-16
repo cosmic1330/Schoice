@@ -5,10 +5,11 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import ResultTableRow from "./ResultTableRow";
 import SelectChartHead from "./SelectChartHead";
 import { ActionButtonType } from "./types";
+import { StockTableType } from "../../types";
 
 const columns = [
   "日期",
@@ -21,14 +22,14 @@ const columns = [
   <SelectChartHead />,
   "Action",
 ];
-export default function ResultTable({
+export default memo(function ResultTable({
   result,
   type = ActionButtonType.Increase,
 }: {
-  result: any[];
+  result: StockTableType[];
   type?: ActionButtonType;
 }) {
-  const [visibleCount, setVisibleCount] = useState(20); // 初始顯示 10 筆
+  const [visibleCount, setVisibleCount] = useState(10); // 初始顯示 10 筆
   const observerRef = useRef<IntersectionObserver | null>(null);
   const lastItemRef = useRef<HTMLTableRowElement | null>(null);
 
@@ -38,7 +39,7 @@ export default function ResultTable({
     observerRef.current = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          setVisibleCount((prev) => Math.min(prev + 20, result.length)); // 每次+10筆
+          setVisibleCount((prev) => Math.min(prev + 10, result.length)); // 每次+10筆
         }
       },
       { rootMargin: "100px" }
@@ -49,7 +50,7 @@ export default function ResultTable({
     }
 
     return () => observerRef.current?.disconnect();
-  }, [visibleCount, result.length]); // 依賴 `visibleCount` 和 `result.length`
+  }, [visibleCount, result.length]);
 
   return (
     <Paper sx={{ width: "100%", overflow: "hidden" }}>
@@ -81,4 +82,4 @@ export default function ResultTable({
       </TableContainer>
     </Paper>
   );
-}
+});

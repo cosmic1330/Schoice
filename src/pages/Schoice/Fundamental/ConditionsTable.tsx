@@ -36,9 +36,9 @@ export default function ConditionsTable() {
           <TableBody>
             {fundamentalCondition?.map((row, idx) => (
               <TableRow key={idx}>
-                <TableCell>{row.indicator1}</TableCell>
+                <TableCell>{row.indicator}</TableCell>
                 <TableCell>{row.operator}</TableCell>
-                <TableCell>{row.indicator2}</TableCell>
+                <TableCell>{row.value}</TableCell>
               </TableRow>
             ))}
           </TableBody>

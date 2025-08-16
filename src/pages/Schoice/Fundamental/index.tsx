@@ -12,24 +12,20 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
-import { StockFundamentalQueryBuilder } from "../../../classes/StockFundamentalQueryBuilder";
-import { Prompts, StorePrompt } from "../../../types";
+import { stockFundamentalQueryBuilder } from "../../../classes/StockFundamentalQueryBuilder";
+import { FundamentalPrompt, FundamentalPrompts } from "../../../types";
 import ConditionsList from "./ConditionsList";
 import ConditionsTable from "./ConditionsTable";
 import FundamentalResult from "./FundamentalResult";
 
 export default function Fundamental() {
-  const [prompts, setPrompts] = useState<Prompts>([]);
-  const [selects, setSelects] = useState<StorePrompt>({
-    day1: StockFundamentalQueryBuilder.options.days[0],
-    indicator1: StockFundamentalQueryBuilder.options.indicators[0],
-    operator: StockFundamentalQueryBuilder.options.operators[0],
-    day2: StockFundamentalQueryBuilder.options.days[1],
-    indicator2: "0",
+  const { indicators, operators } = stockFundamentalQueryBuilder.getOptions();
+  const [prompts, setPrompts] = useState<FundamentalPrompts>([]);
+  const [selects, setSelects] = useState<FundamentalPrompt>({
+    indicator: indicators[0],
+    operator: operators[0],
+    value: "1",
   });
-
-  const indicators = StockFundamentalQueryBuilder.options.indicators;
-  const operators = StockFundamentalQueryBuilder.options.operators;
 
   const handleChange = (event: SelectChangeEvent<string>) => {
     const { value, name } = event.target;
@@ -39,16 +35,16 @@ export default function Fundamental() {
     }));
   };
 
-  const handleCustomChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleValueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
     setSelects((prev) => ({
       ...prev,
-      indicator2: value,
+      value
     }));
   };
 
   const handleAddCondition = () => {
-    if (!selects.indicator1 || !selects.operator || !selects.indicator2) {
+    if (!selects.indicator || !selects.operator || !selects.value) {
       return;
     }
     setPrompts((prev) => [...prev, selects]);
@@ -68,20 +64,20 @@ export default function Fundamental() {
           variant="outlined"
           sx={{ padding: "20px", marginBottom: "20px" }}
         >
-          <Typography variant="h4" gutterBottom align="center">
-            Fundamental Analysis
+          <Typography variant="h5" gutterBottom align="center">
+            挑選基本面
           </Typography>
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gridTemplateColumns: "repeat(3,1fr)",
               gap: "20px",
             }}
           >
             <Select
-              value={selects.indicator1}
+              value={selects.indicator}
               onChange={handleChange}
-              name="indicator1"
+              name="indicator"
               fullWidth
             >
               {indicators.map((indicator) => (
@@ -103,12 +99,12 @@ export default function Fundamental() {
               ))}
             </Select>
             <TextField
-              name="indicator2"
+              name="value"
               type="number"
-              label="Value"
+              label="值"
               fullWidth
-              onChange={handleCustomChange}
-              value={selects.indicator2}
+              onChange={handleValueChange}
+              value={selects.value}
             />
           </Box>
           <Box sx={{ textAlign: "center", marginTop: "20px" }}>

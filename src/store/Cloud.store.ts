@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { handleError } from "../tools/error";
 import { supabase } from "../tools/supabase";
 import {
+  FundamentalPrompts,
   PromptItem,
   Prompts,
   PromptsMap,
@@ -17,10 +18,10 @@ interface CloudState {
   bears: PromptsMap;
   alarms: PromptsMap;
   trash: TrashPrompt[];
-  fundamentalCondition: Prompts | null;
+  fundamentalCondition: FundamentalPrompts | null;
   menu: StockTableType[];
   watchStocks: string[];
-  setFundamentalCondition: (condition: Prompts | null, userId: string) => void;
+  setFundamentalCondition: (condition: FundamentalPrompts | null, userId: string) => void;
   removeFromWatchList: (stockId: string, userId: string) => Promise<void>;
   addToWatchList: (stockId: string, userId: string) => Promise<void>;
   addAlarm: (alarm: PromptItem, id: string, userId: string) => Promise<void>;
@@ -53,7 +54,7 @@ const useCloudStore = create<CloudState>((set, get) => ({
   menu: [],
   watchStocks: [],
   setFundamentalCondition: async (
-    condition: Prompts | null,
+    condition: FundamentalPrompts | null,
     userId: string
   ) => {
     if (condition === null) {

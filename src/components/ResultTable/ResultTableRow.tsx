@@ -1,43 +1,31 @@
 import InfoIcon from "@mui/icons-material/Info";
 import PostAddIcon from "@mui/icons-material/PostAdd";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
-import { Box, IconButton, Tooltip, Typography } from "@mui/material";
+import { IconButton, Tooltip } from "@mui/material";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import { open } from "@tauri-apps/plugin-shell";
-import React, { forwardRef } from "react";
+import React, {
+  forwardRef,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { toast } from "react-toastify";
+import { DatabaseContext } from "../../context/DatabaseContext";
 import { useUser } from "../../context/UserContext";
 import useDetailWebviewWindow from "../../hooks/useDetailWebviewWindow";
+import useFindStocksByPrompt from "../../hooks/useFindStocksByPrompt";
 import useCloudStore from "../../store/Cloud.store";
-import { FundamentalTableType } from "../../types";
+import useSchoiceStore from "../../store/Schoice.store";
+import { StockTableType } from "../../types";
 import DailyUltraTinyLineChart from "./Charts/DailyUltraTinyLineChart";
 import HourlyUltraTinyLineChart from "./Charts/HourlyUltraTinyLineChart";
 import WeeklyUltraTinyLineChart from "./Charts/WeeklyUltraTinyLineChart";
+import FundamentalTooltip from "./FundamentalTooltip";
 import RowChart from "./RowChart";
 import { ActionButtonType } from "./types";
-
-function TooltipContent({ row }: { row: FundamentalTableType }) {
-  return (
-    <Box>
-      <Typography variant="body2" color="text.secondary">
-        本益比: {row.pe}
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
-        殖利率: {row.dividend_yield}
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
-        股價淨值比: {row.pb}
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
-        EPS: {row.eps}
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
-        YOY: {row.yoy}
-      </Typography>
-    </Box>
-  );
-}
 
 export default forwardRef(function ResultTableRow(
   {
@@ -45,22 +33,25 @@ export default forwardRef(function ResultTableRow(
     index,
     type,
   }: {
-    row: any;
+    row: StockTableType;
     index: number;
     type: ActionButtonType;
   },
   ref: React.Ref<HTMLTableRowElement>
 ) {
+  const { dates } = useContext(DatabaseContext);
   const { openDetailWindow } = useDetailWebviewWindow({
     id: row.stock_id,
-    name: row.name,
+    name: row.stock_name,
     group: row.market_type,
   });
   const { user } = useUser();
   const { addToWatchList, removeFromWatchList } = useCloudStore();
-
-  const [addLoading, setAddLoading] = React.useState(false);
-  const [removeLoading, setRemoveLoading] = React.useState(false);
+  const { todayDate } = useSchoiceStore();
+  const [addLoading, setAddLoading] = useState(false);
+  const [removeLoading, setRemoveLoading] = useState(false);
+  const [dailyData, setDailyData] = useState<any[]>([]);
+  const { getOneDateDailyDataByStockId } = useFindStocksByPrompt();
 
   const handleAddToWatchList = async () => {
     if (!user) {
@@ -70,7 +61,7 @@ export default forwardRef(function ResultTableRow(
     setAddLoading(true);
     try {
       await addToWatchList(row.stock_id, user.id);
-      toast.success(`Add ${row.name} Success!`);
+      toast.success(`Add ${row.stock_name} Success!`);
     } finally {
       setAddLoading(false);
     }
@@ -84,35 +75,73 @@ export default forwardRef(function ResultTableRow(
     setRemoveLoading(true);
     try {
       await removeFromWatchList(row.stock_id, user.id);
-      toast.success(`Remove ${row.name} Success!`);
+      toast.success(`Remove ${row.stock_name} Success!`);
     } finally {
       setRemoveLoading(false);
     }
   };
 
+  useEffect(() => {
+    const fetchDailyData = async () => {
+      try {
+        const data = await getOneDateDailyDataByStockId(
+          dates[todayDate],
+          row.stock_id
+        );
+        setDailyData(data || []);
+      } catch (error) {
+        console.error("Error fetching daily data:", error);
+        setDailyData([]);
+      }
+    };
+
+    if (dates[todayDate] && row.stock_id) {
+      fetchDailyData();
+    }
+  }, [dates, todayDate, row.stock_id, getOneDateDailyDataByStockId]);
+
+  const t = useMemo(() => {
+    if (dailyData.length === 0) return "N/A";
+    return dailyData[dailyData.length - 1].t || "N/A";
+  }, [dailyData]);
+
+  const c = useMemo(() => {
+    if (dailyData.length === 0) return "N/A";
+    return dailyData[dailyData.length - 1].c || "N/A";
+  }, [dailyData]);
+
   return (
     <TableRow hover role="checkbox" tabIndex={-1} ref={ref}>
-      <TableCell key={index}>{index + 1}.</TableCell>
-      <TableCell key={row.t}>{row.t}</TableCell>
-      <TableCell key={row.stock_id}>{row.stock_id}</TableCell>
-      <Tooltip title={<TooltipContent row={row} />}>
-        <TableCell key={row.name}>{row.name}</TableCell>
+      <TableCell>{index + 1}.</TableCell>
+      <TableCell>{t}</TableCell>
+      <TableCell>{row.stock_id}</TableCell>
+      <Tooltip title={<FundamentalTooltip row={row} />}>
+        <TableCell>{row.stock_name}</TableCell>
       </Tooltip>
-      <TableCell key={row.c}>{row.c}</TableCell>
+      <TableCell>{c}</TableCell>
       <TableCell>
-        <HourlyUltraTinyLineChart stock_id={row.stock_id} t={row.t} />
+        {c !== "N/A" ? (
+          <HourlyUltraTinyLineChart stock_id={row.stock_id} t={t} />
+        ) : (
+          c
+        )}
       </TableCell>
       <TableCell>
-        <DailyUltraTinyLineChart stock_id={row.stock_id} t={row.t} />
+        {c !== "N/A" ? (
+          <DailyUltraTinyLineChart stock_id={row.stock_id} t={t} />
+        ) : (
+          c
+        )}
       </TableCell>
       <TableCell>
-        <WeeklyUltraTinyLineChart stock_id={row.stock_id} t={row.t} />
+        {c !== "N/A" ? (
+          <WeeklyUltraTinyLineChart stock_id={row.stock_id} t={t} />
+        ) : (
+          c
+        )}
       </TableCell>
-
+      <TableCell>{c !== "N/A" ? <RowChart row={row} /> : c}</TableCell>
       <TableCell>
-        <RowChart row={row} />
-      </TableCell>
-      <TableCell key={row + row.k}>
         <IconButton
           onClick={() =>
             open(

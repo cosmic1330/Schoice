@@ -1,13 +1,13 @@
-import { useCallback, useContext } from "react";
-import { PromptItem } from "../types";
-import { stockDailyQueryBuilder } from "../classes/StockDailyQueryBuilder";
-import { stockWeeklyQueryBuilder } from "../classes/StockWeeklyQueryBuilder";
-import { stockHourlyQueryBuilder } from "../classes/StockHourlyQueryBuilder";
 import { dateFormat } from "@ch20026103/anysis";
 import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
-import useDatabaseQuery from "./useDatabaseQuery";
-import useSchoiceStore from "../store/Schoice.store";
+import { useCallback, useContext } from "react";
+import { stockDailyQueryBuilder } from "../classes/StockDailyQueryBuilder";
+import { stockHourlyQueryBuilder } from "../classes/StockHourlyQueryBuilder";
+import { stockWeeklyQueryBuilder } from "../classes/StockWeeklyQueryBuilder";
 import { DatabaseContext } from "../context/DatabaseContext";
+import useSchoiceStore from "../store/Schoice.store";
+import { PromptItem } from "../types";
+import useDatabaseQuery from "./useDatabaseQuery";
 
 export default function useFindStocksByPrompt() {
   const { dates } = useContext(DatabaseContext);
@@ -126,14 +126,12 @@ export default function useFindStocksByPrompt() {
     return sqls.filter((sql) => sql).join("\nINTERSECT\n");
   }, []);
 
-  const getStocksData = useCallback(
-    async (date: string, ids: string[]) => {
+  const getOneDateDailyDataByStockId = useCallback(
+    async (date: string, id: string) => {
       try {
-        const sql = `SELECT * FROM daily_deal 
-            JOIN fundamental ON daily_deal.stock_id = fundamental.stock_id 
-            JOIN stock ON daily_deal.stock_id = stock.id 
+        const sql = `SELECT * FROM daily_deal
             WHERE t="${date}" 
-            AND daily_deal.stock_id IN ('${ids.join("','")}')`;
+            AND daily_deal.stock_id = '${id}'`;
         const res = await query(sql);
         return res;
       } catch (error) {
@@ -146,6 +144,6 @@ export default function useFindStocksByPrompt() {
   return {
     getPromptSqlScripts,
     getCombinedSqlScript,
-    getStocksData,
+    getOneDateDailyDataByStockId,
   };
 }

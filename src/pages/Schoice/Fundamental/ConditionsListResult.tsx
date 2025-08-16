@@ -1,50 +1,47 @@
 import { Box, Button, Chip, Stack, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { stockFundamentalQueryBuilder } from "../../../classes/StockFundamentalQueryBuilder";
 import { useUser } from "../../../context/UserContext";
-import useDatabaseQuery from "../../../hooks/useDatabaseQuery";
 import useCloudStore from "../../../store/Cloud.store";
 import useSchoiceStore from "../../../store/Schoice.store";
 import { supabase } from "../../../tools/supabase";
-import { Prompts, StockTableType } from "../../../types";
+import { FundamentalPrompts, StockTableType } from "../../../types";
 
 export default function ConditionsListResult({
   prompts,
 }: {
-  prompts: Prompts;
+  prompts: FundamentalPrompts;
 }) {
   const [results, setResults] = useState<StockTableType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { setFilterStocks } = useSchoiceStore();
   const { setFundamentalCondition } = useCloudStore();
   const { user } = useUser();
-  const query = useDatabaseQuery();
 
   useEffect(() => {
-    const conditions = prompts.map((prompt) =>
-      stockFundamentalQueryBuilder.generateExpression(prompt).join(" ")
-    );
-    const sqlQuery = stockFundamentalQueryBuilder.generateSqlQuery({
-      conditions,
-    });
-    query(sqlQuery).then((res) => {
-      if (res) {
-        supabase
+    stockFundamentalQueryBuilder
+      .getStocksByConditions({ conditions: prompts })
+      .then((stockIds) => {
+        if (stockIds.length === 0) {
+          setResults([]);
+          return;
+        }
+        return supabase
           .from("stock")
           .select("*")
-          .in(
-            "stock_id",
-            res.map((r) => r.stock_id)
-          )
-          .then(({ data }) => {
-            setResults(data || []);
+          .in("stock_id", stockIds)
+          .then(({ data }: { data: StockTableType[] | null }) => {
+            if (!data || data.length === 0) {
+              setResults([]);
+              return;
+            }
+            setResults(data);
           });
-      }
-    });
-  }, [prompts, query]);
+      });
+  }, [prompts]);
 
-  const handleClick = async () => {
+  const handleClick = useCallback(async () => {
     // 檢查是否正在載入中
     if (isLoading) {
       return;
@@ -66,7 +63,14 @@ export default function ConditionsListResult({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    isLoading,
+    results,
+    setFilterStocks,
+    setFundamentalCondition,
+    prompts,
+    user,
+  ]);
 
   return (
     <Stack direction="row" justifyContent="space-between" alignItems="center">

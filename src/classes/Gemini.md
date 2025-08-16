@@ -18,6 +18,4 @@ The query builder classes are used to construct SQL queries based on user-define
 
 - **StockHourlyQueryBuilder.ts**: Builds queries for hourly stock data.
 
-- **StockFundamentalQueryBuilder.ts**: Constructs queries based on fundamental stock data, such as P/E ratio, dividend yield, and EPS.
-
 Each query builder provides a set of predefined options for timeframes, indicators, and operators, making it easy to create complex queries from a simple user interface.

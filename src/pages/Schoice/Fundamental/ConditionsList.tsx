@@ -12,14 +12,14 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { StorePrompt } from "../../../types";
+import { FundamentalPrompts } from "../../../types";
 import ConditionsListResult from "./ConditionsListResult";
 
 export default function ConditionsList({
   prompts,
   handleDeleteCondition,
 }: {
-  prompts: StorePrompt[];
+  prompts: FundamentalPrompts;
   handleDeleteCondition: (index: number) => void;
 }) {
   return (
@@ -54,7 +54,7 @@ export default function ConditionsList({
                       类别:
                     </Typography>
                     <Typography variant="body2" fontWeight="bold">
-                      {prompt.indicator1}
+                      {prompt.indicator}
                     </Typography>
                   </Stack>
                   <Stack direction="row" alignItems="center" spacing={1}>
@@ -80,7 +80,7 @@ export default function ConditionsList({
                       值:
                     </Typography>
                     <Typography variant="body2" fontWeight="bold">
-                      {prompt.indicator2}
+                      {prompt.value}
                     </Typography>
                   </Stack>
                 </Stack>

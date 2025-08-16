@@ -7,7 +7,6 @@ import Database from "@tauri-apps/plugin-sql";
 import {
   DealTableOptions,
   DealTableType,
-  FundamentalTableType,
   SkillsTableOptions,
   SkillsTableType,
   StockTableType,
@@ -341,28 +340,6 @@ export default class SqliteDataManager {
       return true;
     } catch (e) {
       throw new Error(`${stock.stock_name}:${e}`);
-    }
-  }
-
-  async saveFundamentalTable(data: FundamentalTableType) {
-    // update
-    try {
-      await this.db.execute(
-        `INSERT OR REPLACE INTO fundamental (stock_id, pe, pb, dividend_yield, yoy, eps, dividend_yield_3y, dividend_yield_5y) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [
-          data.stock_id,
-          data.pe,
-          data.pb,
-          data.dividend_yield,
-          data.yoy,
-          data.eps,
-          data.dividend_yield_3y,
-          data.dividend_yield_5y,
-        ]
-      );
-      return true;
-    } catch (e) {
-      throw new Error(`${data.stock_id}:${e}`);
     }
   }
 

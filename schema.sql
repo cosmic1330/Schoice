@@ -1,7 +1,9 @@
 CREATE TABLE financial_metric (
-  stock_id TEXT PRIMARY KEY REFERENCES stock(stock_id) ON DELETE CASCADE,  -- 股票代號，主鍵並外鍵
+  stock_id TEXT PRIMARY KEY,               -- 股票代號，主鍵
   pe FLOAT,                                -- 本益比
+  pb FLOAT,                                -- 股價淨值比
   dividend_yield FLOAT,                    -- 殖利率
+  report_period TEXT,                      -- 財報年/季
   gross_profit_margin FLOAT,               -- 營業毛利率
   operating_margin FLOAT,                  -- 營業利益率
   pre_tax_profit_margin FLOAT,             -- 稅前淨利率

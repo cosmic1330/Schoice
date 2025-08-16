@@ -21,7 +21,7 @@ const DailyKdLineChart = ({ stock_id, t }: { stock_id: string; t: string }) => {
       const formatData = res.reverse();
       setData(formatData);
     });
-  }, [stock_id, t]);
+  }, [t]);
   return (
     <Tooltip title={<ChartTooltip value={KdIndicatorColor} />} arrow>
       <Box>

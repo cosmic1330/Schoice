@@ -7,11 +7,11 @@ import useDatabaseQuery from "../../../../../../hooks/useDatabaseQuery";
 import useFindStocksByPrompt from "../../../../../../hooks/useFindStocksByPrompt";
 import useCloudStore from "../../../../../../store/Cloud.store";
 import useSchoiceStore from "../../../../../../store/Schoice.store";
+import { supabase } from "../../../../../../tools/supabase";
 import { SelectType } from "../../../../../../types";
 
 export default function Result({ select }: { select: SelectType | null }) {
-  const { getPromptSqlScripts, getCombinedSqlScript, getStocksData } =
-    useFindStocksByPrompt();
+  const { getPromptSqlScripts, getCombinedSqlScript } = useFindStocksByPrompt();
   const { dates } = useContext(DatabaseContext);
   const { todayDate, filterStocks } = useSchoiceStore();
   const { bulls, bears, fundamentalCondition, menu } = useCloudStore();
@@ -58,11 +58,16 @@ export default function Result({ select }: { select: SelectType | null }) {
     throttledQuery(combinedSQL)
       .then(async (res: { stock_id: string }[] | undefined) => {
         if (res) {
-          const result = await getStocksData(
-            dates[todayDate],
-            res.map((r) => r.stock_id)
-          );
-          if (result) setResult(result);
+          supabase
+            .from("stock")
+            .select("*")
+            .in(
+              "stock_id",
+              res.map((r) => r.stock_id)
+            )
+            .then(({ data }) => {
+              setResult(data || []);
+            });
         }
       })
       .finally(() => setLoading(false));
@@ -77,7 +82,6 @@ export default function Result({ select }: { select: SelectType | null }) {
     filterStocks,
     getPromptSqlScripts,
     getCombinedSqlScript,
-    getStocksData,
     throttledQuery,
   ]);
 
@@ -98,7 +102,7 @@ export default function Result({ select }: { select: SelectType | null }) {
       <Typography variant="subtitle2" sx={{ mb: 2 }}>
         {loading ? "讀取中..." : `符合策略結果共 ${result.length} 筆`}
       </Typography>
-      {!loading && <ResultTable {...{ result }} />}
+      {!loading && <ResultTable result={result} />}
     </Box>
   );
 }

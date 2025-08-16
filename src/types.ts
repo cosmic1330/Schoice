@@ -63,6 +63,67 @@ export type StockTableType = {
   market_type: string;
 };
 
+export type FinancialMetricTableType = {
+  stock_id: string;
+  pe: number | null;
+  pb: number | null;
+  dividend_yield: number | null;
+  report_period: string | null;
+  gross_profit_margin: number | null;
+  operating_margin: number | null;
+  pre_tax_profit_margin: number | null;
+  roa: number | null;
+  roe: number | null;
+  book_value_per_share: number | null;
+  updated_at: string; // 或 Date
+};
+
+export type FundamentalConditionTableType = {
+  user_id: string;
+  conditions: string | null;
+};
+
+export type WatchStockTableType = {
+  user_id: string;
+  stock_id: string;
+};
+
+export type RecentFundamentalTableType = {
+  stock_id: string;
+  eps_recent_q1: number | null;
+  eps_recent_q1_name: string | null;
+  eps_recent_q2: number | null;
+  eps_recent_q2_name: string | null;
+  eps_recent_q3: number | null;
+  eps_recent_q3_name: string | null;
+  eps_recent_q4: number | null;
+  eps_recent_q4_name: string | null;
+  eps_recent_y1: number | null;
+  eps_recent_y1_name: string | null;
+  eps_recent_y2: number | null;
+  eps_recent_y2_name: string | null;
+  eps_recent_y3: number | null;
+  eps_recent_y3_name: string | null;
+  eps_recent_y4: number | null;
+  eps_recent_y4_name: string | null;
+};
+
+export type UserPromptsTableType = {
+  prompt_id: number;
+  user_id: string;
+  prompt_type: string | null;
+  prompt_name: string | null;
+  conditions: string | null;
+  updated_at: string; // or Date
+  alarm: boolean;
+  trash: boolean;
+};
+
+export type ProfilesTableType = {
+  user_id: string;
+  plan_tier: string | null;
+};
+
 /****
  * Sqlite
  ****/
@@ -188,16 +249,6 @@ export type SkillsCsvDataType = Omit<
   boll_lb: number;
 };
 
-export type FundamentalTableType = {
-  stock_id: string;
-  pe: number;
-  pb: number;
-  dividend_yield: number;
-  yoy: number;
-  eps: number;
-  dividend_yield_3y: number;
-  dividend_yield_5y: number;
-};
 
 export enum UrlType {
   Indicators = "indicators",
@@ -234,3 +285,11 @@ export type SelectType = {
   prompt_id: string;
   type: PromptType;
 };
+
+export type FundamentalPrompt = {
+  indicator: string;
+  operator: string;
+  value: string;
+}
+
+export type FundamentalPrompts = FundamentalPrompt[];
