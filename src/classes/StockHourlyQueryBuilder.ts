@@ -122,7 +122,6 @@ export class StockHourlyQueryBuilder extends BaseQueryBuilder {
     const query = `
       SELECT "0_hour_ago".stock_id as stock_id
       FROM hourly_deal "0_hour_ago"
-      JOIN stock ON "0_hour_ago".stock_id = stock.id
       JOIN hourly_skills "0_hour_ago_sk" ON "0_hour_ago".stock_id = "0_hour_ago_sk".stock_id AND "0_hour_ago".ts = "0_hour_ago_sk".ts
       ${hourJoins}
       WHERE "0_hour_ago".ts = "${

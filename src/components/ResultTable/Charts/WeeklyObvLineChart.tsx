@@ -28,7 +28,7 @@ const WeeklyObvLineChart = ({
       const formatData = res.reverse();
       setData(formatData);
     });
-  }, [t]);
+  }, [stock_id]);
   return (
     <Tooltip title={<ChartTooltip value={ObvIndicatorColor} />} arrow>
       <Box>

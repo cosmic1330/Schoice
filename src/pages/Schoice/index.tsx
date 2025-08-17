@@ -8,11 +8,10 @@ import {
 import CssBaseline from "@mui/material/CssBaseline";
 import { useEffect, useMemo } from "react";
 import { Outlet, useNavigate } from "react-router";
+import DatabasePerformanceDebugger from "../../components/Debug/DatabasePerformanceDebugger";
 import { DatabaseContext } from "../../context/DatabaseContext";
-import { useUser } from "../../context/UserContext";
 import useDatabase from "../../hooks/useDatabase";
 import useDatabaseDates from "../../hooks/useDatabaseDates";
-import useCloudStore from "../../store/Cloud.store";
 import useSchoiceStore from "../../store/Schoice.store";
 import { supabase } from "../../tools/supabase";
 import Header from "./layout/Header";
@@ -44,16 +43,8 @@ const Main = styled(Box)`
 function Schoice() {
   const db = useDatabase();
   const navigate = useNavigate();
-  const { user } = useUser();
-  const { dates, fetchDates } = useDatabaseDates(db);
+  const { dates, fetchDates, isLoading } = useDatabaseDates(db);
   const { theme } = useSchoiceStore();
-  const { reload } = useCloudStore();
-
-  useEffect(() => {
-    if (user) {
-      reload(user.id);
-    }
-  }, []);
 
   // 監聽系統的深色模式設定
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
@@ -85,7 +76,7 @@ function Schoice() {
   }, []);
 
   return (
-    <DatabaseContext.Provider value={{ db, dates, fetchDates }}>
+    <DatabaseContext.Provider value={{ db, dates, fetchDates, isLoading }}>
       <ThemeProvider theme={themeConfig}>
         <CssBaseline />
         <Main>
@@ -93,6 +84,7 @@ function Schoice() {
           <Header />
           <Outlet />
         </Main>
+        <DatabasePerformanceDebugger />
       </ThemeProvider>
     </DatabaseContext.Provider>
   );

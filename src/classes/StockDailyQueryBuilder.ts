@@ -101,7 +101,6 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
     const query = `
       SELECT "0_day_ago".stock_id as stock_id
       FROM daily_deal "0_day_ago"
-      JOIN stock ON "0_day_ago".stock_id = stock.id
       JOIN daily_skills "0_day_ago_sk" ON "0_day_ago".stock_id = "0_day_ago_sk".stock_id AND "0_day_ago".t = "0_day_ago_sk".t
       ${dayJoins}
       WHERE "0_day_ago".t = "${

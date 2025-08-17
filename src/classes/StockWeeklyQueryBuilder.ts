@@ -103,7 +103,6 @@ export class StockWeeklyQueryBuilder extends BaseQueryBuilder {
     const query = `
       SELECT "0_week_ago".stock_id as stock_id
       FROM weekly_deal "0_week_ago"
-      JOIN stock ON "0_week_ago".stock_id = stock.id
       JOIN weekly_skills "0_week_ago_sk" ON "0_week_ago".stock_id = "0_week_ago_sk".stock_id AND "0_week_ago".t = "0_week_ago_sk".t
       ${weekJoins}
       WHERE "0_week_ago".t = "${dates[0]}" AND ${conditions.join(" AND ")}

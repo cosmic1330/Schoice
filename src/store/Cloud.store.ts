@@ -5,7 +5,6 @@ import { supabase } from "../tools/supabase";
 import {
   FundamentalPrompts,
   PromptItem,
-  Prompts,
   PromptsMap,
   PromptType,
   PromptValue,
@@ -21,7 +20,10 @@ interface CloudState {
   fundamentalCondition: FundamentalPrompts | null;
   menu: StockTableType[];
   watchStocks: string[];
-  setFundamentalCondition: (condition: FundamentalPrompts | null, userId: string) => void;
+  setFundamentalCondition: (
+    condition: FundamentalPrompts | null,
+    userId: string
+  ) => void;
   removeFromWatchList: (stockId: string, userId: string) => Promise<void>;
   addToWatchList: (stockId: string, userId: string) => Promise<void>;
   addAlarm: (alarm: PromptItem, id: string, userId: string) => Promise<void>;
@@ -437,7 +439,17 @@ const useCloudStore = create<CloudState>((set, get) => ({
           }
         }
       }
-      const { data: menu } = await supabase.from("stock").select("*");
+      // 正向排列
+      const { data: menu1 } = await supabase
+        .from("stock")
+        .select("*")
+        .order("stock_id", { ascending: true })
+        .range(0, 999);
+      const { data: menu2 } = await supabase
+        .from("stock")
+        .select("*")
+        .order("stock_id", { ascending: true })
+        .range(1000, 1999);
       const { data: watchStocksData } = await supabase
         .from("watch_stock")
         .select("stock_id")
@@ -445,19 +457,21 @@ const useCloudStore = create<CloudState>((set, get) => ({
       const watchStocks: string[] =
         watchStocksData?.map((item) => item.stock_id) || [];
 
-      const { data: fundamentalCondition } = await supabase
+      const { data: fundamentalConditionData } = await supabase
         .from("fundamental_condition")
         .select("*")
         .eq("user_id", userId);
+      const fundamentalCondition =
+        fundamentalConditionData && fundamentalConditionData?.length > 0
+          && fundamentalConditionData[0].conditions;
       set(() => ({
         bulls,
         bears,
         alarms,
         trash,
-        menu: menu || [],
+        menu: [...(menu1 ?? []), ...(menu2 ?? [])],
         watchStocks: watchStocks,
-        fundamentalCondition:
-          JSON.parse(fundamentalCondition?.[0].conditions) || null,
+        fundamentalCondition: fundamentalCondition ? JSON.parse(fundamentalCondition) : null,
       }));
     } catch (error) {
       handleError(error, "reload");

@@ -1,8 +1,8 @@
 import { Box, Menu, MenuItem, Typography } from "@mui/material";
-import { useState } from "react";
+import React, { useState } from "react";
 import useSchoiceStore, { ChartType } from "../../store/Schoice.store";
 
-export default function SelectChartHead() {
+const SelectChartHead = React.memo(() => {
   const { chartType, changeChartType } = useSchoiceStore();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -52,4 +52,8 @@ export default function SelectChartHead() {
       </Menu>
     </Box>
   );
-}
+});
+
+SelectChartHead.displayName = "SelectChartHead";
+
+export default SelectChartHead;

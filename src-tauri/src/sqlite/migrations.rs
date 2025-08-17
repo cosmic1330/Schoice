@@ -183,5 +183,65 @@ pub fn value() -> Vec<Migration> {
             ",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 7,
+            description: "remove_foreign_keys_related_to_stock",
+            sql: "
+                -- daily_deal
+                CREATE TABLE daily_deal_tmp (
+                    stock_id TEXT,
+                    t TEXT,
+                    c REAL,
+                    o REAL,
+                    h REAL,
+                    l REAL,
+                    v INTEGER,
+                    PRIMARY KEY (stock_id, t)
+                );
+                INSERT INTO daily_deal_tmp SELECT * FROM daily_deal;
+                DROP TABLE daily_deal;
+                ALTER TABLE daily_deal_tmp RENAME TO daily_deal;
+
+                -- daily_skills
+                CREATE TABLE daily_skills_tmp AS SELECT * FROM daily_skills;
+                DROP TABLE daily_skills;
+                ALTER TABLE daily_skills_tmp RENAME TO daily_skills;
+
+                -- weekly_deal
+                CREATE TABLE weekly_deal_tmp AS SELECT * FROM weekly_deal;
+                DROP TABLE weekly_deal;
+                ALTER TABLE weekly_deal_tmp RENAME TO weekly_deal;
+
+                -- weekly_skills
+                CREATE TABLE weekly_skills_tmp AS SELECT * FROM weekly_skills;
+                DROP TABLE weekly_skills;
+                ALTER TABLE weekly_skills_tmp RENAME TO weekly_skills;
+
+                -- hourly_deal
+                CREATE TABLE hourly_deal_tmp AS SELECT * FROM hourly_deal;
+                DROP TABLE hourly_deal;
+                ALTER TABLE hourly_deal_tmp RENAME TO hourly_deal;
+
+                -- hourly_skills
+                CREATE TABLE hourly_skills_tmp AS SELECT * FROM hourly_skills;
+                DROP TABLE hourly_skills;
+                ALTER TABLE hourly_skills_tmp RENAME TO hourly_skills;
+
+                -- fundamental
+                CREATE TABLE fundamental_tmp AS SELECT * FROM fundamental;
+                DROP TABLE fundamental;
+                ALTER TABLE fundamental_tmp RENAME TO fundamental;
+            ",
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 8,
+            description: "remove stock from fundamental table",
+            sql: "
+                DROP TABLE fundamental;
+                DROP TABLE stock;
+            ",
+            kind: MigrationKind::Up,
+        },
     ]
 }

@@ -7,7 +7,7 @@ import useHighConcurrencyDeals, {
 import Process from "../../../../parts/Process";
 
 export default function UpdateDeals() {
-  const { run, status, persent, stop } = useHighConcurrencyDeals();
+  const { run, status, stop, percent } = useHighConcurrencyDeals();
 
   const handleClick = useCallback(async () => {
     if (status === Status.Idle) {
@@ -21,7 +21,7 @@ export default function UpdateDeals() {
   return (
     <Stack direction="row" alignItems="center" spacing={1}>
       <Typography variant="body2" color="text.secondary">
-        {status !== Status.Idle && <Process persent={persent} />}
+        {status !== Status.Idle && <Process percent={percent} />}
       </Typography>
       <Button
         variant="contained"

@@ -28,7 +28,7 @@ const WeeklyBollLineChart = ({
       const formatData = res.reverse();
       setData(formatData);
     });
-  }, [t]);
+  }, [stock_id]);
   return (
     <Tooltip title={<ChartTooltip value={BollIndicatorColor} />} arrow>
       <Box>

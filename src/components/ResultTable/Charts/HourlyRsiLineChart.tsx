@@ -32,7 +32,7 @@ const HourlyRsiLineChart = ({
       const formatData = res.reverse();
       setData(formatData);
     });
-  }, [t]);
+  }, [stock_id]);
   return (
     <Tooltip title={<ChartTooltip value={RsiIndicatorColor} />} arrow>
       <Box>

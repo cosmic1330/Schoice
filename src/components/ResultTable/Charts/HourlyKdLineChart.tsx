@@ -32,7 +32,7 @@ const HourlyKdLineChart = ({
       const formatData = res.reverse();
       setData(formatData);
     });
-  }, [t]);
+  }, [stock_id]);
   return (
     <Tooltip title={<ChartTooltip value={KdIndicatorColor} />} arrow>
       <Box>

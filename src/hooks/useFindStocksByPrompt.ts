@@ -93,7 +93,7 @@ export default function useFindStocksByPrompt() {
         if (weeklyDateResults) {
           const sqlWeeklyQuery = stockWeeklyQueryBuilder.generateSqlQuery({
             conditions: customWeeklyConditions,
-            dates: weeklyDateResults.map((result) => result.t), // 直接傳入查詢到的週資料日期
+            dates: weeklyDateResults.map((result:any) => result.t), // 直接傳入查詢到的週資料日期
             weeksRange: weeklyDateResults.length,
           });
           weeklySQL = sqlWeeklyQuery;
@@ -136,6 +136,7 @@ export default function useFindStocksByPrompt() {
         return res;
       } catch (error) {
         console.error("getStocksData error", error);
+        return [];
       }
     },
     [query]

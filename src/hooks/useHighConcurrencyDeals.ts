@@ -434,10 +434,10 @@ export default function useHighConcurrencyDeals() {
     setStatus(Status.Idle);
   }, [db, status, dates, fetchDates, menu]);
 
-  const persent = useMemo(() => {
+  const percent = useMemo(() => {
     if (downloaded === 0) return 0;
     return Math.round((downloaded / menu.length) * 100);
   }, [downloaded, menu]);
 
-  return { run, persent, stop, status };
+  return { run, percent, stop, status };
 }

@@ -1,9 +1,8 @@
 import { Box, Tooltip } from "@mui/material";
-import { useContext, useEffect, useState } from "react";
 import { Line, LineChart, YAxis } from "recharts";
-import { DatabaseContext } from "../../../context/DatabaseContext";
 import ChartTooltip from "./ChartTooltip";
 import { BollIndicatorColor, daily_count } from "./config";
+import useChartData from "./useChartData";
 
 const DailyBollLineChart = ({
   stock_id,
@@ -12,22 +11,14 @@ const DailyBollLineChart = ({
   stock_id: string;
   t: string;
 }) => {
-  const { db } = useContext(DatabaseContext);
-  const [data, setData] = useState<any[]>([]);
-  useEffect(() => {
-    if (!stock_id) return;
-    const sqlQuery = `SELECT daily_skills.t, ${BollIndicatorColor.map(
-      (item) => `NULLIF(${item.key}, 0) AS ${item.key}`
-    ).join(
-      ","
-    )} FROM daily_skills JOIN daily_deal ON daily_skills.t = daily_deal.t AND daily_skills.stock_id = daily_deal.stock_id WHERE daily_skills.stock_id = ${stock_id} AND daily_skills.t <= '${t}' ORDER BY daily_skills.t DESC LIMIT ${daily_count}`;
-    if (!db) return;
-
-    db?.select(sqlQuery).then((res: any) => {
-      const formatData = res.reverse();
-      setData(formatData);
-    });
-  }, [t]);
+  const { data } = useChartData({
+    stock_id,
+    t,
+    tableName: 'daily_skills',
+    dealTableName: 'daily_deal',
+    indicators: BollIndicatorColor,
+    limit: daily_count
+  });
   return (
     <Tooltip title={<ChartTooltip value={BollIndicatorColor} />} arrow>
       <Box>

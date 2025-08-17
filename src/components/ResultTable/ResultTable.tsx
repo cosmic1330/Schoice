@@ -5,23 +5,12 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { StockTableType } from "../../types";
 import ResultTableRow from "./ResultTableRow";
 import SelectChartHead from "./SelectChartHead";
 import { ActionButtonType } from "./types";
-import { StockTableType } from "../../types";
 
-const columns = [
-  "日期",
-  "代碼",
-  "名稱",
-  "收盤價",
-  "小時趨勢圖",
-  "日趨勢圖",
-  "週趨勢圖",
-  <SelectChartHead />,
-  "Action",
-];
 export default memo(function ResultTable({
   result,
   type = ActionButtonType.Increase,
@@ -32,6 +21,22 @@ export default memo(function ResultTable({
   const [visibleCount, setVisibleCount] = useState(10); // 初始顯示 10 筆
   const observerRef = useRef<IntersectionObserver | null>(null);
   const lastItemRef = useRef<HTMLTableRowElement | null>(null);
+
+  // 使用 useMemo 穩定 columns 陣列
+  const columns = useMemo(
+    () => [
+      "日期",
+      "代碼",
+      "名稱",
+      "收盤價",
+      "小時趨勢圖",
+      "日趨勢圖",
+      "週趨勢圖",
+      <SelectChartHead key="select-chart-head" />,
+      "Action",
+    ],
+    []
+  );
 
   useEffect(() => {
     if (observerRef.current) observerRef.current.disconnect(); // 清除舊的 observer
@@ -69,7 +74,7 @@ export default memo(function ResultTable({
               const isLastItem = index === visibleCount - 1;
               return (
                 <ResultTableRow
-                  key={index}
+                  key={`${row.stock_id}-${index}`}
                   row={row}
                   index={index}
                   type={type}

@@ -28,7 +28,7 @@ const WeeklyOscLineChart = ({
       const formatData = res.reverse();
       setData(formatData);
     });
-  }, [t]);
+  }, [stock_id]);
   return (
     <Tooltip title={<ChartTooltip value={OscIndicatorColor} />} arrow>
       <Box>

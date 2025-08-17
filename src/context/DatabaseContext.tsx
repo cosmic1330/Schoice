@@ -5,9 +5,11 @@ type DbContextType = {
   db: Database | null;
   dates: string[];
   fetchDates?: () => Promise<void>;
+  isLoading?: boolean;
 };
 
 export const DatabaseContext = createContext<DbContextType>({
   db: null,
   dates: [],
+  isLoading: false,
 });
