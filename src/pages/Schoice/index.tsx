@@ -6,11 +6,10 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import CssBaseline from "@mui/material/CssBaseline";
+import Database from "@tauri-apps/plugin-sql";
 import { useEffect, useMemo } from "react";
 import { Outlet, useNavigate } from "react-router";
-import DatabasePerformanceDebugger from "../../components/Debug/DatabasePerformanceDebugger";
 import { DatabaseContext } from "../../context/DatabaseContext";
-import useDatabase from "../../hooks/useDatabase";
 import useDatabaseDates from "../../hooks/useDatabaseDates";
 import useSchoiceStore from "../../store/Schoice.store";
 import { supabase } from "../../tools/supabase";
@@ -40,8 +39,7 @@ const Main = styled(Box)`
   }
 `;
 
-function Schoice() {
-  const db = useDatabase();
+function Schoice({ db }: { db: Database | null }) {
   const navigate = useNavigate();
   const { dates, fetchDates, isLoading } = useDatabaseDates(db);
   const { theme } = useSchoiceStore();
@@ -84,7 +82,7 @@ function Schoice() {
           <Header />
           <Outlet />
         </Main>
-        <DatabasePerformanceDebugger />
+        {/* <DatabasePerformanceDebugger /> */}
       </ThemeProvider>
     </DatabaseContext.Provider>
   );

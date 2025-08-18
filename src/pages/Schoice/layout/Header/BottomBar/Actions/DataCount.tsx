@@ -1,16 +1,14 @@
 import BarChartIcon from "@mui/icons-material/BarChart";
 import { Box, Stack, Typography } from "@mui/material";
-import SqliteDataManager from "../../../../../../classes/SqliteDataManager";
-import useSchoiceStore from "../../../../../../store/Schoice.store";
 import { error } from "@tauri-apps/plugin-log";
 import { useContext, useEffect } from "react";
+import SqliteDataManager from "../../../../../../classes/SqliteDataManager";
 import { DatabaseContext } from "../../../../../../context/DatabaseContext";
-
+import useSchoiceStore from "../../../../../../store/Schoice.store";
 
 export default function DataCount() {
-  const { dataCount, changeDataCount } = useSchoiceStore();
+  const { dataCount, updateProgress, changeDataCount } = useSchoiceStore();
   const { db } = useContext(DatabaseContext);
-
 
   useEffect(() => {
     if (!db) return;
@@ -43,6 +41,11 @@ export default function DataCount() {
         <Typography variant="body2" fontWeight={700} color="primary">
           {dataCount} 檔
         </Typography>
+        {updateProgress > 0 && (
+          <Typography variant="caption" color="textSecondary">
+            更新中: {updateProgress}
+          </Typography>
+        )}
       </Box>
     </Stack>
   );

@@ -45,7 +45,7 @@ export class StockWeeklyQueryBuilder extends BaseQueryBuilder {
         "自定義數值",
       ],
       indicators: Object.keys(new StockWeeklyQueryBuilder().mapping),
-      operators: [">", "<", ">=", "<=", "=", "!="],
+      operators: ["大於", "小於", "等於", "大於等於", "小於等於"],
     };
   }
 

@@ -83,7 +83,7 @@ const AppRoutes = () => {
         <Route path="/" element={<Navigate to="/schoice" />} />
         <Route path="/login" element={<Navigate to="/schoice" />} />
         <Route path="/register" element={<Navigate to="/schoice" />} />
-        <Route path="/schoice" element={<Schoice />}>
+        <Route path="/schoice" element={<Schoice db={db} />}>
           <Route index element={<PromptList />} />
           <Route path="favorite" element={<Favorite />} />
           <Route path="add" element={<PromptAdd />} />

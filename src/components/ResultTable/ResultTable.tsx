@@ -1,4 +1,3 @@
-import Paper from "@mui/material/Paper";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -36,43 +35,37 @@ export default memo(function ResultTable({
 
   // 使用 react-virtuoso 的 TableVirtuoso 取代手動切分與 IntersectionObserver
   return (
-    <Paper sx={{ width: "100%", overflow: "hidden" }}>
-      <TableVirtuoso
-        data={result}
-        style={{ height: 500 }}
-        components={{
-          Scroller: React.forwardRef((props: any, ref) => (
-            <TableContainer
-              ref={ref as any}
-              sx={{ maxHeight: 500 }}
-              {...props}
-            />
-          )),
-          Table: (props: any) => (
-            <Table stickyHeader aria-label="sticky table" {...props} />
-          ),
-          // 移除自定義 TableHead，改用 fixedHeaderContent
-          TableRow: (props: any) => <TableRow {...props} />,
-          TableBody: (props: any) => <TableBody {...props} />,
-        }}
-        // 使用 fixedHeaderContent 來渲染表頭，避免 header 被 virtuoso 覆蓋
-        fixedHeaderContent={() => (
-          <TableRow>
-            <TableCell width={5}></TableCell>
-            {columns.map((column, index) => (
-              <TableCell key={index}>{column}</TableCell>
-            ))}
-          </TableRow>
-        )}
-        itemContent={(index: number, row: StockTableType) => (
-          <ResultTableRow
-            key={`${row.stock_id}`}
-            row={row}
-            index={index}
-            type={type}
-          />
-        )}
-      />
-    </Paper>
+    <TableVirtuoso
+      data={result}
+      style={{ height: 500 }}
+      components={{
+        Scroller: React.forwardRef((props: any, ref) => (
+          <TableContainer ref={ref as any} sx={{ maxHeight: 500 }} {...props} />
+        )),
+        Table: (props: any) => (
+          <Table stickyHeader aria-label="sticky table" {...props} />
+        ),
+        // 移除自定義 TableHead，改用 fixedHeaderContent
+        TableRow: (props: any) => <TableRow {...props} />,
+        TableBody: (props: any) => <TableBody {...props} />,
+      }}
+      // 使用 fixedHeaderContent 來渲染表頭，避免 header 被 virtuoso 覆蓋
+      fixedHeaderContent={() => (
+        <TableRow>
+          <TableCell width={5}></TableCell>
+          {columns.map((column, index) => (
+            <TableCell key={index}>{column}</TableCell>
+          ))}
+        </TableRow>
+      )}
+      itemContent={(index: number, row: StockTableType) => (
+        <ResultTableRow
+          key={`${row.stock_id}`}
+          row={row}
+          index={index}
+          type={type}
+        />
+      )}
+    />
   );
 });

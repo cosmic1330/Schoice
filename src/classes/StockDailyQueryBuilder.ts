@@ -37,7 +37,7 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
     return {
       days: ["今天", "昨天", "前天", "3天前", "4天前", "5天前", "自定義數值"],
       indicators: Object.keys(new StockDailyQueryBuilder().mapping),
-      operators: [">", "<", ">=", "<=", "=", "!="],
+      operators: ["大於", "小於", "等於", "大於等於", "小於等於"],
     };
   }
 

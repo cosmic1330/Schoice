@@ -65,11 +65,10 @@ type StockProfile = {
 };
 
 export default function useHighConcurrencyDeals() {
-  const [downloaded, setDownloaded] = useState(0);
   const [status, setStatus] = useState(Status.Idle);
   const abortControllerRef = useRef<AbortController | null>(null);
   const { db, fetchDates, dates } = useContext(DatabaseContext);
-  const { changeDataCount } = useSchoiceStore();
+  const { changeDataCount, changeUpdateProgress, dataCount, updateProgress } = useSchoiceStore();
   const { menu } = useCloudStore();
 
   // 通用重試函式
@@ -151,6 +150,7 @@ export default function useHighConcurrencyDeals() {
   }, [abortControllerRef.current]);
 
   const run = useCallback(async () => {
+    console.log("menu", menu);
     if (status !== Status.Idle) return;
     // case pre:取消之前的請求
     if (abortControllerRef.current) {
@@ -168,7 +168,6 @@ export default function useHighConcurrencyDeals() {
     // case 1-1: 移除大於第二筆日期的資料(刪除最後一筆資料)
     const sqliteDataManager = new SqliteDataManager(db);
 
-    setDownloaded(() => 0);
     // case 1-2: 為新的請求創建一個新的 AbortController
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
@@ -206,7 +205,7 @@ export default function useHighConcurrencyDeals() {
       info("No reverse menu");
     }
 
-    changeDataCount(0);
+    changeUpdateProgress(0);
     for (let i = 0; i < menu.length; i++) {
       // 檢查是否手動停止
       if (sessionStorage.getItem("schoice:update:stop") === "true") {
@@ -420,8 +419,7 @@ export default function useHighConcurrencyDeals() {
           `Error fetching data for stock ${stock.stock_id} ${stock.stock_name}: ${e}`
         );
       }
-      setDownloaded((prev) => prev + 1);
-      changeDataCount(i + 1);
+      changeUpdateProgress(i + 1);
       localStorage.setItem("schoice:update:downloaded", stock.stock_id);
     }
 
@@ -429,15 +427,18 @@ export default function useHighConcurrencyDeals() {
     if (fetchDates) fetchDates();
     sqliteDataManager.getLatestDailyDealCount().then((result) => {
       changeDataCount(result.count);
+      changeUpdateProgress(0);
     });
 
     setStatus(Status.Idle);
   }, [db, status, dates, fetchDates, menu]);
 
   const percent = useMemo(() => {
-    if (downloaded === 0) return 0;
-    return Math.round((downloaded / menu.length) * 100);
-  }, [downloaded, menu]);
+    const totalToHave = dataCount + menu.length; // current DB count + all stocks to update
+    const currentHave = dataCount + updateProgress; // existing DB count + updated so far
+    if (totalToHave === 0) return 0;
+    return Math.round((currentHave / totalToHave) * 100);
+  }, [dataCount, updateProgress, menu]);
 
   return { run, percent, stop, status };
 }
