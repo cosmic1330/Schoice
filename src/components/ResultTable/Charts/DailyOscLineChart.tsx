@@ -16,18 +16,18 @@ const DailyOscLineChart = ({
   const [data, setData] = useState<any[]>([]);
   useEffect(() => {
     if (!stock_id) return;
-    const sqlQuery = `SELECT daily_skills.t, ${OscIndicatorColor.map(
+    const sqlQuery = `SELECT daily_deal.t, ${OscIndicatorColor.map(
       (item) => item.key
     ).join(
       ","
-    )} FROM daily_skills JOIN daily_deal ON daily_skills.t = daily_deal.t AND daily_skills.stock_id = daily_deal.stock_id WHERE daily_skills.stock_id = ${stock_id} AND daily_skills.t <= '${t}' ORDER BY daily_skills.t DESC LIMIT ${daily_count}`;
+    )} FROM daily_deal JOIN daily_skills ON daily_deal.t = daily_skills.t AND daily_deal.stock_id = daily_skills.stock_id WHERE daily_deal.stock_id = ${stock_id} AND daily_deal.t <= '${t}' ORDER BY daily_deal.t DESC LIMIT ${daily_count}`;
     if (!db) return;
 
     db?.select(sqlQuery).then((res: any) => {
       const formatData = res.reverse();
       setData(formatData);
     });
-  }, [stock_id]);
+  }, [stock_id, t]);
   return (
     <Tooltip title={<ChartTooltip value={OscIndicatorColor} />} arrow>
       <Box>

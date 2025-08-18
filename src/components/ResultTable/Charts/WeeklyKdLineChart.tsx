@@ -1,5 +1,5 @@
 import { Box, Tooltip } from "@mui/material";
-import { useContext, useEffect, useState } from "react";
+import { memo, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Line, LineChart, ReferenceLine, YAxis } from "recharts";
 import { DatabaseContext } from "../../../context/DatabaseContext";
 import ChartTooltip from "./ChartTooltip";
@@ -14,21 +14,54 @@ const WeeklyKdLineChart = ({
 }) => {
   const { db } = useContext(DatabaseContext);
   const [data, setData] = useState<any[]>([]);
+  const prevRef = useRef<any[] | null>(null);
+
   useEffect(() => {
     if (!stock_id) return;
+    if (!db) return;
+
     const sqlQuery = `SELECT weekly_skills.t, ${KdIndicatorColor.map(
       (item) => item.key
     ).join(
       ","
     )} FROM weekly_skills JOIN weekly_deal ON weekly_skills.t = weekly_deal.t AND weekly_skills.stock_id = weekly_deal.stock_id WHERE weekly_skills.stock_id = ${stock_id} AND weekly_skills.t <= '${t}' ORDER BY weekly_skills.t DESC LIMIT ${weekly_count}`;
 
-    if (!db) return;
-
-    db?.select(sqlQuery).then((res: any) => {
+    let cancelled = false;
+    db.select(sqlQuery).then((res: any) => {
+      if (cancelled) return;
       const formatData = res.reverse();
-      setData(formatData);
+      const prev = prevRef.current;
+      const changed =
+        !prev ||
+        prev.length !== formatData.length ||
+        JSON.stringify(prev) !== JSON.stringify(formatData);
+      if (changed) {
+        prevRef.current = formatData;
+        setData(formatData);
+      }
     });
-  }, [stock_id]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [stock_id, t, db]);
+
+  // 緩存 Line 元素，避免每次渲染重建
+  const lines = useMemo(
+    () =>
+      KdIndicatorColor.map((item, index) => (
+        <Line
+          key={index}
+          type="monotone"
+          dataKey={item.key}
+          stroke={item.color}
+          strokeWidth={1.5}
+          dot={false}
+        />
+      )),
+    []
+  );
+
   return (
     <Tooltip title={<ChartTooltip value={KdIndicatorColor} />} arrow>
       <Box>
@@ -36,20 +69,15 @@ const WeeklyKdLineChart = ({
           <YAxis domain={[0, 100]} hide />
           <ReferenceLine y={80} stroke="#d89584" strokeDasharray="3 3" />
           <ReferenceLine y={20} stroke="#d89584" strokeDasharray="3 3" />
-          {KdIndicatorColor.map((item, index) => (
-            <Line
-              key={index}
-              type="monotone"
-              dataKey={item.key}
-              stroke={item.color}
-              strokeWidth={1.5}
-              dot={false}
-            />
-          ))}
+          {lines}
         </LineChart>
       </Box>
     </Tooltip>
   );
 };
 
-export default WeeklyKdLineChart;
+export default memo(WeeklyKdLineChart, (prevProps, nextProps) => {
+  return (
+    prevProps.stock_id === nextProps.stock_id && prevProps.t === nextProps.t
+  );
+});

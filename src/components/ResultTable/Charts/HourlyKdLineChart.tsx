@@ -18,13 +18,13 @@ const HourlyKdLineChart = ({
   const [data, setData] = useState<any[]>([]);
   useEffect(() => {
     if (!stock_id) return;
-    const sqlQuery = `SELECT hourly_skills.ts, ${KdIndicatorColor.map(
+    const sqlQuery = `SELECT hourly_deal.ts, ${KdIndicatorColor.map(
       (item) => item.key
     ).join(
       ","
-    )} FROM hourly_skills JOIN hourly_deal ON hourly_skills.ts = hourly_deal.ts AND hourly_skills.stock_id = hourly_deal.stock_id WHERE ${stock_id} = hourly_skills.stock_id AND hourly_skills.ts <= '${
+    )} FROM hourly_deal JOIN hourly_skills ON hourly_deal.ts = hourly_skills.ts AND hourly_deal.stock_id = hourly_skills.stock_id WHERE ${stock_id} = hourly_deal.stock_id AND hourly_deal.ts <= '${
       dateFormat(t, Mode.StringToNumber) * 10000 + 1400
-    }' ORDER BY hourly_skills.ts DESC LIMIT ${hourly_count}`;
+    }' ORDER BY hourly_deal.ts DESC LIMIT ${hourly_count}`;
 
     if (!db) return;
 
@@ -32,7 +32,7 @@ const HourlyKdLineChart = ({
       const formatData = res.reverse();
       setData(formatData);
     });
-  }, [stock_id]);
+  }, [stock_id, t]);
   return (
     <Tooltip title={<ChartTooltip value={KdIndicatorColor} />} arrow>
       <Box>

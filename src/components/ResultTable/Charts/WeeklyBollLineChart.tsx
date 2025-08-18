@@ -16,11 +16,11 @@ const WeeklyBollLineChart = ({
   const [data, setData] = useState<any[]>([]);
   useEffect(() => {
     if (!stock_id) return;
-    const sqlQuery = `SELECT weekly_skills.t, ${BollIndicatorColor.map(
-      (item) => `NULLIF(${item.key}, 0) AS ${item.key}`
+    const sqlQuery = `SELECT weekly_deal.t, ${BollIndicatorColor.map(
+      (item) => item.key
     ).join(
       ","
-    )} FROM weekly_skills JOIN weekly_deal ON weekly_skills.t = weekly_deal.t AND weekly_skills.stock_id = weekly_deal.stock_id WHERE weekly_skills.stock_id = ${stock_id} AND weekly_skills.t <= '${t}' ORDER BY weekly_skills.t DESC LIMIT ${weekly_count}`;
+    )} FROM weekly_deal JOIN weekly_skills ON weekly_deal.t = weekly_skills.t AND weekly_deal.stock_id = weekly_skills.stock_id WHERE weekly_deal.stock_id = ${stock_id} AND weekly_deal.t <= '${t}' ORDER BY weekly_deal.t DESC LIMIT ${weekly_count}`;
 
     if (!db) return;
 
@@ -28,7 +28,7 @@ const WeeklyBollLineChart = ({
       const formatData = res.reverse();
       setData(formatData);
     });
-  }, [stock_id]);
+  }, [stock_id, t]);
   return (
     <Tooltip title={<ChartTooltip value={BollIndicatorColor} />} arrow>
       <Box>

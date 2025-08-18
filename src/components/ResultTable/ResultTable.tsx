@@ -3,9 +3,9 @@ import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import React, { memo, useMemo } from "react";
+import { TableVirtuoso } from "react-virtuoso";
 import { StockTableType } from "../../types";
 import ResultTableRow from "./ResultTableRow";
 import SelectChartHead from "./SelectChartHead";
@@ -18,10 +18,6 @@ export default memo(function ResultTable({
   result: StockTableType[];
   type?: ActionButtonType;
 }) {
-  const [visibleCount, setVisibleCount] = useState(10); // 初始顯示 10 筆
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const lastItemRef = useRef<HTMLTableRowElement | null>(null);
-
   // 使用 useMemo 穩定 columns 陣列
   const columns = useMemo(
     () => [
@@ -38,53 +34,45 @@ export default memo(function ResultTable({
     []
   );
 
-  useEffect(() => {
-    if (observerRef.current) observerRef.current.disconnect(); // 清除舊的 observer
-
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setVisibleCount((prev) => Math.min(prev + 10, result.length)); // 每次+10筆
-        }
-      },
-      { rootMargin: "100px" }
-    );
-
-    if (lastItemRef.current) {
-      observerRef.current.observe(lastItemRef.current);
-    }
-
-    return () => observerRef.current?.disconnect();
-  }, [visibleCount, result.length]);
-
+  // 使用 react-virtuoso 的 TableVirtuoso 取代手動切分與 IntersectionObserver
   return (
     <Paper sx={{ width: "100%", overflow: "hidden" }}>
-      <TableContainer sx={{ maxHeight: 500 }}>
-        <Table stickyHeader aria-label="sticky table">
-          <TableHead>
-            <TableRow>
-              <TableCell width={5}></TableCell>
-              {columns.map((column, index) => (
-                <TableCell key={index}>{column}</TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {result.slice(0, visibleCount).map((row, index) => {
-              const isLastItem = index === visibleCount - 1;
-              return (
-                <ResultTableRow
-                  key={`${row.stock_id}-${index}`}
-                  row={row}
-                  index={index}
-                  type={type}
-                  ref={isLastItem ? lastItemRef : null} // 綁定最後一個 row
-                />
-              );
-            })}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <TableVirtuoso
+        data={result}
+        style={{ height: 500 }}
+        components={{
+          Scroller: React.forwardRef((props: any, ref) => (
+            <TableContainer
+              ref={ref as any}
+              sx={{ maxHeight: 500 }}
+              {...props}
+            />
+          )),
+          Table: (props: any) => (
+            <Table stickyHeader aria-label="sticky table" {...props} />
+          ),
+          // 移除自定義 TableHead，改用 fixedHeaderContent
+          TableRow: (props: any) => <TableRow {...props} />,
+          TableBody: (props: any) => <TableBody {...props} />,
+        }}
+        // 使用 fixedHeaderContent 來渲染表頭，避免 header 被 virtuoso 覆蓋
+        fixedHeaderContent={() => (
+          <TableRow>
+            <TableCell width={5}></TableCell>
+            {columns.map((column, index) => (
+              <TableCell key={index}>{column}</TableCell>
+            ))}
+          </TableRow>
+        )}
+        itemContent={(index: number, row: StockTableType) => (
+          <ResultTableRow
+            key={`${row.stock_id}`}
+            row={row}
+            index={index}
+            type={type}
+          />
+        )}
+      />
     </Paper>
   );
 });
