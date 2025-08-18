@@ -28,8 +28,25 @@ export default function RuleContent({ select }: { select: SelectType | null }) {
 
   const handleCopy = async () => {
     try {
-      await writeText(JSON.stringify(select));
+      const data = select?.type === PromptType.BULL ? bulls : bears;
+      if (!data || !select) {
+        toast.error("無法複製，請選擇一個策略條件");
+        return;
+      }
+      const prompt = data[select.prompt_id];
+      if (!prompt) {
+        toast.error("無法複製，找不到對應的策略條件");
+        return;
+      }
+      await writeText(
+        JSON.stringify(
+          { ...prompt, type: select.type },
+          null,
+          2
+        )
+      );
       let permissionGranted = await isPermissionGranted();
+      console.log("Permission granted:", permissionGranted);
       if (!permissionGranted) {
         const permission = await requestPermission();
         permissionGranted = permission === "granted";

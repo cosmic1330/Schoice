@@ -2,9 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": [
-    "main"
-  ],
+  "windows": ["main"],
   "permissions": [
     "core:default",
     "opener:default",
@@ -16,6 +14,7 @@
     "core:window:allow-set-title",
     "core:webview:allow-create-webview-window",
     "core:window:allow-set-always-on-top",
+    "clipboard-manager:allow-write-text",
     {
       "identifier": "http:default",
       "allow": [
@@ -26,7 +25,6 @@
           "url": "http://**"
         }
       ]
-    },
-    "sql:default"
+    }
   ]
 }

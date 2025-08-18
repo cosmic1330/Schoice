@@ -43,13 +43,13 @@ export default function InsertRuleButton() {
     const timer = setTimeout(() => {
       try {
         const data = JSON.parse(json);
-        if (data.id && data.name && data.value && data.type) {
+        if (data.name && data.conditions && data.type) {
           setName(data.name);
-          setValue(data.value);
+          setValue(data.conditions);
           setType(data.type);
         } else {
           throw new Error(
-            "缺少必要欄位，請檢查是否包含 id, name, type, value.daily, value.weekly"
+            "缺少必要欄位，請檢查是否包含 name, type, conditions.hourly ,conditions.daily, conditions.weekly"
           );
         }
       } catch (err: any) {
@@ -74,7 +74,7 @@ export default function InsertRuleButton() {
         toast.success("Insert success");
         handleCancel();
       } else {
-        toast.error(`缺少必要欄位，請檢查是否包含 id, name, type, user`);
+        toast.error(`缺少必要欄位，請檢查是否包含 name, type, value, user`);
       }
     } catch (error: any) {
       if (error instanceof SyntaxError) {
