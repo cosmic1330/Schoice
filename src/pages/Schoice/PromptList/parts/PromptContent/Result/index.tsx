@@ -35,6 +35,7 @@ export default function Result({ select }: { select: SelectType | null }) {
   }, [query]);
 
   const run = useCallback(async () => {
+    setResult([]);
     if (!select) {
       setLoading(false);
       return;

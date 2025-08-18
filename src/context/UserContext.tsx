@@ -30,7 +30,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) reload(session.user.id);
       setLoading(false);
     };
 
@@ -53,6 +52,13 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     user,
     loading,
   };
+
+  useEffect(() => {
+    if (user) {
+      // 如果有使用者登入，則從 Cloud Store 中載入使用者資料
+      reload(user.id);
+    }
+  }, [user]);
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };

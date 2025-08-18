@@ -5,24 +5,15 @@ import { IconButton, Tooltip } from "@mui/material";
 import TableCell from "@mui/material/TableCell";
 // TableRow removed: Virtuoso provides the row wrapper
 import { open } from "@tauri-apps/plugin-shell";
-import {
-  lazy,
-  memo,
-  Suspense,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { lazy, memo, Suspense, useContext, useState } from "react";
 import { toast } from "react-toastify";
 import { DatabaseContext } from "../../context/DatabaseContext";
 import { useUser } from "../../context/UserContext";
 import useDetailWebviewWindow from "../../hooks/useDetailWebviewWindow";
-import useFindStocksByPrompt from "../../hooks/useFindStocksByPrompt";
 import useCloudStore from "../../store/Cloud.store";
 import useSchoiceStore from "../../store/Schoice.store";
 import { StockTableType } from "../../types";
+import ClosePrice from "./ClosePrice";
 import FundamentalTooltip from "./FundamentalTooltip";
 import { ActionButtonType } from "./types";
 
@@ -59,27 +50,6 @@ export default memo(function ResultTableRow({
   const { todayDate } = useSchoiceStore();
   const [addLoading, setAddLoading] = useState(false);
   const [removeLoading, setRemoveLoading] = useState(false);
-  const [dailyData, setDailyData] = useState<any[]>([]);
-  const { getOneDateDailyDataByStockId } = useFindStocksByPrompt();
-
-  // 使用 useCallback 穩定函數參照
-  const fetchDailyData = useCallback(async () => {
-    if (!dates[todayDate] || !row.stock_id) {
-      setDailyData([]);
-      return;
-    }
-
-    try {
-      const data = await getOneDateDailyDataByStockId(
-        dates[todayDate],
-        row.stock_id
-      );
-      setDailyData(data || []);
-    } catch (error) {
-      console.error("Error fetching daily data:", error);
-      setDailyData([]);
-    }
-  }, [dates[todayDate], row.stock_id, getOneDateDailyDataByStockId]);
 
   const handleAddToWatchList = async () => {
     if (!user) {
@@ -109,91 +79,64 @@ export default memo(function ResultTableRow({
     }
   };
 
-  useEffect(() => {
-    fetchDailyData();
-  }, [fetchDailyData]);
-
-  const t = useMemo(() => {
-    if (dailyData.length === 0) return "N/A";
-    return dailyData[dailyData.length - 1].t || "N/A";
-  }, [dailyData]);
-
-  const c = useMemo(() => {
-    if (dailyData.length === 0) return "N/A";
-    return dailyData[dailyData.length - 1].c || "N/A";
-  }, [dailyData]);
-
   // 回傳只有 TableCell（不包 TableRow），讓 Virtuoso 負責包裹 <tr>
   return (
     <>
       <TableCell>{index + 1}.</TableCell>
-      <TableCell>{t}</TableCell>
+      <TableCell>{dates[todayDate]}</TableCell>
       <TableCell>{row.stock_id}</TableCell>
       <TableCell>
         <Tooltip title={<FundamentalTooltip row={row} />}>
           <span>{row.stock_name}</span>
         </Tooltip>
       </TableCell>
-      <TableCell>{c}</TableCell>
       <TableCell>
-        {c !== "N/A" ? (
-          <Suspense
-            fallback={
-              <span
-                style={{ display: "inline-block", width: 24, height: 12 }}
-              />
-            }
-          >
-            <HourlyUltraTinyLineChart stock_id={row.stock_id} t={t} />
-          </Suspense>
-        ) : (
-          c
-        )}
+        <ClosePrice row={row} t={dates[todayDate]} />
       </TableCell>
       <TableCell>
-        {c !== "N/A" ? (
-          <Suspense
-            fallback={
-              <span
-                style={{ display: "inline-block", width: 48, height: 12 }}
-              />
-            }
-          >
-            <DailyUltraTinyLineChart stock_id={row.stock_id} t={t} />
-          </Suspense>
-        ) : (
-          c
-        )}
+        <Suspense
+          fallback={
+            <span style={{ display: "inline-block", width: 24, height: 12 }} />
+          }
+        >
+          <HourlyUltraTinyLineChart
+            stock_id={row.stock_id}
+            t={dates[todayDate]}
+          />
+        </Suspense>
       </TableCell>
       <TableCell>
-        {c !== "N/A" ? (
-          <Suspense
-            fallback={
-              <span
-                style={{ display: "inline-block", width: 24, height: 12 }}
-              />
-            }
-          >
-            <WeeklyUltraTinyLineChart stock_id={row.stock_id} t={t} />
-          </Suspense>
-        ) : (
-          c
-        )}
+        <Suspense
+          fallback={
+            <span style={{ display: "inline-block", width: 48, height: 12 }} />
+          }
+        >
+          <DailyUltraTinyLineChart
+            stock_id={row.stock_id}
+            t={dates[todayDate]}
+          />
+        </Suspense>
       </TableCell>
       <TableCell>
-        {c !== "N/A" ? (
-          <Suspense
-            fallback={
-              <span
-                style={{ display: "inline-block", width: 48, height: 12 }}
-              />
-            }
-          >
-            <RowChart row={row} t={t} />
-          </Suspense>
-        ) : (
-          c
-        )}
+        <Suspense
+          fallback={
+            <span style={{ display: "inline-block", width: 24, height: 12 }} />
+          }
+        >
+          <WeeklyUltraTinyLineChart
+            stock_id={row.stock_id}
+            t={dates[todayDate]}
+          />
+        </Suspense>
+      </TableCell>
+      <TableCell>
+        <Suspense
+          fallback={
+            <span style={{ display: "inline-block", width: 48, height: 12 }} />
+          }
+        >
+          <RowChart row={row} t={dates[todayDate]} />
+        </Suspense>
       </TableCell>
       <TableCell>
         <IconButton
