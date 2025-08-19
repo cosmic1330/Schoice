@@ -7,7 +7,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsIcon from "@mui/icons-material/Settings";
 import SmartButtonIcon from "@mui/icons-material/SmartButton";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
-import { Box, IconButton, Stack, styled, SvgIcon, Tooltip } from "@mui/material";
+import { Box, IconButton, Stack, styled, Tooltip } from "@mui/material";
 import { useNavigate } from "react-router";
 import LanguageSwitcher from "../../../../components/LanguageSwitcher";
 import useSchoiceStore from "../../../../store/Schoice.store";
