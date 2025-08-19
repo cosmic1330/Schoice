@@ -34,8 +34,7 @@ export default function useHighConcurrencyDeals() {
   const [status, setStatus] = useState(Status.Idle);
   const abortControllerRef = useRef<AbortController | null>(null);
   const { db, fetchDates, dates } = useContext(DatabaseContext);
-  const { changeDataCount, changeUpdateProgress } =
-    useSchoiceStore();
+  const { changeDataCount, changeUpdateProgress } = useSchoiceStore();
   const [menu, setMenu] = useState<StockTableType[]>([]);
 
   // 通用重試函式
@@ -176,13 +175,22 @@ export default function useHighConcurrencyDeals() {
       info("No reverse menu");
     }
 
-    changeUpdateProgress(0);
-    for (let i = 0; i < menu.length; i++) {
+    const workMenu = [...menu];
+    console.log(
+      "run start, workMenu length:",
+      workMenu.length,
+      "previousDownloaded:",
+      previousDownloaded
+    );
+
+    for (let i = 0; i < workMenu.length; i++) {
+      const stock = workMenu[i];
+      console.log("processing", i + 1, "/", workMenu.length, stock.stock_id);
+
       // 檢查是否手動停止
       if (sessionStorage.getItem("schoice:update:stop") === "true") {
         break;
       }
-      const stock = menu[i];
 
       // 上次是在盤中請求則刪除前筆資料
       const preFetchTime = localStorage.getItem(
