@@ -1,0 +1,27 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "detail",
+  "description": "Capability for the detail window",
+  "windows": ["detail"],
+  "permissions": [
+    "core:default",
+    "opener:default",
+    "store:default",
+    "core:window:allow-show",
+    "core:window:allow-unminimize",
+    "notification:allow-request-permission",
+    "notification:default",
+    "log:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "https://**"
+        },
+        {
+          "url": "http://**"
+        }
+      ]
+    }
+  ]
+}

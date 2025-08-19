@@ -6,8 +6,8 @@ import Result from "./Result";
 import UnSelect from "./UnSelect";
 
 export default function PromptContent() {
-  const { select, dataCount } = useSchoiceStore();
-  return dataCount === 0 && false ? (
+  const { select, data_count } = useSchoiceStore();
+  return data_count === 0 && false ? (
     <Null />
   ) : select ? (
     <Container>

@@ -1,20 +1,23 @@
 import {
   Box,
+  CircularProgress,
   createTheme,
   styled,
   ThemeProvider,
   useMediaQuery,
 } from "@mui/material";
 import CssBaseline from "@mui/material/CssBaseline";
-import Database from "@tauri-apps/plugin-sql";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Outlet, useNavigate } from "react-router";
 import { DatabaseContext } from "../../context/DatabaseContext";
+import { useUser } from "../../context/UserContext";
+import useDatabase from "../../hooks/useDatabase";
 import useDatabaseDates from "../../hooks/useDatabaseDates";
 import useSchoiceStore from "../../store/Schoice.store";
 import { supabase } from "../../tools/supabase";
 import Header from "./layout/Header";
 import SideBar from "./layout/Sidebar";
+import WaitingPage from "./WaitingPage";
 
 const Main = styled(Box)`
   width: 100%;
@@ -39,10 +42,23 @@ const Main = styled(Box)`
   }
 `;
 
-function Schoice({ db }: { db: Database | null }) {
+function Schoice() {
+  const { session, loading } = useUser();
+  const db = useDatabase();
+  const [isAppReady, setIsAppReady] = useState(false);
   const navigate = useNavigate();
   const { dates, fetchDates, isLoading } = useDatabaseDates(db);
   const { theme } = useSchoiceStore();
+
+  // 檢查是否所有依賴都已準備好
+  const userReady = !loading && session !== null;
+  const dbReady = db !== null;
+  const allReady = userReady && dbReady;
+
+  const handleReady = () => {
+    setIsAppReady(true);
+  };
+
 
   // 監聽系統的深色模式設定
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
@@ -72,6 +88,34 @@ function Schoice({ db }: { db: Database | null }) {
         navigate("/login");
       });
   }, []);
+
+  // 如果使用者正在載入，顯示載入畫面
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // 如果使用者已登入但資料庫未準備好，或者整個應用尚未準備好，顯示等待頁面
+  if (!allReady || !isAppReady) {
+    return (
+      <WaitingPage
+        userLoading={loading}
+        userReady={userReady}
+        dbReady={dbReady}
+        onReady={handleReady}
+      />
+    );
+  }
 
   return (
     <DatabaseContext.Provider value={{ db, dates, fetchDates, isLoading }}>

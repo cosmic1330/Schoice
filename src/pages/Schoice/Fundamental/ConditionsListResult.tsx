@@ -6,7 +6,6 @@ import { useUser } from "../../../context/UserContext";
 import useDatabaseQuery from "../../../hooks/useDatabaseQuery";
 import useCloudStore from "../../../store/Cloud.store";
 import useSchoiceStore from "../../../store/Schoice.store";
-import { supabase } from "../../../tools/supabase";
 import { FundamentalPrompts, StockTableType } from "../../../types";
 
 export default function ConditionsListResult({

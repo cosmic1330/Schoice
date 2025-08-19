@@ -125,10 +125,16 @@ export default function useBacktestFunc() {
           )}"`;
           const stocks_data = await query(sql);
           if (stocks_data) {
-            const data = stocks_data.reduce((acc, cur) => {
-              acc[cur.stock_id] = cur;
-              return acc;
-            }, {} as { [stock_id: string]: { stock_id: string } });
+            const data = stocks_data.reduce(
+              (
+                acc: { [x: string]: any },
+                cur: { stock_id: string | number }
+              ) => {
+                acc[cur.stock_id] = cur;
+                return acc;
+              },
+              {} as { [stock_id: string]: { stock_id: string } }
+            );
             data_memory.current = { date, data };
             sell_memory.current = null;
             buy_memory.current = null;
@@ -146,8 +152,9 @@ export default function useBacktestFunc() {
         ) {
           let dailySQL = "";
           if (select.conditions.daily.length > 0) {
-            const customDailyConditions = select.conditions.daily.map((prompt) =>
-              stockDailyQueryBuilder.generateExpression(prompt).join(" ")
+            const customDailyConditions = select.conditions.daily.map(
+              (prompt) =>
+                stockDailyQueryBuilder.generateExpression(prompt).join(" ")
             );
             const sqlDailyQuery = stockDailyQueryBuilder.generateSqlQuery({
               conditions: customDailyConditions,
@@ -158,14 +165,17 @@ export default function useBacktestFunc() {
 
           let weeklySQL = "";
           if (select.conditions.weekly.length > 0) {
-            const customWeeklyConditions = select.conditions.weekly.map((prompt) =>
-              stockWeeklyQueryBuilder.generateExpression(prompt).join(" ")
+            const customWeeklyConditions = select.conditions.weekly.map(
+              (prompt) =>
+                stockWeeklyQueryBuilder.generateExpression(prompt).join(" ")
             );
             const weeklyDateResults = await getWeekDates(dates[date_index]);
             if (weeklyDateResults) {
               const sqlWeeklyQuery = stockWeeklyQueryBuilder.generateSqlQuery({
                 conditions: customWeeklyConditions,
-                dates: weeklyDateResults.map((result) => result.t), // 直接傳入查詢到的週資料日期
+                dates: weeklyDateResults.map(
+                  (result: { t: string }) => result.t
+                ), // 直接傳入查詢到的週資料日期
                 weeksRange: weeklyDateResults.length,
               });
               weeklySQL = sqlWeeklyQuery;
@@ -174,8 +184,9 @@ export default function useBacktestFunc() {
 
           let hourlySQL = "";
           if (select.conditions.hourly?.length > 0) {
-            const customHourlyConditions = select.conditions.hourly.map((prompt) =>
-              stockHourlyQueryBuilder.generateExpression(prompt).join(" ")
+            const customHourlyConditions = select.conditions.hourly.map(
+              (prompt) =>
+                stockHourlyQueryBuilder.generateExpression(prompt).join(" ")
             );
             const hourlyDateResults = await getHourDates(dates[date_index]);
             if (hourlyDateResults) {

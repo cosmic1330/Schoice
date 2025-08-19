@@ -7,7 +7,7 @@ import useHighConcurrencyDeals, {
 import useSchoiceStore from "../../../../../../store/Schoice.store";
 
 export default function UpdateDeals() {
-  const { updateProgress } = useSchoiceStore();
+  const { update_progress } = useSchoiceStore();
   const { run, status, stop } = useHighConcurrencyDeals();
 
   const handleClick = useCallback(async () => {
@@ -22,9 +22,9 @@ export default function UpdateDeals() {
   return (
     <Stack direction="row" alignItems="center" spacing={1}>
       <Typography variant="body2" color="text.secondary">
-        {status !== Status.Idle && updateProgress > 0 && (
+        {status !== Status.Idle && update_progress > 0 && (
           <Typography variant="caption" color="textSecondary">
-            更新中: {updateProgress}
+            更新中: {update_progress}
           </Typography>
         )}
       </Typography>

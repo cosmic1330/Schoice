@@ -167,7 +167,7 @@ export default memo(function ResultTableRow({
             style={{ width: 24, height: 24 }}
           />
         </IconButton>
-        <IconButton
+        {/* <IconButton
           onClick={() =>
             open(`https://statementdog.com/analysis/${row.stock_id}/`)
           }
@@ -177,7 +177,7 @@ export default memo(function ResultTableRow({
             alt="財報狗"
             src="/naughty.svg"
           />
-        </IconButton>
+        </IconButton> */}
         <IconButton onClick={openDetailWindow}>
           <InfoIcon />
         </IconButton>
