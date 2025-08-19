@@ -7,7 +7,7 @@ import { DatabaseContext } from "../../../../../../context/DatabaseContext";
 import useSchoiceStore from "../../../../../../store/Schoice.store";
 
 export default function DataCount() {
-  const { dataCount, updateProgress, changeDataCount } = useSchoiceStore();
+  const { dataCount, changeDataCount } = useSchoiceStore();
   const { db } = useContext(DatabaseContext);
 
   useEffect(() => {
@@ -41,11 +41,6 @@ export default function DataCount() {
         <Typography variant="body2" fontWeight={700} color="primary">
           {dataCount} 檔
         </Typography>
-        {updateProgress > 0 && (
-          <Typography variant="caption" color="textSecondary">
-            更新中: {updateProgress}
-          </Typography>
-        )}
       </Box>
     </Stack>
   );

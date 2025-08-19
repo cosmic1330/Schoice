@@ -4,10 +4,11 @@ import { useCallback } from "react";
 import useHighConcurrencyDeals, {
   Status,
 } from "../../../../../../hooks/useHighConcurrencyDeals";
-import Process from "../../../../parts/Process";
+import useSchoiceStore from "../../../../../../store/Schoice.store";
 
 export default function UpdateDeals() {
-  const { run, status, stop, percent } = useHighConcurrencyDeals();
+  const { updateProgress } = useSchoiceStore();
+  const { run, status, stop } = useHighConcurrencyDeals();
 
   const handleClick = useCallback(async () => {
     if (status === Status.Idle) {
@@ -21,7 +22,11 @@ export default function UpdateDeals() {
   return (
     <Stack direction="row" alignItems="center" spacing={1}>
       <Typography variant="body2" color="text.secondary">
-        {status !== Status.Idle && <Process percent={percent} />}
+        {status !== Status.Idle && updateProgress > 0 && (
+          <Typography variant="caption" color="textSecondary">
+            更新中: {updateProgress}
+          </Typography>
+        )}
       </Typography>
       <Button
         variant="contained"

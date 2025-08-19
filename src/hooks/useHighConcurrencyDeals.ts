@@ -4,14 +4,7 @@ import { fetch } from "@tauri-apps/plugin-http";
 import { error, info } from "@tauri-apps/plugin-log";
 import { load as StoreLoad } from "@tauri-apps/plugin-store";
 import pLimit from "p-limit";
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import SqliteDataManager from "../classes/SqliteDataManager";
 import { DatabaseContext } from "../context/DatabaseContext";
@@ -41,7 +34,7 @@ export default function useHighConcurrencyDeals() {
   const [status, setStatus] = useState(Status.Idle);
   const abortControllerRef = useRef<AbortController | null>(null);
   const { db, fetchDates, dates } = useContext(DatabaseContext);
-  const { changeDataCount, changeUpdateProgress, dataCount, updateProgress } =
+  const { changeDataCount, changeUpdateProgress } =
     useSchoiceStore();
   const [menu, setMenu] = useState<StockTableType[]>([]);
 
@@ -411,13 +404,6 @@ export default function useHighConcurrencyDeals() {
     setStatus(Status.Idle);
   }, [db, status, dates, fetchDates, menu]);
 
-  const percent = useMemo(() => {
-    const totalToHave = dataCount + menu.length; // current DB count + all stocks to update
-    const currentHave = dataCount + updateProgress; // existing DB count + updated so far
-    if (totalToHave === 0) return 0;
-    return Math.round((currentHave / totalToHave) * 100);
-  }, [dataCount, updateProgress, menu]);
-
   useEffect(() => {
     StoreLoad("store.json", { autoSave: false }).then((store) => {
       store.get("menu").then((menu) => {
@@ -427,5 +413,5 @@ export default function useHighConcurrencyDeals() {
     });
   }, []);
 
-  return { run, percent, stop, status };
+  return { run, stop, status };
 }

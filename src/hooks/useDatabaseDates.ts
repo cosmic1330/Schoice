@@ -19,17 +19,13 @@ export default function useDatabaseDates(db: Database | null) {
     setIsLoading(true);
 
     try {
-      console.log("useDatabaseDates: 開始查詢日期");
       const res = (await db.select(
         "SELECT DISTINCT t FROM daily_deal ORDER BY t DESC;"
       )) as { t: string }[];
 
-      console.log("useDatabaseDates: 查詢結果", res);
-
       if (res && Array.isArray(res)) {
         const dateArray = res.map((item) => item.t);
         setDates(dateArray);
-        console.log("useDatabaseDates: 設定日期陣列", dateArray.length, "筆");
       } else {
         console.warn("useDatabaseDates: 查詢結果不是預期的陣列格式", res);
         setDates([]);

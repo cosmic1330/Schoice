@@ -17,6 +17,7 @@ export default function Result({ select }: { select: SelectType }) {
   const query = useDatabaseQuery();
 
   const run = useCallback(async () => {
+    setResult([]);
     const item =
       select.type === "bull"
         ? bulls[select.prompt_id]

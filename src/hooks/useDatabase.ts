@@ -50,7 +50,7 @@ export default function useDatabase() {
     };
 
     initializeDb();
-  }, [isInitializing, db]);
+  }, []);
 
   console.log("useDatabase 當前狀態:", { db: !!db, isInitializing });
   return db;
