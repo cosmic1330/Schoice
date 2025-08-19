@@ -4,17 +4,15 @@ import FastRewindIcon from "@mui/icons-material/FastRewind";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import LogoutIcon from "@mui/icons-material/Logout";
-import QueryStatsIcon from "@mui/icons-material/QueryStats";
 import SettingsIcon from "@mui/icons-material/Settings";
 import SmartButtonIcon from "@mui/icons-material/SmartButton";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
-import { Box, IconButton, Stack, styled, Tooltip } from "@mui/material";
+import { Box, IconButton, Stack, styled, SvgIcon, Tooltip } from "@mui/material";
 import { useNavigate } from "react-router";
 import LanguageSwitcher from "../../../../components/LanguageSwitcher";
 import useSchoiceStore from "../../../../store/Schoice.store";
 import { supabase } from "../../../../tools/supabase";
 import InsertRuleButton from "./InsertRuleButton";
-
 const GridItem = styled(Box)`
   width: 70px;
   height: 100vh;
@@ -56,7 +54,7 @@ export default function SideBar() {
     <Box gridArea="sidebar">
       <GridItem>
         <Stack spacing={2} alignItems="center">
-          <QueryStatsIcon sx={{ fontSize: "50px" }} color="primary" />
+          <img src="schoice_icon.png" alt="logo" style={{ width: 50, height: 50 }} />
           <Tooltip title="首頁" arrow placement="right">
             <IconButton onClick={() => navigate("/schoice")}>
               <HomeRoundedIcon />

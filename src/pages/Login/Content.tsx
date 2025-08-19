@@ -9,10 +9,10 @@ import {
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { error } from "@tauri-apps/plugin-log";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { supabase } from "../../tools/supabase";
 import translateError from "../../utils/translateError";
-import { useTranslation } from "react-i18next";
 
 const Content = () => {
   const { t } = useTranslation();
@@ -63,9 +63,7 @@ const Content = () => {
 
   return (
     <Stack component="form" width={300}>
-      <Typography variant="h4" align="center" gutterBottom>
-        <img src="tauri.svg" alt="logo" style={{ width: "33%" }} />
-      </Typography>
+      <img src="schoice_icon.png" alt="logo" />
 
       <Box width="100%">
         <TextField

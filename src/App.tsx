@@ -15,14 +15,16 @@ import Trash from "./pages/Schoice/Trash";
 import { Box, CssBaseline } from "@mui/material";
 import "./App.css";
 import Detail from "./pages/Detail";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/schoice" />} />
-        <Route path="/login" element={<Navigate to="/schoice" />} />
-        <Route path="/register" element={<Navigate to="/schoice" />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="detail/:id" element={<Detail />} />
         <Route path="/schoice" element={<Schoice />}>
           <Route index element={<PromptList />} />
