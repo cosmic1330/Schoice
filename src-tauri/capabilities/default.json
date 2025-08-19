@@ -4,11 +4,13 @@
   "description": "Capability for the main window",
   "windows": ["main"],
   "permissions": [
+    "store:default",
     "core:default",
     "opener:default",
     "sql:default",
     "log:default",
     "notification:default",
+    "notification:allow-request-permission",
     "shell:default",
     "sql:allow-execute",
     "core:window:allow-set-title",

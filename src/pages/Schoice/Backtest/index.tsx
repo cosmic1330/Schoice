@@ -24,9 +24,9 @@ import {
 import { useCallback, useContext, useState } from "react";
 import { toast } from "react-toastify";
 import { DatabaseContext } from "../../../context/DatabaseContext";
+import useDatabaseQuery from "../../../hooks/useDatabaseQuery";
 import useCloudStore from "../../../store/Cloud.store";
 import useSchoiceStore from "../../../store/Schoice.store";
-import { supabase } from "../../../tools/supabase";
 import { PromptItem, StockTableType } from "../../../types";
 import shuffleArray from "../../../utils/shuffleArray";
 import BacktestResult from "./BacktestResult";
@@ -45,6 +45,7 @@ enum SelectedStocks {
 }
 
 export default function Backtest() {
+  const query = useDatabaseQuery();
   const { filterStocks, setBacktestPersent } = useSchoiceStore();
   const { bulls, bears, watchStocks } = useCloudStore();
   const { dates } = useContext(DatabaseContext);
@@ -84,13 +85,15 @@ export default function Backtest() {
       toast.error("請選擇多空策略");
       return;
     }
-
-    let stocksValue = (await supabase
-      .from("stock")
-      .select("*")
-      .in("stock_id", watchStocks)) as unknown as StockTableType[];
+    let stocksValue = await query(
+      `SELECT * FROM stock WHERE stock_id IN (${watchStocks.join(",")})`
+    );
     if (selectedStocks === SelectedStocks.FilterStocks && filterStocks) {
       stocksValue = filterStocks;
+    }
+    if (!stocksValue || stocksValue.length === 0) {
+      toast.error("沒有可用的股票資料");
+      return;
     }
 
     const genStrategyMethod = (
@@ -115,7 +118,7 @@ export default function Backtest() {
 
     const ctx = new Context({
       dates: contextDates,
-      stocks: stocksValue.map((stock) => ({
+      stocks: stocksValue.map((stock: StockTableType) => ({
         id: stock.stock_id,
         name: stock.stock_name,
       })),

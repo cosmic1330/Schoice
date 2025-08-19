@@ -2,24 +2,23 @@ import { Container, Grid, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import ResultTable from "../../../components/ResultTable/ResultTable";
 import { ActionButtonType } from "../../../components/ResultTable/types";
+import useDatabaseQuery from "../../../hooks/useDatabaseQuery";
 import useCloudStore from "../../../store/Cloud.store";
-import { supabase } from "../../../tools/supabase";
 import { StockTableType } from "../../../types";
 import Alarm from "./Alarm";
 import InsertFavorite from "./InsertFavorite";
 
 export default function Favorite() {
+  const query = useDatabaseQuery();
   const { watchStocks } = useCloudStore();
   const [stocks, setStocks] = useState<StockTableType[]>([]);
 
   useEffect(() => {
-    supabase
-      .from("stock")
-      .select("*")
-      .in("stock_id", watchStocks)
-      .then(({ data }) => {
-        setStocks(data || []);
-      });
+    query(
+      `SELECT * FROM stock WHERE stock_id IN (${watchStocks.join(",")})`
+    ).then((data: StockTableType[] | null) => {
+      if (data && data.length > 0) setStocks(data);
+    });
   }, [watchStocks]);
 
   return (

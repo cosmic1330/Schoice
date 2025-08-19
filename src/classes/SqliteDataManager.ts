@@ -329,7 +329,7 @@ export default class SqliteDataManager {
   async saveStockTable(stock: StockTableType) {
     try {
       await this.db.execute(
-        "INSERT OR REPLACE INTO stock (id, name, industry_group, market_type) VALUES ($1, $2, $3, $4)",
+        "INSERT OR REPLACE INTO stock (stock_id, stock_name, industry_group, market_type) VALUES ($1, $2, $3, $4)",
         [
           stock.stock_id,
           stock.stock_name,

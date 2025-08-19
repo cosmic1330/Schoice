@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { stockFundamentalQueryBuilder } from "../../../classes/StockFundamentalQueryBuilder";
 import { useUser } from "../../../context/UserContext";
+import useDatabaseQuery from "../../../hooks/useDatabaseQuery";
 import useCloudStore from "../../../store/Cloud.store";
 import useSchoiceStore from "../../../store/Schoice.store";
 import { supabase } from "../../../tools/supabase";
@@ -13,6 +14,7 @@ export default function ConditionsListResult({
 }: {
   prompts: FundamentalPrompts;
 }) {
+  const query = useDatabaseQuery();
   const [results, setResults] = useState<StockTableType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { setFilterStocks } = useSchoiceStore();
@@ -25,19 +27,13 @@ export default function ConditionsListResult({
       .then((stockIds) => {
         if (stockIds.length === 0) {
           setResults([]);
-          return;
-        }
-        return supabase
-          .from("stock")
-          .select("*")
-          .in("stock_id", stockIds)
-          .then(({ data }: { data: StockTableType[] | null }) => {
-            if (!data || data.length === 0) {
-              setResults([]);
-              return;
-            }
-            setResults(data);
+        } else {
+          query(
+            `SELECT * FROM stock WHERE stock_id IN (${stockIds.join(",")})`
+          ).then((data: StockTableType[] | null) => {
+            if (data && data.length > 0) setResults(data);
           });
+        }
       });
   }, [prompts]);
 

@@ -124,6 +124,13 @@ pub fn value() -> Vec<Migration> {
                     j REAL, -- J 指標
                     PRIMARY KEY (stock_id, ts)
                 );
+
+                CREATE TABLE stock (
+                    stock_id TEXT PRIMARY KEY, -- 股票代號
+                    stock_name TEXT, -- 股票名稱
+                    industry_group TEXT, -- 產業別
+                    market_type TEXT -- 上市/上櫃
+                );
                 ",
         kind: MigrationKind::Up,
     }]

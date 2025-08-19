@@ -1,4 +1,5 @@
 import { Session, User } from "@supabase/supabase-js";
+import { load as StoreLoad } from "@tauri-apps/plugin-store";
 import {
   createContext,
   ReactNode,
@@ -6,8 +7,10 @@ import {
   useEffect,
   useState,
 } from "react";
+import useDownloadStocks from "../hooks/useDownloadStocks";
 import useCloudStore from "../store/Cloud.store";
 import { supabase } from "../tools/supabase";
+import { StockTableType } from "../types";
 
 interface UserContextType {
   user: User | null;
@@ -22,6 +25,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { reload } = useCloudStore();
+  const { handleDownloadMenu } = useDownloadStocks();
 
   useEffect(() => {
     const getSession = async () => {
@@ -57,6 +61,15 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     if (user) {
       // 如果有使用者登入，則從 Cloud Store 中載入使用者資料
       reload(user.id);
+      StoreLoad("store.json", { autoSave: false }).then((store) => {
+        store.get("menu").then((menu) => {
+          const menuList = menu as StockTableType[];
+          if (menuList.length === 0) {
+            console.warn("Menu is empty, please update your menu.");
+            handleDownloadMenu();
+          }
+        });
+      });
     }
   }, [user]);
 

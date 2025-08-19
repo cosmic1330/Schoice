@@ -8,7 +8,6 @@ import {
   PromptsMap,
   PromptType,
   PromptValue,
-  StockTableType,
   TrashPrompt,
 } from "../types";
 
@@ -18,7 +17,6 @@ interface CloudState {
   alarms: PromptsMap;
   trash: TrashPrompt[];
   fundamentalCondition: FundamentalPrompts | null;
-  menu: StockTableType[];
   watchStocks: string[];
   setFundamentalCondition: (
     condition: FundamentalPrompts | null,
@@ -53,7 +51,6 @@ const useCloudStore = create<CloudState>((set, get) => ({
   alarms: {},
   trash: [],
   fundamentalCondition: null,
-  menu: [],
   watchStocks: [],
   setFundamentalCondition: async (
     condition: FundamentalPrompts | null,
@@ -439,17 +436,6 @@ const useCloudStore = create<CloudState>((set, get) => ({
           }
         }
       }
-      // 正向排列
-      const { data: menu1 } = await supabase
-        .from("stock")
-        .select("*")
-        .order("stock_id", { ascending: true })
-        .range(0, 999);
-      const { data: menu2 } = await supabase
-        .from("stock")
-        .select("*")
-        .order("stock_id", { ascending: true })
-        .range(1000, 1999);
       const { data: watchStocksData } = await supabase
         .from("watch_stock")
         .select("stock_id")
@@ -469,7 +455,6 @@ const useCloudStore = create<CloudState>((set, get) => ({
         bears,
         alarms,
         trash,
-        menu: [...(menu1 ?? []), ...(menu2 ?? [])],
         watchStocks: watchStocks,
         fundamentalCondition: fundamentalCondition ? JSON.parse(fundamentalCondition) : null,
       }));

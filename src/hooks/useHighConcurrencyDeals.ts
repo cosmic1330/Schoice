@@ -2,12 +2,19 @@ import { dateFormat } from "@ch20026103/anysis";
 import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
 import { fetch } from "@tauri-apps/plugin-http";
 import { error, info } from "@tauri-apps/plugin-log";
+import { load as StoreLoad } from "@tauri-apps/plugin-store";
 import pLimit from "p-limit";
-import { useCallback, useContext, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "react-toastify";
 import SqliteDataManager from "../classes/SqliteDataManager";
 import { DatabaseContext } from "../context/DatabaseContext";
-import useCloudStore from "../store/Cloud.store";
 import useSchoiceStore from "../store/Schoice.store";
 import {
   DealTableOptions,
@@ -30,46 +37,13 @@ export enum Status {
   Idle = "Idle",
 }
 
-type StockFundamentals = {
-  PE: string; // 本益比 (Price to Earnings Ratio)
-  PB: string; // 股價淨值比 (Price to Book Ratio)
-  CashYield: string; // 現金殖利率（最新年度）
-  CashYield3Y: string; // 現金殖利率（近三年平均）
-  CashYield5Y: string; // 現金殖利率（近五年平均）
-};
-
-type StockProfile = {
-  ticker_name: string; // 股票代號與名稱（如 "1524 耿鼎"）
-  ticker: string; // 股票代號（如 "1524"）
-  name: string; // 公司名稱
-  local_lang_name: string; // 本地語系公司名稱
-  category: string; // 所屬產業類別（如 "汽車"）
-  subcategory: string; // 子類別（如 COMMON、ETF 等）
-  stock_exchange: string; // 交易所代號（如 "twse"）
-  listing_status: "listed" | "delisted"; // 上市狀態
-  latest_closing_price: string; // 含日期的收盤資訊（如 "2025-04-29 34.4"）
-  latest_close_price: number; // 最新收盤價
-  latest_close_price_date: string; // 最新收盤價日期（"YYYY-MM-DD"）
-  latest_close_price_diff: number; // 與前一日的價格差
-  latest_close_price_diff_pct: number; // 價格變動百分比
-  main_business: string; // 主要營業項目
-  acw: string; // 未知欄位（可能為內部代號或行業分類）
-  chairman: string; // 董事長
-  ceo: string; // 執行長
-  latest_yoy_monthly_revenue: string; // 最新單月營收年增率（%）
-  latest_eps4q: string; // 近四季 EPS（每股盈餘）
-  latest_roe4q: string; // 近四季 ROE（股東權益報酬率）
-  stock_id: number; // 系統內部用的股票 ID
-  country: string; // 國家代號（如 "tw"）
-  website_url: string; // 公司網站網址
-};
-
 export default function useHighConcurrencyDeals() {
   const [status, setStatus] = useState(Status.Idle);
   const abortControllerRef = useRef<AbortController | null>(null);
   const { db, fetchDates, dates } = useContext(DatabaseContext);
-  const { changeDataCount, changeUpdateProgress, dataCount, updateProgress } = useSchoiceStore();
-  const { menu } = useCloudStore();
+  const { changeDataCount, changeUpdateProgress, dataCount, updateProgress } =
+    useSchoiceStore();
+  const [menu, setMenu] = useState<StockTableType[]>([]);
 
   // 通用重試函式
   async function withRetry<T>(fn: () => Promise<T>, retries = 5): Promise<T> {
@@ -150,7 +124,6 @@ export default function useHighConcurrencyDeals() {
   }, [abortControllerRef.current]);
 
   const run = useCallback(async () => {
-    console.log("menu", menu);
     if (status !== Status.Idle) return;
     // case pre:取消之前的請求
     if (abortControllerRef.current) {
@@ -172,6 +145,11 @@ export default function useHighConcurrencyDeals() {
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
     const { signal } = abortController;
+
+    if (menu.length === 0) {
+      info("Menu is empty, fetching from Cloud Store...");
+      return;
+    }
 
     // 取得設定
     const reverse = localStorage.getItem("schoice:fetch:reverse");
@@ -250,7 +228,7 @@ export default function useHighConcurrencyDeals() {
 
       // case 1-4: 寫入股票代號資料
       try {
-        await sqliteDataManager.saveStockTable(stock);
+        sqliteDataManager.saveStockTable(stock);
       } catch (error) {}
 
       // case 1-4: 寫入交易資料與基本面資料
@@ -439,6 +417,15 @@ export default function useHighConcurrencyDeals() {
     if (totalToHave === 0) return 0;
     return Math.round((currentHave / totalToHave) * 100);
   }, [dataCount, updateProgress, menu]);
+
+  useEffect(() => {
+    StoreLoad("store.json", { autoSave: false }).then((store) => {
+      store.get("menu").then((menu) => {
+        const menuList = menu as StockTableType[];
+        setMenu(menuList);
+      });
+    });
+  }, []);
 
   return { run, percent, stop, status };
 }

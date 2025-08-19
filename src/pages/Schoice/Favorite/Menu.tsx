@@ -3,8 +3,10 @@ import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import { t } from "i18next";
 import { Control, Controller, FieldErrors } from "react-hook-form";
-import useCloudStore from "../../../store/Cloud.store";
 import { FormData } from "./type";
+import { useEffect, useState } from "react";
+import { load as StoreLoad } from "@tauri-apps/plugin-store";
+import { StockTableType } from "../../../types";
 
 export default function Menu({
   control,
@@ -13,7 +15,16 @@ export default function Menu({
   control: Control<FormData, any, FormData>;
   errors: FieldErrors<FormData>;
 }) {
-  const { menu } = useCloudStore();
+  const [menu, setMenu] = useState<StockTableType[]>([]);
+
+  useEffect(() => {
+    StoreLoad("store.json", { autoSave: false }).then((store) => {
+      store.get("menu").then((menu) => {
+        const menuList = menu as StockTableType[];
+        setMenu(menuList);
+      });
+    });
+  }, []);
 
   return (
     <Box width="100%">
