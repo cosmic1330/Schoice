@@ -54,6 +54,7 @@ async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
                     .blocking_show();
             } else {
                 // 下載完成後，顯示訊息框詢問是否重新啟動應用程式
+                println!("Update installed");
                 let restart_ans = app
                     .dialog()
                     .message("Update downloaded. Restart now?")
@@ -62,6 +63,18 @@ async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
                     .blocking_show();
 
                 if restart_ans {
+                    let exe_path = std::env::current_exe()?;
+                    let app_dir = app.path().app_data_dir().map_err(|arg0: tauri::Error| {
+                        tauri_plugin_updater::Error::Io(std::io::Error::new(
+                            std::io::ErrorKind::Other,
+                            arg0.to_string(),
+                        ))
+                    })?;
+
+                    println!(
+                        "執行檔路徑: {:?}\n應用程式資料目錄: {:?}",
+                        exe_path, app_dir
+                    );
                     app.restart();
                 }
             }
@@ -83,7 +96,7 @@ fn get_db_size(app_handle: tauri::AppHandle) -> Result<(u64, String), String> {
         .app_data_dir()
         .map_err(|e| format!("Failed to get app data directory: {}", e))?;
     let db_path = app_data_dir.join("schoice.db");
-    let size = std::fs::metadata(&db_path)
+    let size = fs::metadata(&db_path)
         .map(|meta| meta.len())
         .map_err(|e| format!("Failed to get db size: {}", e))?;
     Ok((size, db_path.to_string_lossy().to_string()))
