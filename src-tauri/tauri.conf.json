@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Schoice",
-  "version": "0.0.2",
-  "identifier": "com.schoice",
+  "version": "0.0.5",
+  "identifier": "schoice",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
