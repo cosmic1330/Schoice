@@ -7,6 +7,7 @@ import analyzeIndicatorsData, {
   IndicatorsDateTimeType,
 } from "../utils/analyzeIndicatorsData";
 import generateDealDataDownloadUrl from "../utils/generateDealDataDownloadUrl";
+import { set } from "lodash-es";
 
 export default function useExampleData() {
   const [hour, setHour] = useState<TaType>([]);
@@ -74,9 +75,15 @@ export default function useExampleData() {
   const getNewData = useCallback(
     async ({ type, id }: { type: UrlType; id: string }) => {
       const store = await StoreLoad("example.json", { autoSave: false });
-      getHourData({ type, id, store });
-      getDayData({ type, id, store });
-      getWeekData({ type, id, store });
+      setHour([]);
+      setDay([]);
+      setWeek([]);
+      // 等待三個 fetch 完成後再返回，讓呼叫方可以等待完成狀態
+      await Promise.all([
+        getHourData({ type, id, store }),
+        getDayData({ type, id, store }),
+        getWeekData({ type, id, store }),
+      ]);
     },
     [getDayData, getHourData, getWeekData]
   );

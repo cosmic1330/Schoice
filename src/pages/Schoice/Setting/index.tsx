@@ -3,6 +3,7 @@ import CacheManagement from "./CacheManagement";
 import CloudSync from "./CloudSync";
 import DatabaseDeletion from "./DatabaseDeletion";
 import DatabaseRepair from "./DatabaseRepair";
+import ExampleSelector from "./ExampleSelector";
 import OtherSettings from "./OtherSettings";
 import SystemStatus from "./SystemStatus";
 
@@ -18,6 +19,7 @@ export default function Setting() {
         <CacheManagement />
         <OtherSettings />
         <CloudSync />
+        <ExampleSelector />
       </Grid>
       <SystemStatus />
     </Container>

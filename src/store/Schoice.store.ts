@@ -46,6 +46,7 @@ interface SchoiceState {
     type: PromptType;
   }) => void;
   changeTodayDate: (date: number) => void;
+  setExampleChartId: (id: string) => void;
 }
 
 const useSchoiceStore = create<SchoiceState>((set) => ({
@@ -60,7 +61,9 @@ const useSchoiceStore = create<SchoiceState>((set) => ({
     ChartType.WEEKLY_BOLL,
   filterStocks: null,
   backtestPersent: 0,
-  exampleChartId: FutureIds.WTX,
+  exampleChartId:
+    (localStorage.getItem("slitenting-example-chart-id") as string) ||
+    FutureIds.WTX,
   setFilterStocks: (stocks: StockTableType[] | null) => {
     set({ filterStocks: stocks });
   },
@@ -111,6 +114,10 @@ const useSchoiceStore = create<SchoiceState>((set) => ({
   },
   changeTodayDate: (date: number) => {
     set({ todayDate: date });
+  },
+  setExampleChartId: (id: string) => {
+    localStorage.setItem("slitenting-example-chart-id", id);
+    set({ exampleChartId: id });
   },
 }));
 
