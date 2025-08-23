@@ -7,7 +7,6 @@ import analyzeIndicatorsData, {
   IndicatorsDateTimeType,
 } from "../utils/analyzeIndicatorsData";
 import generateDealDataDownloadUrl from "../utils/generateDealDataDownloadUrl";
-import { set } from "lodash-es";
 
 export default function useExampleData() {
   const [hour, setHour] = useState<TaType>([]);

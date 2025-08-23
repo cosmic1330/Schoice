@@ -77,6 +77,19 @@ export default function ExampleSelector() {
     }
   };
 
+  // 更新目前 store 中的 exampleChartId 對應的資料（不改變選單選擇）
+  const handleUpdateCurrent = async () => {
+    if (!exampleChartId) return;
+    setLoading(true);
+    try {
+      await getNewData({ type: UrlType.Indicators, id: exampleChartId });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Grid size={{ xs: 6 }}>
       <Card>
@@ -138,6 +151,15 @@ export default function ExampleSelector() {
           />
         </CardContent>
         <CardActions sx={{ justifyContent: "flex-end", gap: 1, pr: 2 }}>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={handleUpdateCurrent}
+            disabled={loading || !exampleChartId}
+          >
+            {loading && <CircularProgress size={14} sx={{ mr: 1 }} />}
+            更新原ID資料
+          </Button>
           <Button
             variant="contained"
             color="primary"
