@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { PromptType, SelectType, StockTableType } from "../types";
+import { FutureIds, PromptType, SelectType, StockTableType } from "../types";
 
 export enum ChartType {
   HOURLY_OBV = "小時OBV",
@@ -29,6 +29,7 @@ interface SchoiceState {
   chartType: ChartType;
   filterStocks: StockTableType[] | null;
   backtestPersent: number;
+  exampleChartId: string;
   setFilterStocks: (stocks: StockTableType[] | null) => void;
   setBacktestPersent: (persent: number) => void;
   changeChartType: (type: ChartType) => void;
@@ -59,6 +60,7 @@ const useSchoiceStore = create<SchoiceState>((set) => ({
     ChartType.WEEKLY_BOLL,
   filterStocks: null,
   backtestPersent: 0,
+  exampleChartId: FutureIds.WTX,
   setFilterStocks: (stocks: StockTableType[] | null) => {
     set({ filterStocks: stocks });
   },

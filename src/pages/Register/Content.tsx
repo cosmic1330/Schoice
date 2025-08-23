@@ -34,7 +34,6 @@ function Content() {
       if (error) {
         setErrorMsg(translateError(error.message));
       } else {
-        console.log(data);
         alert("Registration Successful!");
         navigate("/");
       }

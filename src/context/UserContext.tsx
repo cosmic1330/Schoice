@@ -63,7 +63,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       reload(user.id);
       StoreLoad("store.json", { autoSave: false }).then((store) => {
         store.get("menu").then((menu) => {
-          console.log("Loaded menu from store:", menu);
           const menuList = menu as StockTableType[];
           if (!menuList || menuList.length === 0) {
             console.warn("Menu is empty, please update your menu.");

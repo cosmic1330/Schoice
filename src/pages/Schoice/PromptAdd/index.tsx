@@ -2,13 +2,15 @@ import { Button, Container, Grid, Typography } from "@mui/material";
 import { nanoid } from "nanoid";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router";
+import ExpressionGenerator from "../../../components/Prompt/ExpressionGenerator";
+import PromptChart from "../../../components/Prompt/PromptChart";
+import { PromptList } from "../../../components/Prompt/PromptList";
+import PromptName from "../../../components/Prompt/PromptName";
 import { useUser } from "../../../context/UserContext";
+import useExampleData from "../../../hooks/useExampleData";
 import useCloudStore from "../../../store/Cloud.store";
 import useSchoiceStore from "../../../store/Schoice.store";
 import { Prompts, PromptType } from "../../../types";
-import ExpressionGenerator from "../parts/ExpressionGenerator";
-import { PromptList } from "../parts/PromptList";
-import PromptName from "../parts/PromptName";
 
 type PromptCategory = "hourly" | "daily" | "weekly";
 
@@ -23,24 +25,38 @@ export default function PromptAdd() {
   });
 
   const [name, setName] = useState(nanoid());
+  const [isCreating, setIsCreating] = useState(false);
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const promptType = searchParams.get("promptType");
   const navigate = useNavigate();
+  const {
+    hour: hourlyData,
+    day: dailyData,
+    week: weeklyData,
+  } = useExampleData();
 
   const handleCreate = async () => {
     if (!user) {
       return;
     }
-    const id = await increase(
-      name,
-      prompts,
-      promptType === "bull" ? PromptType.BULL : PromptType.BEAR,
-      user.id
-    );
-    if (id)
-      setSelect({ prompt_id: id, type: promptType === "bull" ? PromptType.BULL : PromptType.BEAR });
-    navigate("/schoice");
+    setIsCreating(true);
+    try {
+      const id = await increase(
+        name,
+        prompts,
+        promptType === "bull" ? PromptType.BULL : PromptType.BEAR,
+        user.id
+      );
+      if (id)
+        setSelect({
+          prompt_id: id,
+          type: promptType === "bull" ? PromptType.BULL : PromptType.BEAR,
+        });
+      navigate("/schoice");
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleRemove = (type: PromptCategory, index: number) => {
@@ -102,13 +118,24 @@ export default function PromptAdd() {
               (prompts.hourly.length === 0 &&
                 prompts.daily.length === 0 &&
                 prompts.weekly.length === 0) ||
-              name === ""
+              name === "" ||
+              isCreating
             }
             color="success"
           >
-            建立
+            {isCreating ? "建立中…" : "建立"}
           </Button>
         </Container>
+      </Grid>
+      <Grid size={6}>
+        <PromptChart
+          hourlyPrompts={prompts.hourly}
+          dailyPrompts={prompts.daily}
+          weeklyPrompts={prompts.weekly}
+          hourlyData={hourlyData}
+          dailyData={dailyData}
+          weeklyData={weeklyData}
+        />
       </Grid>
     </Grid>
   );

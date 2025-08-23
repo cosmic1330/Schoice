@@ -62,7 +62,7 @@ const CloudSync: React.FC = () => {
   }
 
   useEffect(() => {
-    fetchStockTable();
+    // fetchStockTable();
   }, []);
 
   return (

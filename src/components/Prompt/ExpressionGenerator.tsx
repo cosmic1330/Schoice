@@ -10,10 +10,10 @@ import {
   ToggleButtonGroup,
 } from "@mui/material";
 import { Dispatch, SetStateAction, useState } from "react";
-import { StockDailyQueryBuilder } from "../../../classes/StockDailyQueryBuilder";
-import { StockHourlyQueryBuilder } from "../../../classes/StockHourlyQueryBuilder";
-import { StockWeeklyQueryBuilder } from "../../../classes/StockWeeklyQueryBuilder";
-import { Prompts, StorePrompt } from "../../../types";
+import { StockDailyQueryBuilder } from "../../classes/StockDailyQueryBuilder";
+import { StockHourlyQueryBuilder } from "../../classes/StockHourlyQueryBuilder";
+import { StockWeeklyQueryBuilder } from "../../classes/StockWeeklyQueryBuilder";
+import { Prompts, StorePrompt } from "../../types";
 
 type TimeFrame = "hour" | "day" | "week";
 

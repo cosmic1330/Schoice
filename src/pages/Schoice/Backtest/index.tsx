@@ -130,7 +130,6 @@ export default function Backtest() {
       ),
       options: { ...options }, // 確保傳遞的是新的物件
     });
-    console.log("ctx", ctx, options);
     setCtx(ctx);
   }, [
     selectedBull,

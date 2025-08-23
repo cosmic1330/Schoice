@@ -13,7 +13,6 @@ import useCloudStore from "../../../store/Cloud.store";
 import CollapseRow from "./CollapseRow";
 export default function TrashTable() {
   const { trash } = useCloudStore();
-  console.log("trash", trash);
 
   return (
     <Container maxWidth="lg" sx={{ mt: 2 }}>

@@ -66,6 +66,7 @@ export default function useDownloadStocks() {
       info(`Total stocks fetched: ${TWSE_data.length}`);
       const store = await StoreLoad("store.json", { autoSave: false });
       await store.set("menu", TWSE_data);
+      await store.save();
       setDisable(false);
       sendNotification({ title: "Menu", body: "Update Success!" });
     } catch (e) {

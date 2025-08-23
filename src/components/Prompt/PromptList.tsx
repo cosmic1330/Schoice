@@ -1,5 +1,5 @@
 import { Box, Button, Typography } from "@mui/material";
-import { Prompts } from "../../../types";
+import { Prompts } from "../../types";
 
 interface PromptListProps {
   title: string;
@@ -22,11 +22,7 @@ export function PromptList({ title, prompts, onRemove }: PromptListProps) {
         {prompts.map((prompt, index) => (
           <Typography key={index} variant="body2" gutterBottom>
             {index + 1}. {Object.values(prompt).join("")}{" "}
-            <Button
-              size="small"
-              color="error"
-              onClick={() => onRemove(index)}
-            >
+            <Button size="small" color="error" onClick={() => onRemove(index)}>
               Remove
             </Button>
           </Typography>

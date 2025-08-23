@@ -1,12 +1,14 @@
 import { Box, Button, Container, Grid, Stack, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import ExpressionGenerator from "../../../components/Prompt/ExpressionGenerator";
+import PromptChart from "../../../components/Prompt/PromptChart";
+import PromptName from "../../../components/Prompt/PromptName";
 import { useUser } from "../../../context/UserContext";
+import useExampleData from "../../../hooks/useExampleData";
 import useCloudStore from "../../../store/Cloud.store";
 import useSchoiceStore from "../../../store/Schoice.store";
 import { Prompts } from "../../../types";
-import ExpressionGenerator from "../parts/ExpressionGenerator";
-import PromptName from "../parts/PromptName";
 
 export default function PromptEdit() {
   const { id } = useParams();
@@ -17,10 +19,18 @@ export default function PromptEdit() {
   const [weekPrompts, setWeekPrompts] = useState<Prompts>([]);
   const [hourlyPrompts, setHourlyPrompts] = useState<Prompts>([]);
   const [name, setName] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
   const navigate = useNavigate();
+  const {
+    hour: hourlyData,
+    day: dailyData,
+    week: weeklyData,
+  } = useExampleData();
 
   const handleEdit = async () => {
-    if (id && select && user) {
+    if (!(id && select && user)) return;
+    setIsEditing(true);
+    try {
       await edit(
         id,
         name,
@@ -34,6 +44,8 @@ export default function PromptEdit() {
       );
       setSelect({ prompt_id: id, type: select.type });
       navigate("/schoice");
+    } finally {
+      setIsEditing(false);
     }
   };
 
@@ -202,14 +214,25 @@ export default function PromptEdit() {
                 (hourlyPrompts.length === 0 &&
                   dailyPrompts.length === 0 &&
                   weekPrompts.length === 0) ||
-                name === ""
+                name === "" ||
+                isEditing
               }
               color="success"
             >
-              修改
+              {isEditing ? "修改中…" : "修改"}
             </Button>
           </Stack>
         </Container>
+      </Grid>
+      <Grid size={6}>
+        <PromptChart
+          hourlyPrompts={hourlyPrompts}
+          dailyPrompts={dailyPrompts}
+          weeklyPrompts={weekPrompts}
+          hourlyData={hourlyData}
+          dailyData={dailyData}
+          weeklyData={weeklyData}
+        />
       </Grid>
     </Grid>
   );
