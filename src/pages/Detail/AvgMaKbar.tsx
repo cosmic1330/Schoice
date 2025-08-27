@@ -69,12 +69,12 @@ export default function AvgMaKbar() {
       ) {
         if (prev.ema5 < prev.ema10 && curr.ema5 > curr.ema10) {
           points.push({
-            ...prev,
+            ...curr,
             type: "golden",
           });
         } else if (prev.ema5 > prev.ema10 && curr.ema5 < curr.ema10) {
           points.push({
-            ...prev,
+            ...curr,
             type: "death",
           });
         }
