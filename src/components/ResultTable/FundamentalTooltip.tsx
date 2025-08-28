@@ -269,6 +269,83 @@ export default function FundamentalTooltip({ row }: { row: StockTableType }) {
             </Box>
           </Grid>
         )}
+
+        {/* 近期營收 */}
+        {recentFundamental && (
+          <Grid size={6}>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                mb: 1.5,
+                fontWeight: "bold",
+                color: "warning.main",
+                borderBottom: 1,
+                borderColor: "warning.light",
+                pb: 0.5,
+              }}
+            >
+              💰 近期營收
+            </Typography>
+            <Box>
+              <MetricItem
+                label={
+                  recentFundamental.revenue_recent_m1_name || "近一月(月增率)"
+                }
+                value={recentFundamental.revenue_recent_m1_mom}
+                suffix="%"
+              />
+              <MetricItem
+                label={
+                  recentFundamental.revenue_recent_m1_name || "近一月(年增率)"
+                }
+                value={recentFundamental.revenue_recent_m1_yoy}
+                suffix="%"
+              />
+              <MetricItem
+                label={
+                  recentFundamental.revenue_recent_m2_name || "近二月(月增率)"
+                }
+                value={recentFundamental.revenue_recent_m2_mom}
+                suffix="%"
+              />
+              <MetricItem
+                label={
+                  recentFundamental.revenue_recent_m2_name || "近二月(年增率)"
+                }
+                value={recentFundamental.revenue_recent_m2_yoy}
+                suffix="%"
+              />
+              <MetricItem
+                label={
+                  recentFundamental.revenue_recent_m3_name || "近三月(月增率)"
+                }
+                value={recentFundamental.revenue_recent_m3_mom}
+                suffix="%"
+              />
+              <MetricItem
+                label={
+                  recentFundamental.revenue_recent_m3_name || "近三月(年增率)"
+                }
+                value={recentFundamental.revenue_recent_m3_yoy}
+                suffix="%"
+              />
+              <MetricItem
+                label={
+                  recentFundamental.revenue_recent_m4_name || "近四月(月增率)"
+                }
+                value={recentFundamental.revenue_recent_m4_mom}
+                suffix="%"
+              />
+              <MetricItem
+                label={
+                  recentFundamental.revenue_recent_m4_name || "近四月(年增率)"
+                }
+                value={recentFundamental.revenue_recent_m4_yoy}
+                suffix="%"
+              />
+            </Box>
+          </Grid>
+        )}
       </Grid>
 
       {/* 如果沒有資料的提示 */}

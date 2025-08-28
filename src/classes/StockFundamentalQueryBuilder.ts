@@ -20,6 +20,38 @@ export class StockFundamentalQueryBuilder {
     EPS近二年: { key: "eps_recent_y2", table: "recent_fundamental" },
     EPS近三年: { key: "eps_recent_y3", table: "recent_fundamental" },
     EPS近四年: { key: "eps_recent_y4", table: "recent_fundamental" },
+    "營收近一月(月增率)": {
+      key: "revenue_recent_m1_mom",
+      table: "recent_fundamental",
+    },
+    "營收近一月(年增率)": {
+      key: "revenue_recent_m1_yoy",
+      table: "recent_fundamental",
+    },
+    "營收近二月(月增率)": {
+      key: "revenue_recent_m2_mom",
+      table: "recent_fundamental",
+    },
+    "營收近二月(年增率)": {
+      key: "revenue_recent_m2_yoy",
+      table: "recent_fundamental",
+    },
+    "營收近三月(月增率)": {
+      key: "revenue_recent_m3_mom",
+      table: "recent_fundamental",
+    },
+    "營收近三月(年增率)": {
+      key: "revenue_recent_m3_yoy",
+      table: "recent_fundamental",
+    },
+    "營收近四月(月增率)": {
+      key: "revenue_recent_m4_mom",
+      table: "recent_fundamental",
+    },
+    "營收近四月(年增率)": {
+      key: "revenue_recent_m4_yoy",
+      table: "recent_fundamental",
+    },
   };
 
   protected operatorMapping: Record<string, string> = {
@@ -42,10 +74,12 @@ export class StockFundamentalQueryBuilder {
 
     // 分組條件按表格
     const financialMetricConditions = conditions.filter(
-      (condition) => this.mapping[condition.indicator].table === "financial_metric"
+      (condition) =>
+        this.mapping[condition.indicator].table === "financial_metric"
     );
     const recentFundamentalConditions = conditions.filter(
-      (condition) => this.mapping[condition.indicator].table === "recent_fundamental"
+      (condition) =>
+        this.mapping[condition.indicator].table === "recent_fundamental"
     );
 
     // 處理 financial_metric 表的條件
@@ -133,7 +167,10 @@ export class StockFundamentalQueryBuilder {
     }
 
     // 取交集：同時滿足兩個表格條件的股票
-    if (financialMetricConditions.length > 0 && recentFundamentalConditions.length > 0) {
+    if (
+      financialMetricConditions.length > 0 &&
+      recentFundamentalConditions.length > 0
+    ) {
       return stockIdsFromFinancialMetric.filter((id) =>
         stockIdsFromRecentFundamental.includes(id)
       );

@@ -87,9 +87,10 @@ export type WatchStockTableType = {
   user_id: string;
   stock_id: string;
 };
-
 export type RecentFundamentalTableType = {
   stock_id: string;
+
+  // 最近四季 EPS
   eps_recent_q1: number | null;
   eps_recent_q1_name: string | null;
   eps_recent_q2: number | null;
@@ -98,6 +99,8 @@ export type RecentFundamentalTableType = {
   eps_recent_q3_name: string | null;
   eps_recent_q4: number | null;
   eps_recent_q4_name: string | null;
+
+  // 最近四年 EPS
   eps_recent_y1: number | null;
   eps_recent_y1_name: string | null;
   eps_recent_y2: number | null;
@@ -106,6 +109,23 @@ export type RecentFundamentalTableType = {
   eps_recent_y3_name: string | null;
   eps_recent_y4: number | null;
   eps_recent_y4_name: string | null;
+
+  // 最近四個月 營收（月增率 / 年增率 / 月份名稱）
+  revenue_recent_m1_mom: number | null;
+  revenue_recent_m1_yoy: number | null;
+  revenue_recent_m1_name: string | null;
+
+  revenue_recent_m2_mom: number | null;
+  revenue_recent_m2_yoy: number | null;
+  revenue_recent_m2_name: string | null;
+
+  revenue_recent_m3_mom: number | null;
+  revenue_recent_m3_yoy: number | null;
+  revenue_recent_m3_name: string | null;
+
+  revenue_recent_m4_mom: number | null;
+  revenue_recent_m4_yoy: number | null;
+  revenue_recent_m4_name: string | null;
 };
 
 export type UserPromptsTableType = {

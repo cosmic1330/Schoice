@@ -1,5 +1,5 @@
 CREATE TABLE financial_metric (
-  stock_id TEXT PRIMARY KEY,               -- 股票代號，主鍵
+  stock_id TEXT PRIMARY KEY,  -- 股票代號，主鍵並外鍵
   pe FLOAT,                                -- 本益比
   pb FLOAT,                                -- 股價淨值比
   dividend_yield FLOAT,                    -- 殖利率
@@ -31,6 +31,20 @@ CREATE TABLE watch_stock (
 
 CREATE TABLE recent_fundamental (
   stock_id TEXT PRIMARY KEY,  -- 股票代碼（文字，因有些代碼有字母）
+
+  -- 最近四個月 營收
+  revenue_recent_m1_mom FLOAT,         -- 最近一個月 月增率(%)
+  revenue_recent_m1_yoy FLOAT,         -- 最近一個月 年增率(%)
+  revenue_recent_m1_name TEXT,         -- 最近一個月名稱，例如 '2025Q2'
+  revenue_recent_m2_mom FLOAT,         -- 往前第二個月 月增率(%)
+  revenue_recent_m2_yoy FLOAT,         -- 往前第二個月 年增率(%)
+  revenue_recent_m2_name TEXT,         -- 往前第二個月名稱
+  revenue_recent_m3_mom FLOAT,         -- 往前第三個月 月增率(%)
+  revenue_recent_m3_yoy FLOAT,         -- 往前第三個月 年增率(%)
+  revenue_recent_m3_name TEXT,         -- 往前第三個月名稱
+  revenue_recent_m4_mom FLOAT,         -- 往前第四個月 月增率(%)
+  revenue_recent_m4_yoy FLOAT,         -- 往前第四個月 年增率(%)
+  revenue_recent_m4_name TEXT,         -- 往前第四個月名稱
 
   -- 最近四季 EPS
   eps_recent_q1 FLOAT,         -- 最近一季 EPS
