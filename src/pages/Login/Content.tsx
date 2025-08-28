@@ -11,6 +11,7 @@ import { error } from "@tauri-apps/plugin-log";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import GoogleOauthButton from "../../components/GoogleOauthButton";
 import { supabase } from "../../tools/supabase";
 import translateError from "../../utils/translateError";
 
@@ -118,6 +119,14 @@ const Content = () => {
           >
             {t("Pages.Login.signIn")}
           </Button>
+        </Stack>
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="center"
+          my={2}
+        >
+          <GoogleOauthButton onLogin={() => navigate("/schoice")} />
         </Stack>
         <Typography color="error" align="center">
           {errorMsg}
