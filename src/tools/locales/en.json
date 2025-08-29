@@ -2,10 +2,10 @@
   "Pages": {
     "Login": {
       "rememberMe": "Remember me",
-      "register":"Register",
-      "signIn":"Sign In",
-      "email":"Email",
-      "password":"Password"
+      "register": "Register",
+      "signIn": "Sign In",
+      "email": "Email",
+      "password": "Password"
     },
     "Register": {
       "register": "Register",
@@ -14,15 +14,15 @@
       "confirmPassword": "Confirm Password",
       "haveAccount": "Already have an account? Sign In"
     },
-    "Add":{
-      "close":"Close",
-      "add":"Add",
-      "download":"Downloading...",
-      "notFoundOptions":"No options? Click me to load",
-      "selectStock":"Select stock to add",
+    "Add": {
+      "close": "Close",
+      "add": "Add",
+      "download": "Downloading...",
+      "notFoundOptions": "No options? Click me to load",
+      "selectStock": "Select stock to add",
       "required": "Stock code is required",
       "pattern": "Stock code format is incorrect",
-      "noStock":"Please enter stock code"
+      "noStock": "Please enter stock code"
     },
     "Schoice": {
       "Trash": {
@@ -37,6 +37,62 @@
         "hourly": "Hourly",
         "daily": "Daily",
         "weekly": "Weekly"
+      },
+      "Backtest": {
+        "title": "Trading Analysis Dashboard",
+        "subtitle": "Comprehensive overview of trading performance",
+        "create": "Create",
+        "run": "Run",
+        "stop": "Stop",
+        "remove": "Remove",
+        "progress": "Progress",
+        "result": "Result",
+        "randomize": "Randomize",
+        "bullStrategy": "Bull Strategy",
+        "bullOption": "Supports multiple selections. If any of A, B, or C is met, the stock will be added to the watchlist and purchased the next day.",
+        "bearStrategy": "Bear Strategy",
+        "bearOption": "Supports multiple selections. If any of A, B, or C is met, the stock will be added to the sell list and sold the next day.",
+        "source": "Source",
+        "favorite": "Favorite Stocks",
+        "filter": "Filtered Stocks",
+        "noData": "No data available",
+        "selectStrategy": "Please select a strategy",
+        "error": "An error occurred",
+        "capitalTitle": "Capital / Inventory",
+        "capital": "Capital",
+        "inventory": "Inventory",
+        "historyTitle": "History",
+        "buyDate": "Buy Date",
+        "buyPrice": "Buy Price",
+        "sellDate": "Sell Date",
+        "sellPrice": "Sell Price",
+        "stock": "Stock",
+        "profit": "Profit",
+        "inventoryTitle": "Inventory",
+        "unsoldDate": "Unsold Date",
+        "unsoldPrice": "Unsold Price",
+        "totalProfitTitle": "Total Profit",
+        "sold": "Sold",
+        "unsold": "Unsold",
+        "total": "Total",
+        "winLossTitle": "Win/Loss Ratio",
+        "win": "Win",
+        "loss": "Loss",
+        "transactionCount": "Transaction Count",
+        "wishListTitle": "Wish List",
+        "buying": "Buying",
+        "selling": "Selling",
+        "lowStockPrice": "Buy Price Range (Above)",
+        "hightStockPrice": "Buy Price Range (Below)",
+        "hightLoss": "Acceptable Loss (%)",
+        "buyPriceLow": "Buy Price (Low)",
+        "buyPricePosition": "Buy Price Position",
+        "sellPricePosition": "Sell Price Position",
+        "hightPrice": "Highest Price",
+        "openPrice": "Opening Price",
+        "closePrice": "Closing Price",
+        "lowPrice": "Lowest Price",
+        "options": "Options"
       }
     }
   }

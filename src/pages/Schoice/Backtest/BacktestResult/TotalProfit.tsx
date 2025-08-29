@@ -1,6 +1,7 @@
 import { Context } from "@ch20026103/backtest-lib";
 import { Box, Card, CardContent, Stack, Typography } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import useDatabaseQuery from "../../../../hooks/useDatabaseQuery";
 import useSchoiceStore from "../../../../store/Schoice.store";
 
@@ -10,6 +11,7 @@ function formatNumber(n: number | undefined): string {
 }
 
 export default function TotalProfit({ ctx }: { ctx: Context }) {
+  const { t } = useTranslation();
   const { backtestPersent } = useSchoiceStore();
   const [unsoldProfit, setUnsoldProfit] = useState<number>(0);
   const query = useDatabaseQuery();
@@ -51,12 +53,12 @@ export default function TotalProfit({ ctx }: { ctx: Context }) {
     <Card elevation={10} sx={{ borderRadius: 2, height: "100%" }}>
       <CardContent>
         <Typography variant="h5" gutterBottom>
-          Profit
+          {t("Pages.Schoice.Backtest.totalProfitTitle")}
         </Typography>
         <Stack direction="row" spacing={2} justifyContent="space-between">
           <Box>
             <Typography variant="subtitle1" color="textSecondary">
-              Sold
+              {t("Pages.Schoice.Backtest.sold")}
             </Typography>
             <Typography variant="h6">
               {formatNumber(ctx?.record.profit)}
@@ -64,13 +66,13 @@ export default function TotalProfit({ ctx }: { ctx: Context }) {
           </Box>
           <Box>
             <Typography variant="subtitle1" color="textSecondary">
-              Unsold
+              {t("Pages.Schoice.Backtest.unsold")}
             </Typography>
             <Typography variant="h6">{formatNumber(unsoldProfit)}</Typography>
           </Box>
           <Box>
             <Typography variant="subtitle1" color="textSecondary">
-              Total
+              {t("Pages.Schoice.Backtest.total")}
             </Typography>
             <Typography variant="h6">
               {formatNumber(ctx?.record.profit + unsoldProfit)}

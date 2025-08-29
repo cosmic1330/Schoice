@@ -1,11 +1,11 @@
 import { Button, Stack } from "@mui/material";
-import { t } from "i18next";
 import { useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { useUser } from "../../../context/UserContext";
 import useCloudStore from "../../../store/Cloud.store";
 import Menu from "./Menu";
 import { FormData } from "./type";
+import { useTranslation } from "react-i18next";
 
 export default function InsertFavorite() {
   const {
@@ -16,6 +16,7 @@ export default function InsertFavorite() {
   } = useForm<FormData>();
   const { user } = useUser();
   const { addToWatchList } = useCloudStore();
+    const { t } = useTranslation();
 
   const onSubmit = useCallback(
     async (data: FormData) => {

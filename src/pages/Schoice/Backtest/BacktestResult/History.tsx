@@ -12,25 +12,40 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import StockTextButton from "./StockTextButton";
 
 export default function History({ ctx }: { ctx: Context }) {
+  const { t } = useTranslation();
+
   return (
     <Card elevation={10} sx={{ borderRadius: 2, height: "100%" }}>
       <CardContent>
         <Typography variant="h5" gutterBottom>
-          History
+          {t("Pages.Schoice.Backtest.historyTitle")}
         </Typography>
         <TableContainer sx={{ maxHeight: "500px" }}>
           <Table stickyHeader size="small">
             <TableHead>
               <TableRow>
-                <TableCell align="center">Buy Date</TableCell>
-                <TableCell align="center">Buy Price</TableCell>
-                <TableCell align="center">Sell Date</TableCell>
-                <TableCell align="center">Sell Price</TableCell>
-                <TableCell align="center">Stock</TableCell>
-                <TableCell align="center">Profit</TableCell>
+                <TableCell align="center">
+                  {t("Pages.Schoice.Backtest.buyDate")}
+                </TableCell>
+                <TableCell align="center">
+                  {t("Pages.Schoice.Backtest.buyPrice")}
+                </TableCell>
+                <TableCell align="center">
+                  {t("Pages.Schoice.Backtest.sellDate")}
+                </TableCell>
+                <TableCell align="center">
+                  {t("Pages.Schoice.Backtest.sellPrice")}
+                </TableCell>
+                <TableCell align="center">
+                  {t("Pages.Schoice.Backtest.stock")}
+                </TableCell>
+                <TableCell align="center">
+                  {t("Pages.Schoice.Backtest.profit")}
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

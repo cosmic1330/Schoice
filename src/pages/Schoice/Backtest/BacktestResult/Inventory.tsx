@@ -13,11 +13,13 @@ import {
   Typography,
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import useDatabaseQuery from "../../../../hooks/useDatabaseQuery";
 import useSchoiceStore from "../../../../store/Schoice.store";
 import StockTextButton from "./StockTextButton";
 
 export default function Inventory({ ctx }: { ctx: Context }) {
+  const { t } = useTranslation();
   const { backtestPersent } = useSchoiceStore();
   const [unsoldProfits, setUnsoldProfits] = useState<
     | {
@@ -60,17 +62,27 @@ export default function Inventory({ ctx }: { ctx: Context }) {
     <Card elevation={10} sx={{ borderRadius: 2, height: "100%" }}>
       <CardContent>
         <Typography variant="h5" gutterBottom>
-          Inventory
+          {t("Pages.Schoice.Backtest.inventoryTitle")}
         </Typography>
         <TableContainer sx={{ maxHeight: "500px" }}>
           <Table stickyHeader size="small">
             <TableHead>
               <TableRow>
-                <TableCell align="center">Buy Date</TableCell>
-                <TableCell align="center">Buy Price</TableCell>
-                <TableCell align="center">Stock</TableCell>
-                <TableCell align="center">Unsold Date</TableCell>
-                <TableCell align="center">Unsold Price</TableCell>
+                <TableCell align="center">
+                  {t("Pages.Schoice.Backtest.buyDate")}
+                </TableCell>
+                <TableCell align="center">
+                  {t("Pages.Schoice.Backtest.buyPrice")}
+                </TableCell>
+                <TableCell align="center">
+                  {t("Pages.Schoice.Backtest.stock")}
+                </TableCell>
+                <TableCell align="center">
+                  {t("Pages.Schoice.Backtest.unsoldDate")}
+                </TableCell>
+                <TableCell align="center">
+                  {t("Pages.Schoice.Backtest.unsoldPrice")}
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

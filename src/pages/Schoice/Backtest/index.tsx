@@ -22,6 +22,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useCallback, useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { DatabaseContext } from "../../../context/DatabaseContext";
 import useDatabaseQuery from "../../../hooks/useDatabaseQuery";
@@ -46,6 +47,7 @@ enum SelectedStocks {
 
 export default function Backtest() {
   const query = useDatabaseQuery();
+  const { t } = useTranslation();
   const { filterStocks, setBacktestPersent } = useSchoiceStore();
   const { bulls, bears, watchStocks } = useCloudStore();
   const { dates } = useContext(DatabaseContext);
@@ -82,7 +84,7 @@ export default function Backtest() {
   const createContext = useCallback(async () => {
     setBacktestPersent(0);
     if (!selectedBull.length || !selectedBear.length) {
-      toast.error("請選擇多空策略");
+      toast.error(t("Pages.Schoice.Backtest.selectStrategy"));
       return;
     }
     let stocksValue = await query(
@@ -92,7 +94,7 @@ export default function Backtest() {
       stocksValue = filterStocks;
     }
     if (!stocksValue || stocksValue.length === 0) {
-      toast.error("沒有可用的股票資料");
+      toast.error(t("Pages.Schoice.Backtest.noData"));
       return;
     }
 
@@ -176,10 +178,10 @@ export default function Backtest() {
   return (
     <Container maxWidth="xl">
       <Typography variant="h4" gutterBottom>
-        Trading Analysis Dashboard
+        {t("Pages.Schoice.Backtest.title")}
       </Typography>
       <Typography variant="subtitle1" gutterBottom>
-        Compare and analyze trading strategies
+        {t("Pages.Schoice.Backtest.subtitle")}
       </Typography>
       <Paper
         elevation={16}
@@ -188,8 +190,8 @@ export default function Backtest() {
         <Grid container spacing={3}>
           <Grid size={4}>
             <Typography variant="subtitle1" gutterBottom>
-              Bull Strategy
-              <Tooltip title="可支持多選，多選結果為符合A或B或C其一時，納入待購清單，於隔日買進。">
+              {t("Pages.Schoice.Backtest.bullStrategy")}
+              <Tooltip title={t("Pages.Schoice.Backtest.bullOption")}>
                 <IconButton size="small">
                   <InfoIcon fontSize="small" />
                 </IconButton>
@@ -206,7 +208,7 @@ export default function Backtest() {
               }
             >
               <MenuItem value="">
-                <em>None</em>
+                <em>{t("Pages.Schoice.Backtest.favorite")}</em>
               </MenuItem>
               {Object.keys(bulls).map((key) => (
                 <MenuItem key={key} value={key}>
@@ -218,8 +220,8 @@ export default function Backtest() {
 
           <Grid size={4}>
             <Typography variant="subtitle1" gutterBottom>
-              Bears Strategy
-              <Tooltip title="可支持多選，多選結果為符合A或B或C其一時，納入待售清單，於隔日賣出。">
+              {t("Pages.Schoice.Backtest.bearStrategy")}
+              <Tooltip title={t("Pages.Schoice.Backtest.bearOption")}>
                 <IconButton size="small">
                   <InfoIcon fontSize="small" />
                 </IconButton>
@@ -237,7 +239,7 @@ export default function Backtest() {
               }
             >
               <MenuItem value="">
-                <em>None</em>
+                <em>{t("Pages.Schoice.Backtest.favorite")}</em>
               </MenuItem>
               {Object.keys(bears).map((key) => (
                 <MenuItem key={key} value={key}>
@@ -249,7 +251,7 @@ export default function Backtest() {
 
           <Grid size={4}>
             <Typography variant="subtitle1" gutterBottom>
-              Source
+              {t("Pages.Schoice.Backtest.source")}
             </Typography>
             <Select
               value={selectedStocks}
@@ -258,11 +260,11 @@ export default function Backtest() {
               fullWidth
             >
               <MenuItem value={SelectedStocks.WatchStock}>
-                <em>My Favorite</em>
+                <em>{t("Pages.Schoice.Backtest.favorite")}</em>
               </MenuItem>
               {filterStocks && (
                 <MenuItem value={SelectedStocks.FilterStocks}>
-                  <em>Fundamental Filter</em>
+                  <em>{t("Pages.Schoice.Backtest.filter")}</em>
                 </MenuItem>
               )}
             </Select>
@@ -271,7 +273,7 @@ export default function Backtest() {
           {/* Additional Options */}
           <Grid size={12}>
             <Typography variant="subtitle1" gutterBottom>
-              Additional Options
+              {t("Pages.Schoice.Backtest.options")}
             </Typography>
             <Options {...{ isRandom, setIsRandom, options, setOptions }} />
           </Grid>
@@ -280,7 +282,7 @@ export default function Backtest() {
             <Stack direction="row" spacing={2} justifyContent="center">
               {!ctx && status === Status.Idle && (
                 <Button variant="contained" onClick={createContext}>
-                  Create
+                  {t("Pages.Schoice.Backtest.create")}
                 </Button>
               )}
               {ctx && status === Status.Idle && (
@@ -289,17 +291,17 @@ export default function Backtest() {
                   startIcon={<PlayCircleFilledWhiteIcon />}
                   onClick={run}
                 >
-                  Execute Analysis
+                  {t("Pages.Schoice.Backtest.run")}
                 </Button>
               )}
               {ctx && status === Status.Running && (
                 <Button variant="outlined" onClick={stop}>
-                  Stop
+                  {t("Pages.Schoice.Backtest.stop")}
                 </Button>
               )}
               {ctx && (
                 <Button variant="outlined" color="error" onClick={remove}>
-                  Delete
+                  {t("Pages.Schoice.Backtest.remove")}
                 </Button>
               )}
             </Stack>

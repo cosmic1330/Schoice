@@ -12,8 +12,8 @@ import {
 } from "@mui/material";
 import Box from "@mui/material/Box";
 import Collapse from "@mui/material/Collapse";
-import { t } from "i18next";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useUser } from "../../../context/UserContext";
 import useCloudStore from "../../../store/Cloud.store";
 import { TrashPrompt } from "../../../types";
@@ -23,6 +23,7 @@ export default function CollapseRow({ item }: { item: TrashPrompt }) {
   const [open, setOpen] = useState(false);
   const { recover, removeFromTrash } = useCloudStore();
   const { user } = useUser();
+  const { t } = useTranslation();
   return (
     <>
       <TableRow>

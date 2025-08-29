@@ -1,12 +1,12 @@
 import { Box, Typography } from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
-import { t } from "i18next";
 import { Control, Controller, FieldErrors } from "react-hook-form";
 import { FormData } from "./type";
 import { useEffect, useState } from "react";
 import { load as StoreLoad } from "@tauri-apps/plugin-store";
 import { StockTableType } from "../../../types";
+import { useTranslation } from "react-i18next";
 
 export default function Menu({
   control,
@@ -16,6 +16,7 @@ export default function Menu({
   errors: FieldErrors<FormData>;
 }) {
   const [menu, setMenu] = useState<StockTableType[]>([]);
+    const { t } = useTranslation();
 
   useEffect(() => {
     StoreLoad("store.json", { autoSave: false }).then((store) => {

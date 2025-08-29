@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { supabase } from "../../tools/supabase";
 import translateError from "../../utils/translateError";
-import { t } from "i18next";
+import { useTranslation } from "react-i18next";
 
 function Content() {
   const [errorMsg, setErrorMsg] = useState("");
@@ -13,6 +13,7 @@ function Content() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   let navigate = useNavigate();
+    const { t } = useTranslation();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

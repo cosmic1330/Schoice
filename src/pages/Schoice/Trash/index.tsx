@@ -8,11 +8,12 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { t } from "i18next";
 import useCloudStore from "../../../store/Cloud.store";
 import CollapseRow from "./CollapseRow";
+import { useTranslation } from "react-i18next";
 export default function TrashTable() {
   const { trash } = useCloudStore();
+    const { t } = useTranslation();
 
   return (
     <Container maxWidth="lg" sx={{ mt: 2 }}>
