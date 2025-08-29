@@ -23,7 +23,7 @@ export default memo(function ResultTable({
       "日期",
       "代碼",
       "名稱",
-      "收盤價",
+      "收盤價量",
       "小時趨勢圖",
       "日趨勢圖",
       "週趨勢圖",
@@ -51,7 +51,7 @@ export default memo(function ResultTable({
       }}
       // 使用 fixedHeaderContent 來渲染表頭，避免 header 被 virtuoso 覆蓋
       fixedHeaderContent={() => (
-        <TableRow>
+        <TableRow sx={{ backgroundColor: 'background.paper' }}>
           <TableCell width={5}></TableCell>
           {columns.map((column, index) => (
             <TableCell key={index}>{column}</TableCell>
