@@ -61,10 +61,26 @@ export default function FundamentalTooltip({ row }: { row: StockTableType }) {
   }, [row.stock_id]);
 
   const formatValue = (
-    value: any,
+    value: any | [any, any],
     suffix: string = "",
     decimals: number = 2
   ) => {
+    if (Array.isArray(value)) {
+      const [first, second] = value;
+      const formattedFirst =
+        first === null || first === undefined || first === "" || isNaN(first)
+          ? "N/A"
+          : Number(first).toFixed(decimals);
+      const formattedSecond =
+        second === null ||
+        second === undefined ||
+        second === "" ||
+        isNaN(second)
+          ? "N/A"
+          : Number(second).toFixed(decimals);
+      return `${formattedFirst}${suffix} / ${formattedSecond}${suffix}`;
+    }
+
     if (value === null || value === undefined || value === "" || isNaN(value)) {
       return "N/A";
     }
@@ -130,10 +146,10 @@ export default function FundamentalTooltip({ row }: { row: StockTableType }) {
 
   if (loading) {
     return (
-      <Box sx={{ p: 3, minWidth: 350 }}>
+      <Box sx={{ p: 3, minWidth: 300 }}>
         <Skeleton variant="text" width="80%" height={30} />
         <Skeleton variant="text" width="60%" height={20} sx={{ mb: 2 }} />
-        <Skeleton variant="rectangular" width="100%" height={200} />
+        <Skeleton variant="rectangular" width="80%" height={200} />
       </Box>
     );
   }
@@ -272,7 +288,7 @@ export default function FundamentalTooltip({ row }: { row: StockTableType }) {
 
         {/* 近期營收 */}
         {recentFundamental && (
-          <Grid size={6}>
+          <Grid size={12}>
             <Typography
               variant="subtitle2"
               sx={{
@@ -284,65 +300,28 @@ export default function FundamentalTooltip({ row }: { row: StockTableType }) {
                 pb: 0.5,
               }}
             >
-              💰 近期營收
+              💰 近期營收 mom / yoy
             </Typography>
             <Box>
-              <MetricItem
-                label={
-                  recentFundamental.revenue_recent_m1_name || "近一月(月增率)"
-                }
-                value={recentFundamental.revenue_recent_m1_mom}
-                suffix="%"
-              />
-              <MetricItem
-                label={
-                  recentFundamental.revenue_recent_m1_name || "近一月(年增率)"
-                }
-                value={recentFundamental.revenue_recent_m1_yoy}
-                suffix="%"
-              />
-              <MetricItem
-                label={
-                  recentFundamental.revenue_recent_m2_name || "近二月(月增率)"
-                }
-                value={recentFundamental.revenue_recent_m2_mom}
-                suffix="%"
-              />
-              <MetricItem
-                label={
-                  recentFundamental.revenue_recent_m2_name || "近二月(年增率)"
-                }
-                value={recentFundamental.revenue_recent_m2_yoy}
-                suffix="%"
-              />
-              <MetricItem
-                label={
-                  recentFundamental.revenue_recent_m3_name || "近三月(月增率)"
-                }
-                value={recentFundamental.revenue_recent_m3_mom}
-                suffix="%"
-              />
-              <MetricItem
-                label={
-                  recentFundamental.revenue_recent_m3_name || "近三月(年增率)"
-                }
-                value={recentFundamental.revenue_recent_m3_yoy}
-                suffix="%"
-              />
-              <MetricItem
-                label={
-                  recentFundamental.revenue_recent_m4_name || "近四月(月增率)"
-                }
-                value={recentFundamental.revenue_recent_m4_mom}
-                suffix="%"
-              />
-              <MetricItem
-                label={
-                  recentFundamental.revenue_recent_m4_name || "近四月(年增率)"
-                }
-                value={recentFundamental.revenue_recent_m4_yoy}
-                suffix="%"
-              />
+              {[1, 2, 3, 4].map((month) => {
+                const momKey =
+                  `revenue_recent_m${month}_mom` as keyof RecentFundamentalTableType;
+                const yoyKey =
+                  `revenue_recent_m${month}_yoy` as keyof RecentFundamentalTableType;
+                const nameKey =
+                  `revenue_recent_m${month}_name` as keyof RecentFundamentalTableType;
+
+                return (
+                  <MetricItem
+                    key={month}
+                    label={String(recentFundamental[nameKey]) || `近${month}月`}
+                    value={[
+                      recentFundamental[momKey],
+                      recentFundamental[yoyKey],
+                    ]}
+                  />
+                );
+              })}
             </Box>
           </Grid>
         )}
