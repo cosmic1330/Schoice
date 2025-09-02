@@ -2,10 +2,9 @@ import { error, info } from "@tauri-apps/plugin-log";
 import { sendNotification } from "@tauri-apps/plugin-notification";
 import { load } from "cheerio";
 import { useCallback, useState } from "react";
+import { getStore } from "../store/Setting.store";
 import { tauriFetcher, TauriFetcherType } from "../tools/http";
 import { StockTableType } from "../types";
-import { load as StoreLoad } from "@tauri-apps/plugin-store";
-
 
 enum QueryStockType {
   TWSE = 2,
@@ -64,7 +63,7 @@ export default function useDownloadStocks() {
       const OTC_data = await queryStocks(QueryStockType.OTC);
       TWSE_data.push(...OTC_data);
       info(`Total stocks fetched: ${TWSE_data.length}`);
-      const store = await StoreLoad("store.json", { autoSave: false });
+      const store = await getStore();
       await store.set("menu", TWSE_data);
       await store.save();
       setDisable(false);

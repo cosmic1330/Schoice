@@ -2,13 +2,13 @@ import { dateFormat } from "@ch20026103/anysis";
 import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
 import { fetch } from "@tauri-apps/plugin-http";
 import { error, info } from "@tauri-apps/plugin-log";
-import { load as StoreLoad } from "@tauri-apps/plugin-store";
 import pLimit from "p-limit";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import SqliteDataManager from "../classes/SqliteDataManager";
 import { DatabaseContext } from "../context/DatabaseContext";
 import useSchoiceStore from "../store/Schoice.store";
+import { getStore } from "../store/Setting.store";
 import {
   DealTableOptions,
   SkillsTableOptions,
@@ -413,7 +413,7 @@ export default function useHighConcurrencyDeals() {
   }, [db, status, dates, fetchDates, menu]);
 
   useEffect(() => {
-    StoreLoad("store.json", { autoSave: false }).then((store) => {
+    getStore().then((store) => {
       store.get("menu").then((menu) => {
         const menuList = menu as StockTableType[];
         setMenu(menuList);

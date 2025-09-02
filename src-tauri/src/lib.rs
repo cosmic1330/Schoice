@@ -2,6 +2,7 @@ mod sqlite;
 use std::fs;
 use tauri::Manager;
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
+use tauri_plugin_store::StoreBuilder;
 use tauri_plugin_updater::UpdaterExt;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -11,6 +12,19 @@ fn greet(name: &str) -> String {
 }
 
 async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
+    let app_data_dir = app.path().app_data_dir().unwrap();
+    let store_path = app_data_dir.join("store.json");
+    let store = StoreBuilder::new(&app.clone(), &store_path).build().map_err(|e| {
+        println!("Failed to build store: {}", e);
+        tauri_plugin_updater::Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))
+    })?;
+
+    let auto_update = store.get("autoUpdate").unwrap_or(Some(false).into());
+    if !auto_update.as_bool().unwrap_or(false) {
+        println!("Auto-update is disabled. Skipping update check.");
+        return Ok(());
+    }
+
     if let Some(update) = app.updater()?.check().await? {
         let version = &update.version;
 

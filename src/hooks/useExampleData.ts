@@ -1,5 +1,5 @@
-import { load as StoreLoad } from "@tauri-apps/plugin-store";
 import { useCallback, useEffect, useState } from "react";
+import { getStore } from "../store/Example.store";
 import useSchoiceStore from "../store/Schoice.store";
 import { tauriFetcher } from "../tools/http";
 import { TaType, UrlTaPerdOptions, UrlType } from "../types";
@@ -73,7 +73,7 @@ export default function useExampleData() {
 
   const getNewData = useCallback(
     async ({ type, id }: { type: UrlType; id: string }) => {
-      const store = await StoreLoad("example.json", { autoSave: false });
+      const store = await getStore();
       setHour([]);
       setDay([]);
       setWeek([]);
@@ -90,7 +90,7 @@ export default function useExampleData() {
   useEffect(() => {
     const type = UrlType.Indicators;
     const id = exampleChartId;
-    StoreLoad("example.json", { autoSave: false }).then(async (store) => {
+    getStore().then(async (store) => {
       const hour_list = await store.get<string>(UrlTaPerdOptions.Hour);
       const day_list = await store.get<string>(UrlTaPerdOptions.Day);
       const week_list = await store.get<string>(UrlTaPerdOptions.Week);

@@ -1,10 +1,6 @@
 import { Container, Grid, Typography } from "@mui/material";
-import CacheManagement from "./CacheManagement";
-import CloudSync from "./CloudSync";
-import DatabaseDeletion from "./DatabaseDeletion";
-import DatabaseRepair from "./DatabaseRepair";
+import CheckUpdate from "./CheckUpdate";
 import ExampleSelector from "./ExampleSelector";
-import OtherSettings from "./OtherSettings";
 import SystemStatus from "./SystemStatus";
 
 export default function Setting() {
@@ -14,11 +10,11 @@ export default function Setting() {
         系統管理
       </Typography>
       <Grid container spacing={2}>
-        <DatabaseRepair />
+        {/* <DatabaseRepair />
         <DatabaseDeletion />
-        <CacheManagement />
-        <OtherSettings />
-        <CloudSync />
+        <CacheManagement /> */}
+        {/* <OtherSettings /> */}
+        <CheckUpdate />
         <ExampleSelector />
       </Grid>
       <SystemStatus />
