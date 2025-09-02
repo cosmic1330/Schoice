@@ -1,6 +1,7 @@
 import { Container, Grid, Typography } from "@mui/material";
 import CheckUpdate from "./CheckUpdate";
 import ExampleSelector from "./ExampleSelector";
+import OtherSettings from "./OtherSettings";
 import SystemStatus from "./SystemStatus";
 
 export default function Setting() {
@@ -13,9 +14,9 @@ export default function Setting() {
         {/* <DatabaseRepair />
         <DatabaseDeletion />
         <CacheManagement /> */}
-        {/* <OtherSettings /> */}
-        <CheckUpdate />
+        <OtherSettings />
         <ExampleSelector />
+        <CheckUpdate />
       </Grid>
       <SystemStatus />
     </Container>

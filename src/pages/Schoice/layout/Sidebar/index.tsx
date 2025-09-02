@@ -1,15 +1,12 @@
-import DarkModeIcon from "@mui/icons-material/DarkMode";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import FastRewindIcon from "@mui/icons-material/FastRewind";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
-import LightModeIcon from "@mui/icons-material/LightMode";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsIcon from "@mui/icons-material/Settings";
 import SmartButtonIcon from "@mui/icons-material/SmartButton";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import { Box, IconButton, Stack, styled, Tooltip } from "@mui/material";
 import { useNavigate } from "react-router";
-import LanguageSwitcher from "../../../../components/LanguageSwitcher";
 import useSchoiceStore from "../../../../store/Schoice.store";
 import { supabase } from "../../../../tools/supabase";
 import InsertRuleButton from "./InsertRuleButton";
@@ -34,15 +31,8 @@ const GridItem = styled(Box)`
 export default function SideBar() {
   const navigate = useNavigate();
 
-  const { theme, changeTheme } = useSchoiceStore();
-
   const toSetting = () => {
     navigate("/schoice/setting");
-  };
-
-  const onThemeChange = () => {
-    if (theme === "light") changeTheme("dark");
-    else changeTheme("light");
   };
 
   const onLogout = async () => {
@@ -54,7 +44,11 @@ export default function SideBar() {
     <Box gridArea="sidebar">
       <GridItem>
         <Stack spacing={2} alignItems="center">
-          <img src="schoice_icon.png" alt="logo" style={{ width: 50, height: 50 }} />
+          <img
+            src="schoice_icon.png"
+            alt="logo"
+            style={{ width: 50, height: 50 }}
+          />
           <Tooltip title="首頁" arrow placement="right">
             <IconButton onClick={() => navigate("/schoice")}>
               <HomeRoundedIcon />
@@ -84,24 +78,18 @@ export default function SideBar() {
               <FastRewindIcon />
             </IconButton>
           </Tooltip>
+          <Tooltip title="設定" arrow placement="right">
+            <IconButton onClick={toSetting}>
+              <SettingsIcon />
+            </IconButton>
+          </Tooltip>
         </Stack>
 
         <Stack spacing={2} alignItems="center">
-          <LanguageSwitcher />
-          <Tooltip title="切換主題" arrow placement="right">
-            <IconButton onClick={onThemeChange}>
-              {theme === "light" ? <LightModeIcon /> : <DarkModeIcon />}
-            </IconButton>
-          </Tooltip>
           <InsertRuleButton />
           <Tooltip title="登出" arrow placement="right">
             <IconButton onClick={onLogout}>
               <LogoutIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="設定" arrow placement="right">
-            <IconButton onClick={toSetting}>
-              <SettingsIcon />
             </IconButton>
           </Tooltip>
         </Stack>

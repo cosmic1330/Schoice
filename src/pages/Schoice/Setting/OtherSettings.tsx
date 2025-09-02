@@ -7,10 +7,16 @@ import {
   Switch,
   Typography,
 } from "@mui/material";
-import { useState } from "react";
+import useSchoiceStore from "../../../store/Schoice.store";
+import LanguageSwitcher from "../../../components/LanguageSwitcher";
 
 export default function OtherSettings() {
-  const [disableNoti, setDisableNoti] = useState(false);
+  const { theme, changeTheme } = useSchoiceStore();
+
+  const onThemeChange = () => {
+    if (theme === "light") changeTheme("dark");
+    else changeTheme("light");
+  };
   return (
     <Grid size={{ xs: 12, md: 6 }}>
       <Card sx={{ height: "100%" }}>
@@ -22,16 +28,20 @@ export default function OtherSettings() {
             </Typography>
           </Stack>
           <Typography variant="body2" color="text.secondary" mb={2}>
-            設定暫時性系統選項，將於指定時間或重啟後還原。
+            系統選項
           </Typography>
           <Stack spacing={1} mt={2}>
             <Stack direction="row" alignItems="center" spacing={1}>
               <Switch
-                checked={disableNoti}
-                onChange={(e) => setDisableNoti(e.target.checked)}
+                checked={theme === "light" ? true : false}
+                onChange={onThemeChange}
                 color="success"
               />
-              <Typography variant="body2">停用通知</Typography>
+              <Typography variant="body2">切換主題</Typography>
+            </Stack>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <LanguageSwitcher />
+              <Typography variant="body2">語言切換</Typography>
             </Stack>
           </Stack>
         </CardContent>

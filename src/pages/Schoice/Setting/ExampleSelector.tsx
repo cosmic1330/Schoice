@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import useExampleData from "../../../hooks/useExampleData";
 import useSchoiceStore from "../../../store/Schoice.store";
 import { FutureIds, StockTableType, UrlType } from "../../../types";
+import DataObjectIcon from '@mui/icons-material/DataObject';
 
 export default function ExampleSelector() {
   const [menu, setMenu] = useState<StockTableType[]>([]);
@@ -94,9 +95,12 @@ export default function ExampleSelector() {
     <Grid size={{ xs: 6 }}>
       <Card>
         <CardContent>
-          <Typography variant="subtitle1" mb={1} fontWeight="bold">
-            範例圖表 (Example)
-          </Typography>
+          <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+            <DataObjectIcon color="error" />
+            <Typography variant="h6" fontWeight="bold">
+              範例圖表
+            </Typography>
+          </Stack>
 
           {loading ? (
             <Stack direction="row" alignItems="center" spacing={1} mb={1}>

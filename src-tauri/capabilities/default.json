@@ -16,6 +16,8 @@
     "core:window:allow-set-title",
     "core:webview:allow-create-webview-window",
     "core:window:allow-set-always-on-top",
+    "process:default",
+    "process:allow-restart",
     "clipboard-manager:allow-write-text",
     {
       "identifier": "http:default",

@@ -142,7 +142,7 @@ export default function RuleContent({ select }: { select: SelectType | null }) {
             <EditRoundedIcon />
           </IconButton>
         </Tooltip>
-        <Tooltip title="複製策略條件">
+        <Tooltip title="匯出策略條件(JSON格式)">
           <IconButton onClick={handleCopy}>
             <ContentPasteGoRoundedIcon />
           </IconButton>

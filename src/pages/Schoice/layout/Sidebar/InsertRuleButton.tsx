@@ -96,7 +96,7 @@ export default function InsertRuleButton() {
 
   return (
     <Box>
-      <Tooltip title="加入複製的策略" placement="right" arrow>
+      <Tooltip title="匯入JSON策略" placement="right" arrow>
         <IconButton
           onClick={() => {
             setOpen(true);
