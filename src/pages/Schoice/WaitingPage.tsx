@@ -6,6 +6,9 @@ import {
   useTheme,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import useDownloadStocks from "../../hooks/useDownloadStocks";
+import { getStore } from "../../store/Setting.store";
+import { StockTableType } from "../../types";
 
 interface WaitingPageProps {
   userLoading: boolean;
@@ -22,31 +25,53 @@ const WaitingPage = ({
 }: WaitingPageProps) => {
   const theme = useTheme();
   const [progress, setProgress] = useState(0);
+  const [menuReady, setMenuReady] = useState(false);
+  const { handleDownloadMenu } = useDownloadStocks();
 
   useEffect(() => {
     console.log("WaitingPage 狀態更新:", { userLoading, userReady, dbReady });
 
     let newProgress = 0;
-    if (!userLoading) newProgress += 50; // 用戶驗證完成
-    if (dbReady) newProgress += 50; // 資料庫連線完成
+    if (!userLoading) newProgress += 30; // 用戶驗證完成
+    if (dbReady) newProgress += 30; // 資料庫連線完成
 
+    // 檢查 menu 資料
+    getStore().then((store) => {
+      store.get("menu").then((menu) => {
+        const menuList = menu as StockTableType[];
+        if (!menuList || menuList.length === 0) {
+          console.warn("Menu is empty, please update your menu.");
+          handleDownloadMenu().then(() => {
+            setMenuReady(true);
+            console.log("Menu 資料下載完成");
+          });
+        } else {
+          setMenuReady(true);
+        }
+      });
+    });
+
+    // 更新進度條
+    if (menuReady) newProgress += 40; // Menu 資料準備完成
     setProgress(newProgress);
 
-    // 當兩者都準備好時，延遲一點時間讓使用者看到完成狀態
-    if (userReady && dbReady) {
+    // 當所有條件都滿足時，延遲一點時間讓使用者看到完成狀態
+    if (userReady && dbReady && menuReady) {
       console.log("所有服務都準備好了，即將進入主應用");
       setTimeout(() => {
         onReady();
       }, 500);
     }
-  }, [userLoading, userReady, dbReady, onReady]);
+  }, [userLoading, userReady, dbReady, menuReady, onReady]);
 
   const getStatusText = () => {
     if (userLoading) {
       return "正在驗證使用者身份...";
     } else if (!dbReady) {
       return "正在連接資料庫...";
-    } else if (userReady && dbReady) {
+    } else if (!menuReady) {
+      return "正在下載選單資料...";
+    } else if (userReady && dbReady && menuReady) {
       return "初始化完成！";
     }
     return "正在初始化...";

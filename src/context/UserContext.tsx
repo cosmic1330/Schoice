@@ -9,8 +9,6 @@ import {
 import useDownloadStocks from "../hooks/useDownloadStocks";
 import useCloudStore from "../store/Cloud.store";
 import { supabase } from "../tools/supabase";
-import { StockTableType } from "../types";
-import { getStore } from "../store/Setting.store";
 
 interface UserContextType {
   user: User | null;
@@ -61,15 +59,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     if (user) {
       // 如果有使用者登入，則從 Cloud Store 中載入使用者資料
       reload(user.id);
-      getStore().then((store) => {
-        store.get("menu").then((menu) => {
-          const menuList = menu as StockTableType[];
-          if (!menuList || menuList.length === 0) {
-            console.warn("Menu is empty, please update your menu.");
-            handleDownloadMenu();
-          }
-        });
-      });
     }
   }, [user]);
 
