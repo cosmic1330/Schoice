@@ -7,7 +7,6 @@ import SmartButtonIcon from "@mui/icons-material/SmartButton";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import { Box, IconButton, Stack, styled, Tooltip } from "@mui/material";
 import { useNavigate } from "react-router";
-import useSchoiceStore from "../../../../store/Schoice.store";
 import { supabase } from "../../../../tools/supabase";
 import InsertRuleButton from "./InsertRuleButton";
 const GridItem = styled(Box)`
