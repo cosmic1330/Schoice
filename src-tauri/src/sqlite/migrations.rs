@@ -1,10 +1,11 @@
 use tauri_plugin_sql::{Migration, MigrationKind};
 
 pub fn value() -> Vec<Migration> {
-    vec![Migration {
-        version: 1,
-        description: "create_initial_tables",
-        sql: "
+    vec![
+        Migration {
+            version: 1,
+            description: "create_initial_tables",
+            sql: "
                 CREATE TABLE daily_deal (
                     stock_id TEXT, -- 股票代號
                     t TEXT,  -- 日期
@@ -132,6 +133,46 @@ pub fn value() -> Vec<Migration> {
                     market_type TEXT -- 上市/上櫃
                 );
                 ",
-        kind: MigrationKind::Up,
-    }]
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 2,
+            description: "add_ema_columns_to_skills_tables",
+            sql: "
+                ALTER TABLE daily_skills
+                    ADD COLUMN ema5 REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN ema10 REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN ema20 REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN ema60 REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN ema120 REAL;
+
+                ALTER TABLE weekly_skills
+                    ADD COLUMN ema5 REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN ema10 REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN ema20 REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN ema60 REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN ema120 REAL;
+
+                ALTER TABLE hourly_skills
+                    ADD COLUMN ema5 REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN ema10 REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN ema20 REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN ema60 REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN ema120 REAL;
+            ",
+            kind: MigrationKind::Up,
+        },
+    ]
 }

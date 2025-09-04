@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { SkillsTableType, TaType } from "../types";
-import { Boll, Kd, Ma, Macd, Obv, ObvEma, Rsi } from "@ch20026103/anysis";
+import { Boll, Ema, Kd, Ma, Macd, Obv, ObvEma, Rsi } from "@ch20026103/anysis";
 
 export type FormatDataRow = Omit<SkillsTableType, "stock_id" | "t"> & {
   t: number;
@@ -18,6 +18,7 @@ export default function useFormatSkillData(data: TaType) {
 
     const boll = new Boll();
     const ma = new Ma();
+    const ema = new Ema();
     const macd = new Macd();
     const kd = new Kd();
     const rsi = new Rsi();
@@ -30,6 +31,11 @@ export default function useFormatSkillData(data: TaType) {
     let ma20_data = ma.init(init, 20);
     let ma60_data = ma.init(init, 60);
     let ma120_data = ma.init(init, 120);
+    let ema5_data = ema.init(init, 5);
+    let ema10_data = ema.init(init, 10);
+    let ema20_data = ema.init(init, 20);
+    let ema60_data = ema.init(init, 60);
+    let ema120_data = ema.init(init, 120);
     let boll_data = boll.init(init);
     let macd_data = macd.init(init);
     let kd_data = kd.init(init, 9);
@@ -50,6 +56,11 @@ export default function useFormatSkillData(data: TaType) {
       ma60_ded: ma60_data.exclusionValue["d-1"],
       ma120: ma120_data.ma,
       ma120_ded: ma120_data.exclusionValue["d-1"],
+      ema5: ema5_data.ema,
+      ema10: ema10_data.ema,
+      ema20: ema20_data.ema,
+      ema60: ema60_data.ema,
+      ema120: ema120_data.ema,
       macd: macd_data.macd,
       dif: macd_data.dif[macd_data.dif.length - 1] || 0,
       osc: macd_data.osc,
@@ -72,6 +83,11 @@ export default function useFormatSkillData(data: TaType) {
       ma20_data = ma.next(value, ma20_data, 20);
       ma60_data = ma.next(value, ma60_data, 60);
       ma120_data = ma.next(value, ma120_data, 120);
+      ema5_data = ema.next(value, ema5_data, 5);
+      ema10_data = ema.next(value, ema10_data, 10);
+      ema20_data = ema.next(value, ema20_data, 20);
+      ema60_data = ema.next(value, ema60_data, 60);
+      ema120_data = ema.next(value, ema120_data, 120);
       boll_data = boll.next(value, boll_data, 20);
       macd_data = macd.next(value, macd_data);
       kd_data = kd.next(value, kd_data, 9);
@@ -92,6 +108,11 @@ export default function useFormatSkillData(data: TaType) {
         ma60_ded: ma60_data.exclusionValue["d-1"],
         ma120: ma120_data.ma,
         ma120_ded: ma120_data.exclusionValue["d-1"],
+        ema5: ema5_data.ema,
+        ema10: ema10_data.ema,
+        ema20: ema20_data.ema,
+        ema60: ema60_data.ema,
+        ema120: ema120_data.ema,
         macd: macd_data.macd,
         dif: macd_data.dif[macd_data.dif.length - 1] || 0,
         osc: macd_data.osc,
