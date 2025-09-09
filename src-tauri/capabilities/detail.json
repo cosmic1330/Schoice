@@ -11,6 +11,7 @@
     "core:window:allow-unminimize",
     "notification:allow-request-permission",
     "notification:default",
+    "core:window:allow-set-focus",
     "log:default",
     {
       "identifier": "http:default",

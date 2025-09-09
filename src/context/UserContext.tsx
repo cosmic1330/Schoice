@@ -6,7 +6,6 @@ import {
   useEffect,
   useState,
 } from "react";
-import useDownloadStocks from "../hooks/useDownloadStocks";
 import useCloudStore from "../store/Cloud.store";
 import { supabase } from "../tools/supabase";
 
@@ -23,7 +22,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { reload } = useCloudStore();
-  const { handleDownloadMenu } = useDownloadStocks();
 
   useEffect(() => {
     const getSession = async () => {
