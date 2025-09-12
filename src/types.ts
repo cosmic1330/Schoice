@@ -87,6 +87,7 @@ export type WatchStockTableType = {
   user_id: string;
   stock_id: string;
 };
+
 export type RecentFundamentalTableType = {
   stock_id: string;
 
@@ -110,23 +111,43 @@ export type RecentFundamentalTableType = {
   eps_recent_y4: number | null;
   eps_recent_y4_name: string | null;
 
-  // 最近四個月 營收（月增率 / 年增率 / 月份名稱）
+  // 最近四個月 營收（月增率 / 年增率 / 累計年增率 / 月份名稱）
   revenue_recent_m1_mom: number | null;
   revenue_recent_m1_yoy: number | null;
+  revenue_recent_m1_yoy_acc: number | null;
   revenue_recent_m1_name: string | null;
 
   revenue_recent_m2_mom: number | null;
   revenue_recent_m2_yoy: number | null;
+  revenue_recent_m2_yoy_acc: number | null;
   revenue_recent_m2_name: string | null;
 
   revenue_recent_m3_mom: number | null;
   revenue_recent_m3_yoy: number | null;
+  revenue_recent_m3_yoy_acc: number | null;
   revenue_recent_m3_name: string | null;
 
   revenue_recent_m4_mom: number | null;
   revenue_recent_m4_yoy: number | null;
+  revenue_recent_m4_yoy_acc: number | null;
   revenue_recent_m4_name: string | null;
 };
+
+export type InvestorPositionsTableType = {
+  stock_id: string;
+  recent_w1_foreign_ratio: number | null;
+  recent_w1_big_investor_ratio: number | null;
+  recent_w1_name: string | null;
+  recent_w2_foreign_ratio: number | null;
+  recent_w2_big_investor_ratio: number | null;
+  recent_w2_name: string | null;
+  recent_w3_foreign_ratio: number | null;
+  recent_w3_big_investor_ratio: number | null;
+  recent_w3_name: string | null;
+  recent_w4_foreign_ratio: number | null;
+  recent_w4_big_investor_ratio: number | null;
+  recent_w4_name: string | null;
+}
 
 export type UserPromptsTableType = {
   prompt_id: number;

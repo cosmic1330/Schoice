@@ -28,12 +28,20 @@ export class StockFundamentalQueryBuilder {
       key: "revenue_recent_m1_yoy",
       table: "recent_fundamental",
     },
+    "營收近一月(累計年增率)": {
+      key: "revenue_recent_m1_yoy_acc",
+      table: "recent_fundamental",
+    },
     "營收近二月(月增率)": {
       key: "revenue_recent_m2_mom",
       table: "recent_fundamental",
     },
     "營收近二月(年增率)": {
       key: "revenue_recent_m2_yoy",
+      table: "recent_fundamental",
+    },
+    "營收近二月(累計年增率)": {
+      key: "revenue_recent_m2_yoy_acc",
       table: "recent_fundamental",
     },
     "營收近三月(月增率)": {
@@ -44,6 +52,10 @@ export class StockFundamentalQueryBuilder {
       key: "revenue_recent_m3_yoy",
       table: "recent_fundamental",
     },
+    "營收近三月(累計年增率)": {
+      key: "revenue_recent_m3_yoy_acc",
+      table: "recent_fundamental",
+    },
     "營收近四月(月增率)": {
       key: "revenue_recent_m4_mom",
       table: "recent_fundamental",
@@ -51,6 +63,42 @@ export class StockFundamentalQueryBuilder {
     "營收近四月(年增率)": {
       key: "revenue_recent_m4_yoy",
       table: "recent_fundamental",
+    },
+    "營收近四月(累計年增率)": {
+      key: "revenue_recent_m4_yoy_acc",
+      table: "recent_fundamental",
+    },
+    "持股比率近一週(外資)": {
+      key: "recent_w1_foreign_ratio",
+      table: "investor_positions",
+    },
+    "持股比率近一週(大戶)": {
+      key: "recent_w1_big_investor_ratio",
+      table: "investor_positions",
+    },
+    "持股比率近二週(外資)": {
+      key: "recent_w2_foreign_ratio",
+      table: "investor_positions",
+    },
+    "持股比率近二週(大戶)": {
+      key: "recent_w2_big_investor_ratio",
+      table: "investor_positions",
+    },
+    "持股比率近三週(外資)": {
+      key: "recent_w3_foreign_ratio",
+      table: "investor_positions",
+    },
+    "持股比率近三週(大戶)": {
+      key: "recent_w3_big_investor_ratio",
+      table: "investor_positions",
+    },
+    "持股比率近四週(外資)": {
+      key: "recent_w4_foreign_ratio",
+      table: "investor_positions",
+    },
+    "持股比率近四週(大戶)": {
+      key: "recent_w4_big_investor_ratio",
+      table: "investor_positions",
     },
   };
 

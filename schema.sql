@@ -35,15 +35,19 @@ CREATE TABLE recent_fundamental (
   -- 最近四個月 營收
   revenue_recent_m1_mom FLOAT,         -- 最近一個月 月增率(%)
   revenue_recent_m1_yoy FLOAT,         -- 最近一個月 年增率(%)
+  revenue_recent_m1_yoy_acc FLOAT,     -- 最近一個月 年增率(不含匯率)
   revenue_recent_m1_name TEXT,         -- 最近一個月名稱，例如 '2025Q2'
   revenue_recent_m2_mom FLOAT,         -- 往前第二個月 月增率(%)
   revenue_recent_m2_yoy FLOAT,         -- 往前第二個月 年增率(%)
+  revenue_recent_m2_yoy_acc FLOAT,     -- 往前第二個月 年增率(不含匯率)
   revenue_recent_m2_name TEXT,         -- 往前第二個月名稱
   revenue_recent_m3_mom FLOAT,         -- 往前第三個月 月增率(%)
   revenue_recent_m3_yoy FLOAT,         -- 往前第三個月 年增率(%)
+  revenue_recent_m3_yoy_acc FLOAT,     -- 往前第三個月 年增率(不含匯率)
   revenue_recent_m3_name TEXT,         -- 往前第三個月名稱
   revenue_recent_m4_mom FLOAT,         -- 往前第四個月 月增率(%)
   revenue_recent_m4_yoy FLOAT,         -- 往前第四個月 年增率(%)
+  revenue_recent_m4_yoy_acc FLOAT,     -- 往前第四個月 年增率(不含匯率)
   revenue_recent_m4_name TEXT,         -- 往前第四個月名稱
 
   -- 最近四季 EPS
@@ -65,6 +69,31 @@ CREATE TABLE recent_fundamental (
   eps_recent_y3_name TEXT,     -- 往前第三年名稱
   eps_recent_y4 FLOAT,         -- 往前第四年 EPS
   eps_recent_y4_name TEXT,     -- 往前第四年名稱
+
+  CONSTRAINT fk_stock 
+    FOREIGN KEY (stock_id) 
+    REFERENCES stock(stock_id)
+    ON DELETE CASCADE
+);
+
+
+CREATE TABLE investor_positions (
+  stock_id TEXT PRIMARY KEY,  -- 股票代碼（文字，因有些代碼有字母）
+
+  -- 最近四週大戶持股
+  recent_w1_foreign_ratio FLOAT,              -- 最近一週 外資持股比(%)
+  recent_w1_big_investor_ratio FLOAT,         -- 最近一週 大戶持股比(%)
+  recent_w1_name TEXT,                        -- 最近一週名稱，例如 '2025Q2'
+  recent_w2_foreign_ratio FLOAT,              -- 往前第二週 外資持股比(%)
+  recent_w2_big_investor_ratio FLOAT,         -- 往前第二週 大戶持股比(%)
+  recent_w2_name TEXT,                        -- 往前第二週名稱
+  recent_w3_foreign_ratio FLOAT,              -- 往前第三週 外資持股比(%)
+  recent_w3_big_investor_ratio FLOAT,         -- 往前第三週 大戶持股比(%)
+  recent_w3_name TEXT,                        -- 往前第三週名稱
+  recent_w4_foreign_ratio FLOAT,              -- 往前第四週 外資持股比(%)
+  recent_w4_big_investor_ratio FLOAT,         -- 往前第四週 大戶持股比(%)
+  recent_w4_name TEXT,                        -- 往前第四週名稱
+
 
   CONSTRAINT fk_stock 
     FOREIGN KEY (stock_id) 
