@@ -21,8 +21,8 @@ export default function RevenueSection({ recentFundamental }: RevenueSectionProp
             `revenue_recent_m${month}_mom` as keyof RecentFundamentalTableType;
           const yoyKey =
             `revenue_recent_m${month}_yoy` as keyof RecentFundamentalTableType;
-          const cumulativeYoyKey =
-            `revenue_recent_m${month}_cumulative_yoy` as keyof RecentFundamentalTableType;
+          const yoyAccKey =
+            `revenue_recent_m${month}_yoy_acc` as keyof RecentFundamentalTableType;
           const nameKey =
             `revenue_recent_m${month}_name` as keyof RecentFundamentalTableType;
 
@@ -33,7 +33,7 @@ export default function RevenueSection({ recentFundamental }: RevenueSectionProp
               value={[
                 recentFundamental[momKey],
                 recentFundamental[yoyKey],
-                recentFundamental[cumulativeYoyKey],
+                recentFundamental[yoyAccKey],
               ]}
               suffix="%"
               colorRule="both_red_when_negative"
