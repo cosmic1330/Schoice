@@ -5,7 +5,7 @@ import { IconButton, Tooltip } from "@mui/material";
 import TableCell from "@mui/material/TableCell";
 // TableRow removed: Virtuoso provides the row wrapper
 import { open } from "@tauri-apps/plugin-shell";
-import { lazy, memo, Suspense, useContext, useState } from "react";
+import { Fragment, lazy, memo, Suspense, useContext, useState } from "react";
 import { toast } from "react-toastify";
 import { DatabaseContext } from "../../context/DatabaseContext";
 import { useUser } from "../../context/UserContext";
@@ -81,12 +81,24 @@ export default memo(function ResultTableRow({
 
   // 回傳只有 TableCell（不包 TableRow），讓 Virtuoso 負責包裹 <tr>
   return (
-    <>
+    <Fragment>
       <TableCell>{index + 1}.</TableCell>
       <TableCell>{dates[todayDate]}</TableCell>
       <TableCell>{row.stock_id}</TableCell>
       <TableCell>
-        <Tooltip title={<FundamentalTooltip row={row} />}>
+        <Tooltip
+          title={<FundamentalTooltip row={row} />}
+          slotProps={{
+            popper: {
+              sx: {
+                "& .MuiTooltip-tooltip": {
+                  width: "auto",
+                  maxWidth: "none",
+                },
+              },
+            },
+          }}
+        >
           <span>{row.stock_name}</span>
         </Tooltip>
       </TableCell>
@@ -195,6 +207,6 @@ export default memo(function ResultTableRow({
           </IconButton>
         )}
       </TableCell>
-    </>
+    </Fragment>
   );
 });
