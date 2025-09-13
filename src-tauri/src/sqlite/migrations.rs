@@ -174,5 +174,75 @@ pub fn value() -> Vec<Migration> {
             ",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 3,
+            description: "add_obv_ma_and_mfi_columns_to_skills_tables",
+            sql: "
+                ALTER TABLE daily_skills
+                    DROP COLUMN obv5;
+                ALTER TABLE weekly_skills
+                    DROP COLUMN obv5;
+                ALTER TABLE hourly_skills
+                    DROP COLUMN obv5;
+
+                ALTER TABLE daily_skills
+                    ADD COLUMN obv_ma5 REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN obv_ma10 REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN obv_ma20 REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN obv_ma60 REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN obv_ema5 REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN obv_ema10 REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN obv_ema20 REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN obv_ema60 REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN mfi REAL;
+
+                ALTER TABLE weekly_skills
+                    ADD COLUMN obv_ma5 REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN obv_ma10 REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN obv_ma20 REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN obv_ma60 REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN obv_ema5 REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN obv_ema10 REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN obv_ema20 REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN obv_ema60 REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN mfi REAL;
+
+                ALTER TABLE hourly_skills
+                    ADD COLUMN obv_ma5 REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN obv_ma10 REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN obv_ma20 REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN obv_ma60 REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN obv_ema5 REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN obv_ema10 REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN obv_ema20 REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN obv_ema60 REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN mfi REAL;
+            ",
+            kind: MigrationKind::Up,
+        },
     ]
 }

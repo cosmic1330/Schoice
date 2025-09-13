@@ -1,4 +1,4 @@
-import { Boll, Ema, Kd, Ma, Macd, Obv, ObvEma, Rsi } from "@ch20026103/anysis";
+import { Boll, Ema, Kd, Ma, Macd, Obv, ObvEma, Rsi, Mfi } from "@ch20026103/anysis";
 import dateFormat, {
   Mode,
 } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
@@ -113,6 +113,7 @@ export default class SqliteDataManager {
       const rsi = new Rsi();
       const obv = new Obv();
       const obvEma = new ObvEma();
+      const mfi = new Mfi();
 
       const init = ta[0];
       let ma5_data = ma.init(init, 5);
@@ -131,7 +132,11 @@ export default class SqliteDataManager {
       let rsi5_data = rsi.init(init, 5);
       let rsi10_data = rsi.init(init, 10);
       let obv_data = obv.init(init);
-      let obvEma_data = obvEma.init(obv_data.obv, 5);
+      let obv_ma5_data = obvEma.init(obv_data.obv, 5);
+      let obv_ma10_data = obvEma.init(obv_data.obv, 10);
+      let obv_ma20_data = obvEma.init(obv_data.obv, 20);
+      let obv_ma60_data = obvEma.init(obv_data.obv, 60);
+      let mfi_data = mfi.init(init, 14);
 
       const deals: TimeSharingDealTableType[] = [];
       const skills: TimeSharingSkillsTableType[] = [];
@@ -156,7 +161,11 @@ export default class SqliteDataManager {
           rsi5_data = rsi.next(value, rsi5_data, 5);
           rsi10_data = rsi.next(value, rsi10_data, 10);
           obv_data = obv.next(value, obv_data);
-          obvEma_data = obvEma.next(obv_data.obv, obvEma_data, 5);
+          obv_ma5_data = obvEma.next(obv_data.obv, obv_ma5_data, 5);
+          obv_ma10_data = obvEma.next(obv_data.obv, obv_ma10_data, 10);
+          obv_ma20_data = obvEma.next(obv_data.obv, obv_ma20_data, 20);
+          obv_ma60_data = obvEma.next(obv_data.obv, obv_ma60_data, 60);
+          mfi_data = mfi.next(value, mfi_data, 14);
         }
 
         if (sets.lose_deal_set.has(value.t)) {
@@ -202,7 +211,15 @@ export default class SqliteDataManager {
             bollMa: boll_data.bollMa,
             bollLb: boll_data.bollLb,
             obv: obv_data.obv,
-            obv5: obvEma_data.ema,
+            obv_ma5: obv_ma5_data.ma,
+            obv_ma10: obv_ma10_data.ma,
+            obv_ma20: obv_ma20_data.ma,
+            obv_ma60: obv_ma60_data.ma,
+            obv_ema5: obv_ma5_data.ema,
+            obv_ema10: obv_ma10_data.ema,
+            obv_ema20: obv_ma20_data.ema,
+            obv_ema60: obv_ma60_data.ema,
+            mfi: mfi_data.mfi,
           });
         }
       }
@@ -248,6 +265,8 @@ export default class SqliteDataManager {
       const rsi = new Rsi();
       const obv = new Obv();
       const obvEma = new ObvEma();
+      const mfi = new Mfi();
+
 
       const init = ta[0];
       let ma5_data = ma.init(init, 5);
@@ -266,7 +285,11 @@ export default class SqliteDataManager {
       let rsi5_data = rsi.init(init, 5);
       let rsi10_data = rsi.init(init, 10);
       let obv_data = obv.init(init);
-      let obvEma_data = obvEma.init(obv_data.obv, 5);
+      let obv_ma5_data = obvEma.init(obv_data.obv, 5);
+      let obv_ma10_data = obvEma.init(obv_data.obv, 10);
+      let obv_ma20_data = obvEma.init(obv_data.obv, 20);
+      let obv_ma60_data = obvEma.init(obv_data.obv, 60);
+      let mfi_data = mfi.init(init, 14);
 
       const deals: DealTableType[] = [];
       const skills: SkillsTableType[] = [];
@@ -291,7 +314,11 @@ export default class SqliteDataManager {
           rsi5_data = rsi.next(value, rsi5_data, 5);
           rsi10_data = rsi.next(value, rsi10_data, 10);
           obv_data = obv.next(value, obv_data);
-          obvEma_data = obvEma.next(obv_data.obv, obvEma_data, 5);
+          obv_ma5_data = obvEma.next(obv_data.obv, obv_ma5_data, 5);
+          obv_ma10_data = obvEma.next(obv_data.obv, obv_ma10_data, 10);
+          obv_ma20_data = obvEma.next(obv_data.obv, obv_ma20_data, 20);
+          obv_ma60_data = obvEma.next(obv_data.obv, obv_ma60_data, 60);
+          mfi_data = mfi.next(value, mfi_data, 14);
         }
 
         if (sets.lose_deal_set.has(t)) {
@@ -337,7 +364,15 @@ export default class SqliteDataManager {
             bollMa: boll_data.bollMa,
             bollLb: boll_data.bollLb,
             obv: obv_data.obv,
-            obv5: obvEma_data.ema,
+            obv_ma5: obv_ma5_data.ma,
+            obv_ma10: obv_ma10_data.ma,
+            obv_ma20: obv_ma20_data.ma,
+            obv_ma60: obv_ma60_data.ma,
+            obv_ema5: obv_ma5_data.ema,
+            obv_ema10: obv_ma10_data.ema,
+            obv_ema20: obv_ma20_data.ema,
+            obv_ema60: obv_ma60_data.ema,
+            mfi: mfi_data.mfi,
           });
         }
       }
@@ -429,10 +464,18 @@ export default class SqliteDataManager {
           bollMa,
           bollLb,
           obv,
-          obv5) VALUES ${skills
+          obv_ma5,
+          obv_ma10,
+          obv_ma20,
+          obv_ma60,
+          obv_ema5,
+          obv_ema10,
+          obv_ema20,
+          obv_ema60,
+          mfi) VALUES ${skills
             .map(
               (skill) =>
-                `(${skill.stock_id}, '${skill.t}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv5})`
+                `(${skill.stock_id}, '${skill.t}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi})`
             )
             .join(", ")}`;
       await this.db.execute(sql);
@@ -497,10 +540,18 @@ export default class SqliteDataManager {
           bollMa,
           bollLb,
           obv,
-          obv5) VALUES ${skills
+          obv_ma5,
+          obv_ma10,
+          obv_ma20,
+          obv_ma60,
+          obv_ema5,
+          obv_ema10,
+          obv_ema20,
+          obv_ema60,
+          mfi) VALUES ${skills
             .map(
               (skill) =>
-                `(${skill.stock_id}, ${skill.ts}, ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv5})`
+                `(${skill.stock_id}, ${skill.ts}, ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi})`
             )
             .join(", ")}`;
       await this.db.execute(sql);

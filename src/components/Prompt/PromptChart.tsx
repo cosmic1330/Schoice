@@ -71,7 +71,15 @@ const indicatorMap: Record<string, keyof FormatDataRow> = {
   布林中軌: "bollMa",
   布林下軌: "bollLb",
   obv: "obv",
-  obv5: "obv5",
+  obv_ma5: "obv_ma5",
+  obv_ma10: "obv_ma10",
+  obv_ma20: "obv_ma20",
+  obv_ma60: "obv_ma60",
+  obv_ema5: "obv_ema5",
+  obv_ema10: "obv_ema10",
+  obv_ema20: "obv_ema20",
+  obv_ema60: "obv_ema60",
+  mfi: "mfi",
 };
 
 const hourMapping: Record<string, number> = {

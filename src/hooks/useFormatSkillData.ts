@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { SkillsTableType, TaType } from "../types";
-import { Boll, Ema, Kd, Ma, Macd, Obv, ObvEma, Rsi } from "@ch20026103/anysis";
+import { Boll, Ema, Kd, Ma, Macd, Obv, ObvEma, Rsi, Mfi } from "@ch20026103/anysis";
 
 export type FormatDataRow = Omit<SkillsTableType, "stock_id" | "t"> & {
   t: number;
@@ -24,6 +24,7 @@ export default function useFormatSkillData(data: TaType) {
     const rsi = new Rsi();
     const obv = new Obv();
     const obvEma = new ObvEma();
+    const mfi = new Mfi();
 
     const init = data[0];
     let ma5_data = ma.init(init, 5);
@@ -42,7 +43,11 @@ export default function useFormatSkillData(data: TaType) {
     let rsi5_data = rsi.init(init, 5);
     let rsi10_data = rsi.init(init, 10);
     let obv_data = obv.init(init);
-    let obvEma_data = obvEma.init(obv_data.obv, 5);
+    let obv_ma5_data = obvEma.init(obv_data.obv, 5);
+    let obv_ma10_data = obvEma.init(obv_data.obv, 10);
+    let obv_ma20_data = obvEma.init(obv_data.obv, 20);
+    let obv_ma60_data = obvEma.init(obv_data.obv, 60);
+    let mfi_data = mfi.init(init, 14);
 
     deals.push({
       ...init,
@@ -73,7 +78,15 @@ export default function useFormatSkillData(data: TaType) {
       bollMa: boll_data.bollMa,
       bollLb: boll_data.bollLb,
       obv: obv_data.obv,
-      obv5: obvEma_data.ema,
+      obv_ma5: obv_ma5_data.ma,
+      obv_ma10: obv_ma10_data.ma,
+      obv_ma20: obv_ma20_data.ma,
+      obv_ma60: obv_ma60_data.ma,
+      obv_ema5: obv_ma5_data.ema,
+      obv_ema10: obv_ma10_data.ema,
+      obv_ema20: obv_ma20_data.ema,
+      obv_ema60: obv_ma60_data.ema,
+      mfi: mfi_data.mfi,
     });
 
     for (let i = 1; i < data.length; i++) {
@@ -94,7 +107,11 @@ export default function useFormatSkillData(data: TaType) {
       rsi5_data = rsi.next(value, rsi5_data, 5);
       rsi10_data = rsi.next(value, rsi10_data, 10);
       obv_data = obv.next(value, obv_data);
-      obvEma_data = obvEma.next(obv_data.obv, obvEma_data, 5);
+      obv_ma5_data = obvEma.next(obv_data.obv, obv_ma5_data, 5);
+      obv_ma10_data = obvEma.next(obv_data.obv, obv_ma10_data, 10);
+      obv_ma20_data = obvEma.next(obv_data.obv, obv_ma20_data, 20);
+      obv_ma60_data = obvEma.next(obv_data.obv, obv_ma60_data, 60);
+      mfi_data = mfi.next(value, mfi_data, 14);
 
       deals.push({
         ...value,
@@ -125,7 +142,15 @@ export default function useFormatSkillData(data: TaType) {
         bollMa: boll_data.bollMa,
         bollLb: boll_data.bollLb,
         obv: obv_data.obv,
-        obv5: obvEma_data.ema,
+        obv_ma5: obv_ma5_data.ma,
+        obv_ma10: obv_ma10_data.ma,
+        obv_ma20: obv_ma20_data.ma,
+        obv_ma60: obv_ma60_data.ma,
+        obv_ema5: obv_ma5_data.ema,
+        obv_ema10: obv_ma10_data.ema,
+        obv_ema20: obv_ma20_data.ema,
+        obv_ema60: obv_ma60_data.ema,
+        mfi: mfi_data.mfi,
       });
     }
     return deals;

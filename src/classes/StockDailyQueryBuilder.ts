@@ -35,7 +35,15 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
     布林中軌: { key: "bollMa", group: "_day_ago_sk" },
     布林下軌: { key: "bollLb", group: "_day_ago_sk" },
     obv: { key: "obv", group: "_day_ago_sk" },
-    obv5: { key: "obv5", group: "_day_ago_sk" },
+    obv_ma5: { key: "obv_ma5", group: "_day_ago_sk" },
+    obv_ma10: { key: "obv_ma10", group: "_day_ago_sk" },
+    obv_ma20: { key: "obv_ma20", group: "_day_ago_sk" },
+    obv_ma60: { key: "obv_ma60", group: "_day_ago_sk" },
+    obv_ema5: { key: "obv_ema5", group: "_day_ago_sk" },
+    obv_ema10: { key: "obv_ema10", group: "_day_ago_sk" },
+    obv_ema20: { key: "obv_ema20", group: "_day_ago_sk" },
+    obv_ema60: { key: "obv_ema60", group: "_day_ago_sk" },
+    mfi: { key: "mfi", group: "_day_ago_sk" },
   };
 
   static getSpecificOptions(): Record<string, readonly string[]> {

@@ -31,21 +31,29 @@ export default function Obv({ perd }: { perd: UrlTaPerdOptions }) {
     if (deals?.length === 0) return [];
     const response = [];
     let obvData = obv.init(deals[0]);
-    let obvEmaData = obvEma.init(obvData.obv, 10);
-
+    
+    let obvEmaData = obvEma.init(obvData.obv, 20);
+    let obvEmaData20 = obvEma.init(obvData.obv, 20);
+    let obvEmaData60 = obvEma.init(obvData.obv, 60);
     response.push({
       ...deals[0],
       obv: obvData.obv,
-      emaObv10: obvEmaData.ema,
+      emaObv10: obvEmaData.ma,
+      emaObv20: obvEmaData20.ma,
+      emaObv60: obvEmaData60.ma,
     });
     for (let i = 1; i < deals.length; i++) {
       const deal = deals[i];
       obvData = obv.next(deal, obvData);
-      obvEmaData = obvEma.next(obvData.obv, obvEmaData, 10);
+      obvEmaData = obvEma.next(obvData.obv, obvEmaData, 20);
+      obvEmaData20 = obvEma.next(obvData.obv, obvEmaData20, 20);
+      obvEmaData60 = obvEma.next(obvData.obv, obvEmaData60, 60);
       response.push({
         ...deal,
         obv: obvData.obv,
-        emaObv10: obvEmaData.ema,
+        emaObv10: obvEmaData.ma,
+        emaObv20: obvEmaData20.ma,
+        emaObv60: obvEmaData60.ma,
       });
     }
     return response;
@@ -149,7 +157,7 @@ export default function Obv({ perd }: { perd: UrlTaPerdOptions }) {
             <Tooltip offset={50} />
             <Area
               type="monotone"
-              dataKey="emaObv10"
+              dataKey="emaObv60"
               stroke="#ff7300"
               fill="#ff7300"
             />

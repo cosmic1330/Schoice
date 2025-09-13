@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@ch20026103/anysis':
-        specifier: 0.0.17-alpha2
-        version: 0.0.17-alpha2
+        specifier: 0.0.18
+        version: 0.0.18
       '@ch20026103/backtest-lib':
         specifier: 0.0.3-alpha1
         version: 0.0.3-alpha1
@@ -235,8 +235,8 @@ packages:
   '@ch20026103/anysis@0.0.17-alpha1':
     resolution: {integrity: sha512-iYSYGuRu3P9DugXrFvo1upEUxOBZ9s3upIY0Q/Wd1yyT4VNFfMWlLbWrMUSmL5AjZgc1zHJQnECwu+sMxNJafQ==}
 
-  '@ch20026103/anysis@0.0.17-alpha2':
-    resolution: {integrity: sha512-SOwYjnhnBkkDZwGYzuGKay/hOoSyPi1dOvnQhnPLzsHS1fJuiS4dVJMBz9Zzy6TX26O109GGdHiE3R6cHsNdaQ==}
+  '@ch20026103/anysis@0.0.18':
+    resolution: {integrity: sha512-uC4v+hNTO9YPaXxaIr4Crp9ZbAWKLXZ9HwERTsvgnpsD0weuy+P5tKXkoEVObAYGb1ra/bh9GC6svIDjJd333Q==}
 
   '@ch20026103/backtest-lib@0.0.3-alpha1':
     resolution: {integrity: sha512-bJQaGpPzpJ8v/CI473sul8AGgVNW6a7jhDxCxW3SWMtUVMM1n6lLXRMTS7giYXQUjgS9hmPKEzodNEQL+kHp9w==}
@@ -1765,7 +1765,7 @@ snapshots:
 
   '@ch20026103/anysis@0.0.17-alpha1': {}
 
-  '@ch20026103/anysis@0.0.17-alpha2': {}
+  '@ch20026103/anysis@0.0.18': {}
 
   '@ch20026103/backtest-lib@0.0.3-alpha1':
     dependencies:

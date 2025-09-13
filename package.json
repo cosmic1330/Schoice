@@ -12,7 +12,7 @@
     "package": "tauri build"
   },
   "dependencies": {
-    "@ch20026103/anysis": "0.0.17-alpha2",
+    "@ch20026103/anysis": "0.0.18",
     "@ch20026103/backtest-lib": "0.0.3-alpha1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",

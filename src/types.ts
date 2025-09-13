@@ -208,7 +208,15 @@ export type SkillsTableType = {
   bollMa: number;
   bollLb: number;
   obv: number;
-  obv5: number;
+  obv_ma5: number;
+  obv_ma10: number;
+  obv_ma20: number;
+  obv_ma60: number;
+  obv_ema5: number;
+  obv_ema10: number;
+  obv_ema20: number;
+  obv_ema60: number;
+  mfi: number | null;
 };
 
 export type TickDealsType = {
@@ -261,7 +269,15 @@ export type TimeSharingSkillsTableType = {
   bollMa: number;
   bollLb: number;
   obv: number;
-  obv5: number;
+  obv_ma5: number;
+  obv_ma10: number;
+  obv_ma20: number;
+  obv_ma60: number;
+  obv_ema5: number;
+  obv_ema10: number;
+  obv_ema20: number;
+  obv_ema60: number;
+  mfi: number | null;
 };
 
 /****
