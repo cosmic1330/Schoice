@@ -12,73 +12,69 @@ import {
   ComposedChart,
   Line,
   ReferenceDot,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
-import obv from "../../cls_tools/obv";
+import mfi from "../../cls_tools/mfi";
 import { DealsContext } from "../../context/DealsContext";
-import { DivergenceSignalType, UrlTaPerdOptions } from "../../types";
-import detectObvDivergence from "../../utils/detectObvDivergence";
+import { DivergenceSignalType } from "../../types";
 
-export default function Obv({ perd }: { perd: UrlTaPerdOptions }) {
+export default function Mfi() {
   const deals = useContext(DealsContext);
 
   const chartData = useMemo(() => {
     if (deals?.length === 0) return [];
     const response = [];
-    let obvData = obv.init(deals[0]);
+    let mfiData = mfi.init(deals[0], 14);
 
     response.push({
       ...deals[0],
-      obv: obvData.obv,
+      mfi: mfiData.mfi,
     });
     for (let i = 1; i < deals.length; i++) {
       const deal = deals[i];
-      obvData = obv.next(deal, obvData);
+      mfiData = mfi.next(deal, mfiData, 14);
       response.push({
         ...deal,
-        obv: obvData.obv,
+        mfi: mfiData.mfi,
       });
     }
     return response;
   }, [deals]);
 
   const singals = useMemo(() => {
+    const response: {
+      t: number;
+      price: number;
+      type: DivergenceSignalType;
+      description: string;
+    }[] = [];
     const data = chartData;
-    return detectObvDivergence(data).splice(-5);
-  }, [chartData, perd]);
+    data.forEach((element) => {
+      if (element?.mfi !== null && element?.mfi < 20) {
+        response.push({
+          t: element.t,
+          price: element.c,
+          type:
+            element?.mfi < 20
+              ? DivergenceSignalType.BULLISH_DIVERGENCE
+              : DivergenceSignalType.BEARISH_DIVERGENCE,
+          description: `MFI 指標值為 ${element.mfi.toFixed(2)}`,
+        });
+      }
+    });
+    return response;
+  }, [chartData]);
 
   return (
     <Container component="main">
       <Stack spacing={1} direction="row" alignItems="center">
-        <MuiTooltip
-          title={
-            <Typography>
-              [健康的上升趨勢]價格持續創下新高，同時 OBV
-              線也跟著持續創下新高，買盤力道強勁，趨勢有望延續。
-              <br />
-              [健康的下降趨勢]價格持續創下新低，同時 OBV
-              線也跟著持續創下新低，賣壓沉重，趨勢短期難以扭轉。
-              <br />
-              頂背離: 股價持續上漲，創下近期新高，但 OBV
-              線卻沒有跟著創下新高，反而開始走平或下滑。
-              <br />
-              底背離: 股價持續下跌，創下近期新低，但 OBV
-              線卻沒有跟著創下新低，反而開始走平或小幅上揚。
-              <br />
-              可以像分析股價一樣，在 OBV
-              線上畫出支撐線、壓力線或趨勢線。由於「量在價先」，OBV
-              線的突破通常會早於價格線的突破。
-            </Typography>
-          }
-          arrow
-        >
-          <Typography variant="h5" gutterBottom>
-            OBV 流線圖
-          </Typography>
-        </MuiTooltip>
+        <Typography variant="h5" gutterBottom>
+          MFI 流線圖
+        </Typography>
         <Divider orientation="vertical" flexItem />
         {singals.length > 0 && (
           <MuiTooltip
@@ -130,8 +126,10 @@ export default function Obv({ perd }: { perd: UrlTaPerdOptions }) {
             <XAxis dataKey="t" />
             <YAxis domain={["dataMin", "dataMax"]} />
             <Tooltip offset={50} />
+            <ReferenceLine y={80} stroke="#ff0000" strokeDasharray="5 5" />
+            <ReferenceLine y={20} stroke="#ff0000" strokeDasharray="5 5" />
             <Line
-              dataKey="obv"
+              dataKey="mfi"
               stroke="#589bf3"
               dot={false}
               activeDot={false}

@@ -9,7 +9,6 @@ interface DataPoint {
   h: number;
   c: number;
   obv: number;
-  emaObv10: number;
 }
 
 // 簡單的峰值檢測 - 找到N天內的最高點

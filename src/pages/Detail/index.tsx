@@ -28,6 +28,7 @@ const Ma = lazy(() => import("./Ma"));
 const MJ = lazy(() => import("./MJ"));
 const MR = lazy(() => import("./MR"));
 const Kd = lazy(() => import("./Kd"));
+const Mfi = lazy(() => import("./Mfi"));
 
 const FullscreenVerticalCarousel: React.FC = () => {
   const [current, setCurrent] = useState(0);
@@ -47,6 +48,10 @@ const FullscreenVerticalCarousel: React.FC = () => {
       { id: "mr", content: <MR /> },
       { id: "kd", content: <Kd /> },
       { id: "obv", content: <Obv perd={perd} /> },
+      {
+        id: "mfi",
+        content: <Mfi />,
+      },
     ],
     [perd]
   );
@@ -93,12 +98,12 @@ const FullscreenVerticalCarousel: React.FC = () => {
     animate: {
       y: 0,
       opacity: 1,
-      transition: { duration: 0.3, ease: "easeInOut" }, 
+      transition: { duration: 0.3, ease: "easeInOut" },
     },
     exit: (direction: number) => ({
       y: direction > 0 ? "-100%" : "100%",
       opacity: 0,
-      transition: { duration: 0.3, ease: "easeInOut" }, 
+      transition: { duration: 0.3, ease: "easeInOut" },
     }),
   };
 
