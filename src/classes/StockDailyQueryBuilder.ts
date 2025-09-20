@@ -46,11 +46,56 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
     mfi: { key: "mfi", group: "_day_ago_sk" },
   };
 
+  protected othersMapping: Record<string, QueryBuilderMappingItem> = {
+    "營收近一月(累計年增率)": {
+      key: "revenue_recent_m1_yoy_acc",
+      group: "recent_fundamental",
+    },
+    "營收近二月(累計年增率)": {
+      key: "revenue_recent_m2_yoy_acc",
+      group: "recent_fundamental",
+    },
+    "營收近三月(累計年增率)": {
+      key: "revenue_recent_m3_yoy_acc",
+      group: "recent_fundamental",
+    },
+    "營收近四月(累計年增率)": {
+      key: "revenue_recent_m4_yoy_acc",
+      group: "recent_fundamental",
+    },
+    近一週外資持股比例: {
+      key: "recent_w1_foreign_ratio",
+      group: "investor_positions",
+    },
+    近一週大戶持股比例: {
+      key: "recent_w1_foreign_ratio",
+      group: "investor_positions",
+    },
+    近二週外資持股比例: {
+      key: "recent_w2_foreign_ratio",
+      group: "investor_positions",
+    },
+    近二週大戶持股比例: {
+      key: "recent_w2_foreign_ratio",
+      group: "investor_positions",
+    },
+  };
+
   static getSpecificOptions(): Record<string, readonly string[]> {
     return {
-      days: ["今天", "昨天", "前天", "3天前", "4天前", "5天前", "自定義數值"],
+      days: [
+        "今天",
+        "昨天",
+        "前天",
+        "3天前",
+        "4天前",
+        "5天前",
+        "自定義數值",
+        // "其他",
+      ],
       indicators: Object.keys(new StockDailyQueryBuilder().mapping),
       operators: ["大於", "小於", "等於", "大於等於", "小於等於"],
+      otherIndicators: Object.keys(new StockDailyQueryBuilder().othersMapping),
     };
   }
 
@@ -68,22 +113,33 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
 
   public generateExpression(prompt: StorePrompt): string[] {
     const { day1, indicator1, operator, day2, indicator2 } = prompt;
+    console.log(prompt);
+
     const operatorKey = this.convertOperator(operator);
 
-    const day1Mapping = this.mapping[indicator1];
-    const day1Key = `'${this.convertDayToNumber(day1)}${day1Mapping.group}'.${
-      day1Mapping.key
-    }`;
-
-    if (day2 === "自定義數值") {
-      return [day1Key, operatorKey, indicator2];
+    let day1Key = "";
+    if (day1 === "其他") {
+      const day1Mapping = this.othersMapping[indicator1];
+      day1Key = `'${day1Mapping.group}'.${day1Mapping.key}`;
+    } else {
+      const day1Mapping = this.mapping[indicator1];
+      day1Key = `'${this.convertDayToNumber(day1)}${day1Mapping.group}'.${
+        day1Mapping.key
+      }`;
     }
 
-    const day2Mapping = this.mapping[indicator2];
-    const day2Key = `'${this.convertDayToNumber(day2)}${day2Mapping.group}'.${
-      day2Mapping.key
-    }`;
-
+    let day2Key = "";
+    if (day2 === "自定義數值") {
+      day2Key = indicator2;
+    } else if (day2 === "其他") {
+      const day2Mapping = this.othersMapping[indicator2];
+      day2Key = `'${day2Mapping.group}'.${day2Mapping.key}`;
+    } else {
+      const day2Mapping = this.mapping[indicator2];
+      day2Key = `'${this.convertDayToNumber(day2)}${day2Mapping.group}'.${
+        day2Mapping.key
+      }`;
+    }
     return [day1Key, operatorKey, day2Key];
   }
 
@@ -106,6 +162,11 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
         `
       )
       .join("");
+
+    // const otherJoins = `
+    //   JOIN investor_positions ON investor_positions.stock_id = "0_day_ago".stock_id
+    //   JOIN recent_fundamental ON recent_fundamental.stock_id = "0_day_ago".stock_id
+    // `;
 
     const stockIdCondition = stockIds
       ? ` AND "0_day_ago".stock_id IN ('${stockIds.join("','")}')`

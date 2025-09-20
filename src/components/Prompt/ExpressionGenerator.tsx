@@ -113,6 +113,8 @@ function ExpressionGenerator({
   const indicators =
     timeFrame === "hour"
       ? StockHourlyQueryBuilder.getSpecificOptions().indicators
+      : timeFrame === "day" && selects.day1 === "其他" || selects.day2 === "其他"
+      ? StockDailyQueryBuilder.getSpecificOptions().otherIndicators
       : timeFrame === "day"
       ? StockDailyQueryBuilder.getSpecificOptions().indicators
       : StockWeeklyQueryBuilder.getSpecificOptions().indicators;

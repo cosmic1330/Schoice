@@ -87,6 +87,7 @@ export default memo(function ResultTableRow({
       <TableCell>{row.stock_id}</TableCell>
       <TableCell>
         <Tooltip
+          placement="top-start"
           title={<FundamentalTooltip row={row} />}
           slotProps={{
             popper: {

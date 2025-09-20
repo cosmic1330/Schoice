@@ -16,25 +16,25 @@ export default function InvestorPositionsSection({
       <Box>
         {/* 近期外資比例 */}
         <MetricItem
-          label={`近一週外資 ${investorPositions.recent_w1_foreign_ratio}`}
+          label={`近一週外資 ${investorPositions.recent_w1_name}`}
           value={investorPositions.recent_w1_foreign_ratio}
           suffix="%"
           colorRule="negative_red"
         />
         <MetricItem
-          label={`近二週外資 ${investorPositions.recent_w2_foreign_ratio}}`}
+          label={`近二週外資 ${investorPositions.recent_w1_name}`}
           value={investorPositions.recent_w2_foreign_ratio}
           suffix="%"
           colorRule="negative_red"
         />
         <MetricItem
-          label={`近三週外資 ${investorPositions.recent_w3_foreign_ratio}}`}
+          label={`近三週外資 ${investorPositions.recent_w1_name}`}
           value={investorPositions.recent_w3_foreign_ratio}
           suffix="%"
           colorRule="negative_red"
         />
         <MetricItem
-          label={`近四週外資 ${investorPositions.recent_w4_foreign_ratio}}`}
+          label={`近四週外資 ${investorPositions.recent_w1_name}`}
           value={investorPositions.recent_w4_foreign_ratio}
           suffix="%"
           colorRule="negative_red"
