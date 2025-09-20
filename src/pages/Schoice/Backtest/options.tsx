@@ -92,7 +92,7 @@ export default function Options({
             {t("Pages.Schoice.Backtest.closePrice")}
           </MenuItem>
           <MenuItem value={BuyPrice.HIGHT}>
-            {t("Pages.Schoice.Backtest.highPrice")}
+            {t("Pages.Schoice.Backtest.hightPrice")}
           </MenuItem>
           <MenuItem value={BuyPrice.LOW}>
             {t("Pages.Schoice.Backtest.lowPrice")}
@@ -115,7 +115,7 @@ export default function Options({
             {t("Pages.Schoice.Backtest.closePrice")}
           </MenuItem>
           <MenuItem value={SellPrice.HIGHT}>
-            {t("Pages.Schoice.Backtest.highPrice")}
+            {t("Pages.Schoice.Backtest.hightPrice")}
           </MenuItem>
           <MenuItem value={SellPrice.LOW}>
             {t("Pages.Schoice.Backtest.lowPrice")}
