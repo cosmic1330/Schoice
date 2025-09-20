@@ -2,11 +2,13 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
 import {
   Box,
   Button,
+  FormControlLabel,
   Grid,
   MenuItem,
   Paper,
   Select,
   SelectChangeEvent,
+  Switch,
   TextField,
   Tooltip,
   Typography,
@@ -19,13 +21,24 @@ import ConditionsTable from "./ConditionsTable";
 import FundamentalResult from "./FundamentalResult";
 
 export default function Fundamental() {
-  const { indicators, operators } = stockFundamentalQueryBuilder.getOptions();
+  const { indicators, operators, valuesByIndicator } =
+    stockFundamentalQueryBuilder.getOptions();
+  const [open, setOpen] = useState(false);
   const [prompts, setPrompts] = useState<FundamentalPrompts>([]);
   const [selects, setSelects] = useState<FundamentalPrompt>({
     indicator: indicators[0],
     operator: operators[0],
-    value: "1",
+    value: valuesByIndicator[indicators[0]][0] || "1",
   });
+
+  const handleIndicatorChange = (event: SelectChangeEvent<string>) => {
+    const { value } = event.target;
+    setSelects((prev) => ({
+      ...prev,
+      indicator: value,
+      value: valuesByIndicator[value][0] || "1",
+    }));
+  };
 
   const handleChange = (event: SelectChangeEvent<string>) => {
     const { value, name } = event.target;
@@ -39,7 +52,7 @@ export default function Fundamental() {
     const { value } = event.target;
     setSelects((prev) => ({
       ...prev,
-      value
+      value,
     }));
   };
 
@@ -76,7 +89,7 @@ export default function Fundamental() {
           >
             <Select
               value={selects.indicator}
-              onChange={handleChange}
+              onChange={handleIndicatorChange}
               name="indicator"
               fullWidth
             >
@@ -98,13 +111,37 @@ export default function Fundamental() {
                 </MenuItem>
               ))}
             </Select>
-            <TextField
-              name="value"
-              type="number"
-              label="值"
-              fullWidth
-              onChange={handleValueChange}
-              value={selects.value}
+            {open ? (
+              <TextField
+                name="value"
+                type="number"
+                label="值"
+                fullWidth
+                onChange={handleValueChange}
+                value={selects.value}
+              />
+            ) : (
+              <Select
+                value={selects.value}
+                onChange={handleChange}
+                name="value"
+                fullWidth
+              >
+                {valuesByIndicator[selects.indicator].map((value) => (
+                  <MenuItem key={value} value={value}>
+                    {value}
+                  </MenuItem>
+                ))}
+              </Select>
+            )}
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={open}
+                  onChange={() => setOpen((value) => !value)}
+                />
+              }
+              label="設定數字"
             />
           </Box>
           <Box sx={{ textAlign: "center", marginTop: "20px" }}>

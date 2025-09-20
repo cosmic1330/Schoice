@@ -63,22 +63,6 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
       key: "revenue_recent_m4_yoy_acc",
       group: "recent_fundamental",
     },
-    近一週外資持股比例: {
-      key: "recent_w1_foreign_ratio",
-      group: "investor_positions",
-    },
-    近一週大戶持股比例: {
-      key: "recent_w1_foreign_ratio",
-      group: "investor_positions",
-    },
-    近二週外資持股比例: {
-      key: "recent_w2_foreign_ratio",
-      group: "investor_positions",
-    },
-    近二週大戶持股比例: {
-      key: "recent_w2_foreign_ratio",
-      group: "investor_positions",
-    },
   };
 
   static getSpecificOptions(): Record<string, readonly string[]> {

@@ -68,6 +68,38 @@ export class StockFundamentalQueryBuilder {
       key: "revenue_recent_m4_yoy_acc",
       table: "recent_fundamental",
     },
+    近一週外資持股比例: {
+      key: "recent_w1_foreign_ratio",
+      table: "investor_positions",
+    },
+    近一週大戶持股比例: {
+      key: "recent_w1_big_investor_ratio",
+      table: "investor_positions",
+    },
+    近二週外資持股比例: {
+      key: "recent_w2_foreign_ratio",
+      table: "investor_positions",
+    },
+    近二週大戶持股比例: {
+      key: "recent_w2_big_investor_ratio",
+      table: "investor_positions",
+    },
+    近三週外資持股比例: {
+      key: "recent_w3_foreign_ratio",
+      table: "investor_positions",
+    },
+    近三週大戶持股比例: {
+      key: "recent_w3_big_investor_ratio",
+      table: "investor_positions",
+    },
+    近四週外資持股比例: {
+      key: "recent_w4_foreign_ratio",
+      table: "investor_positions",
+    },
+    近四週大戶持股比例: {
+      key: "recent_w4_big_investor_ratio",
+      table: "investor_positions",
+    },
   };
 
   protected operatorMapping: Record<string, string> = {
@@ -85,129 +117,115 @@ export class StockFundamentalQueryBuilder {
     conditions: FundamentalPrompts;
     stockIds?: string[];
   }) {
-    let stockIdsFromFinancialMetric: string[] = [];
-    let stockIdsFromRecentFundamental: string[] = [];
+    let stockIdsFromTables: Record<string, string[]> = {};
 
     // 分組條件按表格
-    const financialMetricConditions = conditions.filter(
-      (condition) =>
-        this.mapping[condition.indicator].table === "financial_metric"
-    );
-    const recentFundamentalConditions = conditions.filter(
-      (condition) =>
-        this.mapping[condition.indicator].table === "recent_fundamental"
-    );
+    const groupedConditions = conditions.reduce((acc, condition) => {
+      const table = this.mapping[condition.indicator].table;
+      if (!acc[table]) acc[table] = [];
+      acc[table].push(condition);
+      return acc;
+    }, {} as Record<string, FundamentalPrompts>);
 
-    // 處理 financial_metric 表的條件
-    if (financialMetricConditions.length > 0) {
-      let query = supabase.from("financial_metric").select("stock_id");
+    for (const [table, tableConditions] of Object.entries(groupedConditions)) {
+      let query = supabase.from(table).select("stock_id, *");
 
-      for (const condition of financialMetricConditions) {
+      // 先查出所有該 table 的資料
+      const { data: tableData, error: tableError } = await query;
+      if (tableError) {
+        console.error(`${table} 查詢失敗:`, tableError);
+        return [];
+      }
+      let filteredData = tableData;
+
+      for (const condition of tableConditions) {
         const indicator = this.mapping[condition.indicator].key;
         const operator = this.operatorMapping[condition.operator];
         const value = condition.value;
 
-        switch (operator) {
-          case "=":
-            query = query.eq(indicator, parseFloat(value));
-            break;
-          case ">":
-            query = query.gt(indicator, parseFloat(value));
-            break;
-          case ">=":
-            query = query.gte(indicator, parseFloat(value));
-            break;
-          case "<":
-            query = query.lt(indicator, parseFloat(value));
-            break;
-          case "<=":
-            query = query.lte(indicator, parseFloat(value));
-            break;
-          default:
-            throw new Error(`不支援的運算子: ${operator}`);
+        if (!operator) {
+          throw new Error(`不支援的運算子: ${condition.operator}`);
+        }
+
+        // value 是數字
+        if (!isNaN(Number(value))) {
+          filteredData = filteredData.filter((row) => {
+            if (row[indicator] == null) return false;
+            switch (operator) {
+              case "=":
+                return row[indicator] === parseFloat(value);
+              case ">":
+                return row[indicator] > parseFloat(value);
+              case ">=":
+                return row[indicator] >= parseFloat(value);
+              case "<":
+                return row[indicator] < parseFloat(value);
+              case "<=":
+                return row[indicator] <= parseFloat(value);
+              default:
+                return false;
+            }
+          });
+        } else if (this.mapping[value] && this.mapping[value].table === table) {
+          // value 是 mapping 的 key，且屬於相同的 table
+          const valueKey = this.mapping[value].key;
+          filteredData = filteredData.filter((row) => {
+            if (row[indicator] == null || row[valueKey] == null) return false;
+            switch (operator) {
+              case "=":
+                return row[indicator] === row[valueKey];
+              case ">":
+                return row[indicator] > row[valueKey];
+              case ">=":
+                return row[indicator] >= row[valueKey];
+              case "<":
+                return row[indicator] < row[valueKey];
+              case "<=":
+                return row[indicator] <= row[valueKey];
+              default:
+                return false;
+            }
+          });
+        } else {
+          throw new Error(
+            `條件 ${condition.indicator} 的值 ${value} 不屬於相同的表格 ${table}`
+          );
         }
       }
 
+      // stockIds 篩選
       if (stockIds && stockIds.length > 0) {
-        query = query.in("stock_id", stockIds);
+        filteredData = filteredData.filter((row) =>
+          stockIds.includes(row.stock_id)
+        );
       }
-
-      const { data, error } = await query;
-      if (error) {
-        console.error("financial_metric 查詢失敗:", error);
-        return [];
-      }
-      stockIdsFromFinancialMetric = data.map((r) => r.stock_id);
+      stockIdsFromTables[table] = filteredData.map((r) => r.stock_id);
     }
 
-    // 處理 recent_fundamental 表的條件
-    if (recentFundamentalConditions.length > 0) {
-      let query = supabase.from("recent_fundamental").select("stock_id");
-
-      for (const condition of recentFundamentalConditions) {
-        const indicator = this.mapping[condition.indicator].key;
-        const operator = this.operatorMapping[condition.operator];
-        const value = condition.value;
-
-        switch (operator) {
-          case "=":
-            query = query.eq(indicator, parseFloat(value));
-            break;
-          case ">":
-            query = query.gt(indicator, parseFloat(value));
-            break;
-          case ">=":
-            query = query.gte(indicator, parseFloat(value));
-            break;
-          case "<":
-            query = query.lt(indicator, parseFloat(value));
-            break;
-          case "<=":
-            query = query.lte(indicator, parseFloat(value));
-            break;
-          default:
-            throw new Error(`不支援的運算子: ${operator}`);
-        }
-      }
-
-      if (stockIds && stockIds.length > 0) {
-        query = query.in("stock_id", stockIds);
-      }
-
-      const { data, error } = await query;
-      if (error) {
-        console.error("recent_fundamental 查詢失敗:", error);
-        return [];
-      }
-      stockIdsFromRecentFundamental = data.map((r) => r.stock_id);
-    }
-
-    // 取交集：同時滿足兩個表格條件的股票
-    if (
-      financialMetricConditions.length > 0 &&
-      recentFundamentalConditions.length > 0
-    ) {
-      return stockIdsFromFinancialMetric.filter((id) =>
-        stockIdsFromRecentFundamental.includes(id)
-      );
+    // 取交集：滿足所有表格條件的股票
+    const allStockIds = Object.values(stockIdsFromTables);
+    if (allStockIds.length > 1) {
+      return allStockIds.reduce((a, b) => a.filter((id) => b.includes(id)));
     }
 
     // 如果只有一個表格有條件，返回該表格的結果
-    if (financialMetricConditions.length > 0) {
-      return stockIdsFromFinancialMetric;
-    }
-
-    if (recentFundamentalConditions.length > 0) {
-      return stockIdsFromRecentFundamental;
-    }
-
-    return [];
+    return allStockIds[0] || [];
   }
 
   public getOptions() {
+    const indicators = Object.keys(this.mapping);
+    const valuesByIndicator = indicators.reduce((acc, indicator) => {
+      const table = this.mapping[indicator].table;
+      acc[indicator] = indicators.filter(
+        (key) => this.mapping[key].table === table
+      );
+      return acc;
+    }, {} as Record<string, string[]>);
+
     return {
-      indicators: [...Object.keys(this.mapping)],
+      indicators,
       operators: Object.keys(this.operatorMapping),
+      valuesByIndicator,
     };
   }
 }
