@@ -1,4 +1,14 @@
-import { Boll, Ema, Kd, Ma, Macd, Obv, ObvEma, Rsi, Mfi } from "@ch20026103/anysis";
+import {
+  Boll,
+  Ema,
+  Kd,
+  Ma,
+  Macd,
+  Mfi,
+  Obv,
+  ObvEma,
+  Rsi,
+} from "@ch20026103/anysis";
 import dateFormat, {
   Mode,
 } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
@@ -10,7 +20,7 @@ import {
   SkillsTableOptions,
   SkillsTableType,
   StockTableType,
-  TaType,
+  TaListType,
   TimeSharingDealTableOptions,
   TimeSharingDealTableType,
   TimeSharingSkillsTableOptions,
@@ -89,7 +99,7 @@ export default class SqliteDataManager {
   }
 
   async timeSharingProcessor(
-    ta: TaType,
+    ta: TaListType,
     stock: StockTableType,
     options: {
       dealType: TimeSharingDealTableOptions;
@@ -241,7 +251,7 @@ export default class SqliteDataManager {
   }
 
   async processor(
-    ta: TaType,
+    ta: TaListType,
     stock: StockTableType,
     options: {
       dealType: DealTableOptions;
@@ -266,7 +276,6 @@ export default class SqliteDataManager {
       const obv = new Obv();
       const obvEma = new ObvEma();
       const mfi = new Mfi();
-
 
       const init = ta[0];
       let ma5_data = ma.init(init, 5);

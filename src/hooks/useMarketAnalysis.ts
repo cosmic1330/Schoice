@@ -1,13 +1,13 @@
 import { dateFormat, Kd, Ma, Macd } from "@ch20026103/anysis";
 import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
 import { useMemo } from "react";
-import { TaType, UrlTaPerdOptions } from "../types";
+import { TaListType, UrlTaPerdOptions } from "../types";
 
 const kd = new Kd();
-const ma = new Ma();  
+const ma = new Ma();
 const macd = new Macd();
 interface UseMarketAnalysisOptions {
-  ta: TaType;
+  ta: TaListType;
   perd: UrlTaPerdOptions;
 }
 

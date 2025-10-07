@@ -4,7 +4,7 @@ This directory contains the core data management and query building logic for th
 
 ## Data Managers
 
-- **CsvDataManager.ts**: This class is responsible for generating CSV data for stock deals and technical analysis indicators. It takes raw technical analysis data (`TaType`) and transforms it into a CSV-friendly format.
+- **CsvDataManager.ts**: This class is responsible for generating CSV data for stock deals and technical analysis indicators. It takes raw technical analysis data (`TaListType`) and transforms it into a CSV-friendly format.
 
 - **SqliteDataManager.ts**: This class manages all interactions with the SQLite database. It handles clearing tables, deleting data, querying for the latest data, and processing and saving new data. It includes methods for handling daily, weekly, and hourly stock data, as well as fundamental data. It also contains the logic for calculating a wide range of technical indicators (MA, MACD, RSI, etc.) and saving them to the database.
 

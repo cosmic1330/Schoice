@@ -15,7 +15,7 @@ import useFormatSkillData, {
   FormatDataRow,
 } from "../../hooks/useFormatSkillData";
 import useSchoiceStore from "../../store/Schoice.store";
-import type { Prompts } from "../../types";
+import type { Prompts, RequirementPrompt } from "../../types";
 import BaseCandlestickRectangle from "../RechartCustoms/BaseCandlestickRectangle";
 
 type dataRow = {
@@ -31,6 +31,8 @@ interface PromptChartProps {
   hourlyPrompts: Prompts;
   dailyPrompts: Prompts;
   weeklyPrompts: Prompts;
+  specialRequirement: RequirementPrompt[];
+
   // data 由呼叫方傳入；若沒有則顯示空白提示
   hourlyData?: dataRow[];
   dailyData?: dataRow[];

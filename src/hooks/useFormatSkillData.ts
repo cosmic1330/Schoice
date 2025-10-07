@@ -1,6 +1,16 @@
+import {
+  Boll,
+  Ema,
+  Kd,
+  Ma,
+  Macd,
+  Mfi,
+  Obv,
+  ObvEma,
+  Rsi,
+} from "@ch20026103/anysis";
 import { useMemo } from "react";
-import { SkillsTableType, TaType } from "../types";
-import { Boll, Ema, Kd, Ma, Macd, Obv, ObvEma, Rsi, Mfi } from "@ch20026103/anysis";
+import { SkillsTableType, TaListType } from "../types";
 
 export type FormatDataRow = Omit<SkillsTableType, "stock_id" | "t"> & {
   t: number;
@@ -11,7 +21,7 @@ export type FormatDataRow = Omit<SkillsTableType, "stock_id" | "t"> & {
   v: number;
 };
 
-export default function useFormatSkillData(data: TaType) {
+export default function useFormatSkillData(data: TaListType) {
   const formatData = useMemo<FormatDataRow[]>(() => {
     if (!data || data.length === 0) return [];
     const deals: FormatDataRow[] = [];

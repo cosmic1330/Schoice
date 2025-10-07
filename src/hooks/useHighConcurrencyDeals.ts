@@ -13,7 +13,7 @@ import {
   DealTableOptions,
   SkillsTableOptions,
   StockTableType,
-  TaType,
+  TaListType,
   TimeSharingDealTableOptions,
   TimeSharingSkillsTableOptions,
   UrlTaPerdOptions,
@@ -60,7 +60,7 @@ export default function useHighConcurrencyDeals() {
       signal: AbortSignal,
       stock: StockTableType,
       perd: UrlTaPerdOptions
-    ): Promise<TaType> => {
+    ): Promise<TaListType> => {
       return withRetry(async () => {
         try {
           const response = await fetch(
@@ -258,7 +258,7 @@ export default function useHighConcurrencyDeals() {
 
         // daily
         if (daily.status === "fulfilled") {
-          const dailyData = daily.value as TaType;
+          const dailyData = daily.value as TaListType;
 
           const daily_date = dailyData.map((item) =>
             dateFormat(item.t, Mode.NumberToString)
@@ -302,7 +302,7 @@ export default function useHighConcurrencyDeals() {
 
         // weekly
         if (weekly.status === "fulfilled") {
-          const weeklyData = weekly.value as TaType;
+          const weeklyData = weekly.value as TaListType;
           const weekly_date = weeklyData.map((item) =>
             dateFormat(item.t, Mode.NumberToString)
           );
@@ -349,7 +349,7 @@ export default function useHighConcurrencyDeals() {
         }
         // hourly
         if (hourly.status === "fulfilled") {
-          const hourlyData = hourly.value as TaType;
+          const hourlyData = hourly.value as TaListType;
           const hourly_date = hourlyData.map((item) => item.t);
           const sqlite_hourly_deal =
             await sqliteDataManager.getStockTimeSharing(

@@ -1,4 +1,4 @@
 import { createContext } from "react";
-import { TaType } from "../types";
+import { TaListType } from "../types";
 
-export const DealsContext = createContext<TaType>([]);
+export const DealsContext = createContext<TaListType>([]);

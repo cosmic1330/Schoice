@@ -10,7 +10,7 @@ import { useUser } from "../../../context/UserContext";
 import useExampleData from "../../../hooks/useExampleData";
 import useCloudStore from "../../../store/Cloud.store";
 import useSchoiceStore from "../../../store/Schoice.store";
-import { Prompts, PromptType } from "../../../types";
+import { Prompts, PromptType, RequirementPrompt } from "../../../types";
 
 type PromptCategory = "hourly" | "daily" | "weekly";
 
@@ -23,6 +23,9 @@ export default function PromptAdd() {
     daily: [],
     weekly: [],
   });
+  const [specialRequirement, setSpecialRequirement] = useState<
+    RequirementPrompt[]
+  >([]);
 
   const [name, setName] = useState(nanoid());
   const [isCreating, setIsCreating] = useState(false);
@@ -95,6 +98,8 @@ export default function PromptAdd() {
                 setPrompts((p) => ({ ...p, daily: newPrompts(p.daily) })),
               setWeekPrompts: (newPrompts: any) =>
                 setPrompts((p) => ({ ...p, weekly: newPrompts(p.weekly) })),
+              setSpecialRequirement,
+              specialRequirement,
             }}
           />
         </Container>
@@ -135,6 +140,7 @@ export default function PromptAdd() {
           hourlyData={hourlyData}
           dailyData={dailyData}
           weeklyData={weeklyData}
+          specialRequirement={specialRequirement}
         />
       </Grid>
     </Grid>

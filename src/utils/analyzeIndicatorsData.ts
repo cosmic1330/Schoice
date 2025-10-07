@@ -1,6 +1,6 @@
 import { dateFormat } from "@ch20026103/anysis";
 import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
-import { TaType } from "../types";
+import { TaListType } from "../types";
 import formatDateTime from "./formatDateTime";
 
 export enum IndicatorsDateTimeType {
@@ -11,7 +11,7 @@ export enum IndicatorsDateTimeType {
 export default function analyzeIndicatorsData(
   data: string,
   timeType: IndicatorsDateTimeType
-): TaType {
+): TaListType {
   const json = JSON.parse(data as string);
   const opens = json[0].chart.indicators.quote[0].open;
   const closes = json[0].chart.indicators.quote[0].close;

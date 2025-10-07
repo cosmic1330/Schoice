@@ -1,6 +1,7 @@
 /****
  * Data Example: [{"t":20241007,"o":199.0,"h":199.0,"l":195.0,"c":197.5,"v":83451}]
  ****/
+
 export type TaType = {
   t: number; // 20241007
   o: number; // 199.0
@@ -8,7 +9,9 @@ export type TaType = {
   l: number; // 195.0
   c: number; // 197.5
   v: number; // 83451
-}[];
+};
+
+export type TaListType = TaType[];
 
 export enum PromptType {
   BULL = "bull",
@@ -31,9 +34,14 @@ export type PromptValue = {
   hourly: Prompts;
 };
 
+export enum RequirementPrompt {
+  Regression = "regression",
+}
+
 export type PromptItem = {
   name: string;
   conditions: PromptValue;
+  special_requirement?: RequirementPrompt[];
   index: number;
 };
 
@@ -147,7 +155,7 @@ export type InvestorPositionsTableType = {
   recent_w4_foreign_ratio: number | null;
   recent_w4_big_investor_ratio: number | null;
   recent_w4_name: string | null;
-}
+};
 
 export type UserPromptsTableType = {
   prompt_id: number;
@@ -301,13 +309,13 @@ export enum TimeSharingSkillsTableOptions {
   HourlySkills = "hourly_skills",
 }
 
-export enum CsvDataType {
+export enum CsvDaTaListType {
   Deal = "Deal",
   Skills = "Skills",
 }
 
 // 繼承 SkillsTableType但是不要bollUb, bollMa, bollLb改成 boll_ub, boll_ma, boll_lb
-export type SkillsCsvDataType = Omit<
+export type SkillsCsvDaTaListType = Omit<
   SkillsTableType,
   "bollUb" | "bollMa" | "bollLb"
 > & {
@@ -315,7 +323,6 @@ export type SkillsCsvDataType = Omit<
   boll_ma: number;
   boll_lb: number;
 };
-
 
 export enum UrlType {
   Indicators = "indicators",
@@ -357,6 +364,6 @@ export type FundamentalPrompt = {
   indicator: string;
   operator: string;
   value: string;
-}
+};
 
 export type FundamentalPrompts = FundamentalPrompt[];

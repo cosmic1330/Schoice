@@ -13,7 +13,7 @@ import { Dispatch, SetStateAction, useState } from "react";
 import { StockDailyQueryBuilder } from "../../classes/StockDailyQueryBuilder";
 import { StockHourlyQueryBuilder } from "../../classes/StockHourlyQueryBuilder";
 import { StockWeeklyQueryBuilder } from "../../classes/StockWeeklyQueryBuilder";
-import { Prompts, StorePrompt } from "../../types";
+import { Prompts, RequirementPrompt, StorePrompt } from "../../types";
 
 type TimeFrame = "hour" | "day" | "week";
 
@@ -21,10 +21,14 @@ function ExpressionGenerator({
   setHourlyPrompts,
   setDailyPrompts,
   setWeekPrompts,
+  setSpecialRequirement,
+  specialRequirement,
 }: {
   setHourlyPrompts: Dispatch<SetStateAction<Prompts>>;
   setDailyPrompts: Dispatch<SetStateAction<Prompts>>;
   setWeekPrompts: Dispatch<SetStateAction<Prompts>>;
+  setSpecialRequirement: Dispatch<SetStateAction<RequirementPrompt[]>>;
+  specialRequirement: RequirementPrompt[];
 }) {
   const [timeFrame, setTimeFrame] = useState<TimeFrame>("day");
   const [selects, setSelects] = useState<StorePrompt>({
@@ -220,6 +224,33 @@ function ExpressionGenerator({
           </Select>
         )}
       </Stack>
+
+      <Box mb={2}>
+        <Select
+          multiple
+          fullWidth
+          displayEmpty
+          value={specialRequirement}
+          onChange={(e) => {
+            const {
+              target: { value },
+            } = e;
+            setSpecialRequirement(
+              // On autofill we get a stringified value.
+              typeof value === "string"
+                ? (value.split(",") as RequirementPrompt[])
+                : (value as RequirementPrompt[])
+            );
+          }}
+        >
+          <MenuItem disabled value="">
+            特殊需求 (選填)
+          </MenuItem>
+          <MenuItem value={RequirementPrompt.Regression}>
+            回歸測試
+          </MenuItem>
+        </Select>
+      </Box>
 
       <Button
         variant="contained"

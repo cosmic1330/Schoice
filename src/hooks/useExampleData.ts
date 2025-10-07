@@ -2,16 +2,16 @@ import { useCallback, useEffect, useState } from "react";
 import { getStore } from "../store/Example.store";
 import useSchoiceStore from "../store/Schoice.store";
 import { tauriFetcher } from "../tools/http";
-import { TaType, UrlTaPerdOptions, UrlType } from "../types";
+import { TaListType, UrlTaPerdOptions, UrlType } from "../types";
 import analyzeIndicatorsData, {
   IndicatorsDateTimeType,
 } from "../utils/analyzeIndicatorsData";
 import generateDealDataDownloadUrl from "../utils/generateDealDataDownloadUrl";
 
 export default function useExampleData() {
-  const [hour, setHour] = useState<TaType>([]);
-  const [day, setDay] = useState<TaType>([]);
-  const [week, setWeek] = useState<TaType>([]);
+  const [hour, setHour] = useState<TaListType>([]);
+  const [day, setDay] = useState<TaListType>([]);
+  const [week, setWeek] = useState<TaListType>([]);
   const { exampleChartId } = useSchoiceStore();
 
   const getHourData = useCallback(
@@ -96,20 +96,20 @@ export default function useExampleData() {
       const week_list = await store.get<string>(UrlTaPerdOptions.Week);
       // hour
       if (hour_list) {
-        setHour(JSON.parse(hour_list) as TaType);
+        setHour(JSON.parse(hour_list) as TaListType);
       } else {
         getHourData({ type, id, store });
       }
       // day
       if (day_list) {
-        setDay(JSON.parse(day_list) as TaType);
+        setDay(JSON.parse(day_list) as TaListType);
       } else {
         getDayData({ type, id, store });
       }
 
       // week
       if (week_list) {
-        setWeek(JSON.parse(week_list) as TaType);
+        setWeek(JSON.parse(week_list) as TaListType);
       } else {
         getWeekData({ type, id, store });
       }
