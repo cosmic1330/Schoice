@@ -34,14 +34,10 @@ export type PromptValue = {
   hourly: Prompts;
 };
 
-export enum RequirementPrompt {
-  Regression = "regression",
-}
 
 export type PromptItem = {
   name: string;
   conditions: PromptValue;
-  special_requirement?: RequirementPrompt[];
   index: number;
 };
 

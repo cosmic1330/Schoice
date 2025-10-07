@@ -1,4 +1,4 @@
-import { TaListType, TaType } from "../types";
+import { TaListType } from "../types";
 
 /**
  * 跳空缺口類型
