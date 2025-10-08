@@ -54,30 +54,21 @@ export default function MR() {
         ...deal,
       });
     }
-    return response;
+    return response.splice(160);
   }, [deals]);
 
   const longSignals = useMemo(() => {
-    return chartData.filter((item, idx, arr) => {
-      // 第一筆沒有前一筆，略過
-      if (idx === 0) return false;
-      const prev = arr[idx - 1];
-      if (item.rsi === null || item.osc === null || prev.osc === null)
-        return false;
-      // rsi 維持大於 50，且當前 osc 要大於前一筆的 osc
-      return item.rsi > 50 && item.osc > prev.osc;
-    });
+    return chartData.filter(
+      (item) =>
+        item.rsi !== null && item.osc !== null && item.rsi > 50 && item.osc > 0
+    );
   }, [chartData]);
 
   const shortSignals = useMemo(() => {
-    return chartData.filter((item, idx, arr) => {
-      if (idx === 0) return false;
-      const prev = arr[idx - 1];
-      if (item.rsi === null || item.osc === null || prev.osc === null)
-        return false;
-      // rsi 維持小於 50，且當前 osc 要小於前一筆的 osc
-      return item.rsi < 50 && item.osc < prev.osc;
-    });
+    return chartData.filter(
+      (item) =>
+        item.rsi !== null && item.osc !== null && item.rsi < 50 && item.osc < 0
+    );
   }, [chartData]);
 
   return (
@@ -104,29 +95,6 @@ export default function MR() {
         </MuiTooltip>
       </Stack>
       <Box height="calc(100vh - 32px)" width="100%">
-        <ResponsiveContainer width="100%" height="25%">
-          <ComposedChart data={chartData} syncId="anySyncId">
-            <XAxis dataKey="t" />
-            <YAxis />
-            <ReferenceLine y={0} stroke="#589bf3" strokeDasharray="3" />
-            <Tooltip offset={50} />
-            {/* Red bars for positive values */}
-            <Bar
-              dataKey="positiveOsc"
-              fill="#ff0000"
-              barSize={6}
-              name="Oscillator"
-            />
-            {/* Green bars for negative values */}
-            <Bar
-              dataKey="negativeOsc"
-              fill="#00aa00"
-              barSize={6}
-              name="Oscillator"
-            />
-            <Brush dataKey="name" height={20} stroke="#8884d8" />
-          </ComposedChart>
-        </ResponsiveContainer>
         <ResponsiveContainer width="100%" height="50%">
           <ComposedChart data={chartData} syncId="anySyncId">
             <XAxis dataKey="t" />
@@ -193,6 +161,29 @@ export default function MR() {
               stroke="#afa"
               baseValue={50}
             />
+          </ComposedChart>
+        </ResponsiveContainer>
+        <ResponsiveContainer width="100%" height="25%">
+          <ComposedChart data={chartData} syncId="anySyncId">
+            <XAxis dataKey="t" />
+            <YAxis />
+            <ReferenceLine y={0} stroke="#589bf3" strokeDasharray="3" />
+            <Tooltip offset={50} />
+            {/* Red bars for positive values */}
+            <Bar
+              dataKey="positiveOsc"
+              fill="#ff0000"
+              barSize={6}
+              name="Oscillator"
+            />
+            {/* Green bars for negative values */}
+            <Bar
+              dataKey="negativeOsc"
+              fill="#00aa00"
+              barSize={6}
+              name="Oscillator"
+            />
+            <Brush dataKey="name" height={20} stroke="#8884d8" />
           </ComposedChart>
         </ResponsiveContainer>
       </Box>

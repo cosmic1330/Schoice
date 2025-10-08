@@ -19,6 +19,7 @@ import analyzeIndicatorsData, {
   IndicatorsDateTimeType,
 } from "../../utils/analyzeIndicatorsData";
 import generateDealDataDownloadUrl from "../../utils/generateDealDataDownloadUrl";
+import HighCloseSignal from "./HighCloseSignal";
 
 // lazy load components
 const MaKbar = lazy(() => import("./MaKbar"));
@@ -44,6 +45,10 @@ const FullscreenVerticalCarousel: React.FC = () => {
       { id: "ma", content: <Ma /> },
       { id: "ma_k", content: <MaKbar perd={perd} /> },
       { id: "avg_k", content: <AvgMaKbar /> },
+      {
+        id: "high_close_signal",
+        content: <HighCloseSignal />,
+      },
       { id: "mj", content: <MJ /> },
       { id: "mr", content: <MR /> },
       { id: "kd", content: <Kd /> },
