@@ -54,7 +54,7 @@ export default function Kd() {
         prevL: deals[i - 1].h, // 前一天的最低價
       });
     }
-    return response.splice(160);
+    return response.splice(-160);
   }, [deals]);
 
   const singals = useMemo(() => {

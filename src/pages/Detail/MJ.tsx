@@ -54,7 +54,7 @@ export default function MJ() {
         ...deal,
       });
     }
-    return response.splice(160);
+    return response.splice(-160);
   }, [deals]);
 
   const longSignals = useMemo(() => {
@@ -177,7 +177,7 @@ export default function MJ() {
               barSize={6}
               name="Oscillator"
             />
-            <Brush dataKey="name" height={20} stroke="#8884d8" />
+            <Brush dataKey="name" height={10} stroke="#8884d8" />
           </ComposedChart>
         </ResponsiveContainer>
       </Box>

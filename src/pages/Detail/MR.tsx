@@ -54,7 +54,7 @@ export default function MR() {
         ...deal,
       });
     }
-    return response.splice(160);
+    return response.splice(-160);
   }, [deals]);
 
   const longSignals = useMemo(() => {
@@ -70,7 +70,7 @@ export default function MR() {
         item.rsi !== null && item.osc !== null && item.rsi < 50 && item.osc < 0
     );
   }, [chartData]);
-
+  
   return (
     <Container component="main">
       <Stack spacing={1} direction="row" alignItems="center">
@@ -183,7 +183,7 @@ export default function MR() {
               barSize={6}
               name="Oscillator"
             />
-            <Brush dataKey="name" height={20} stroke="#8884d8" />
+            <Brush dataKey="name" height={10} stroke="#8884d8" />
           </ComposedChart>
         </ResponsiveContainer>
       </Box>

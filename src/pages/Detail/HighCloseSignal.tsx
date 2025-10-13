@@ -53,7 +53,7 @@ export default function HighCloseSignal() {
         prev: deals[i - 1].l, // 前一天的最低價
       });
     }
-    return response.splice(160);
+    return response.splice(-160);
   }, [deals]);
 
   return (
