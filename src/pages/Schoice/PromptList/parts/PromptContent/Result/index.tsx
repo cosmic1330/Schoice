@@ -27,19 +27,31 @@ export default function Result({ select }: { select: SelectType }) {
       filterStocks?.map((item) => item.stock_id) || undefined
     );
     if (sqls.length === 0) return;
+
     // 合併查詢
     const combinedSQL = getCombinedSqlScript(sqls);
-    query(combinedSQL).then(async (res: { stock_id: string }[] | undefined) => {
-      if (res && res.length > 0) {
-        query(
-          `SELECT * FROM stock WHERE stock_id IN (${res
-            .map((r) => r.stock_id)
-            .join(",")})`
-        ).then((data: StockTableType[] | null) => {
-          if (data && data.length > 0) setResult(data);
-        });
-      }
-    });
+
+    // 檢查 combinedSQL 是否為空
+    if (!combinedSQL || !combinedSQL.trim()) {
+      console.log("No valid SQL generated");
+      return;
+    }
+
+    query(combinedSQL)
+      .then(async (res: { stock_id: string }[] | undefined) => {
+        if (res && res.length > 0) {
+          query(
+            `SELECT * FROM stock WHERE stock_id IN (${res
+              .map((r) => r.stock_id)
+              .join(",")})`
+          ).then((data: StockTableType[] | null) => {
+            if (data && data.length > 0) setResult(data);
+          });
+        }
+      })
+      .catch((error) => {
+        console.error("Query error:", error);
+      });
   }, [dates, select, query, todayDate]);
 
   useEffect(() => {
