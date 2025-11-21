@@ -1,50 +1,59 @@
 import { QueryBuilderMappingItem, StorePrompt } from "../types";
 import { BaseQueryBuilder } from "./BaseQueryBuilder";
 
+// 將 mapping 抽出為常量，方便維護
+export const WEEKLY_MAPPING: Record<string, QueryBuilderMappingItem> = {
+  收盤價: { key: "c", group: "_week_ago" },
+  開盤價: { key: "o", group: "_week_ago" },
+  成交量: { key: "v", group: "_week_ago" },
+  最低價: { key: "l", group: "_week_ago" },
+  最高價: { key: "h", group: "_week_ago" },
+  ma5: { key: "ma5", group: "_week_ago_sk" },
+  ma5扣抵: { key: "ma5_ded", group: "_week_ago_sk" },
+  ma10: { key: "ma10", group: "_week_ago_sk" },
+  ma10扣抵: { key: "ma10_ded", group: "_week_ago_sk" },
+  ma20: { key: "ma20", group: "_week_ago_sk" },
+  ma20扣抵: { key: "ma20_ded", group: "_week_ago_sk" },
+  ma60: { key: "ma60", group: "_week_ago_sk" },
+  ma60扣抵: { key: "ma60_ded", group: "_week_ago_sk" },
+  ma120: { key: "ma120", group: "_week_ago_sk" },
+  ma120扣抵: { key: "ma120_ded", group: "_week_ago_sk" },
+  ema5: { key: "ema5", group: "_week_ago_sk" },
+  ema10: { key: "ema10", group: "_week_ago_sk" },
+  ema20: { key: "ema20", group: "_week_ago_sk" },
+  ema60: { key: "ema60", group: "_week_ago_sk" },
+  ema120: { key: "ema120", group: "_week_ago_sk" },
+  macd: { key: "macd", group: "_week_ago_sk" },
+  dif: { key: "dif", group: "_week_ago_sk" },
+  osc: { key: "osc", group: "_week_ago_sk" },
+  k: { key: "k", group: "_week_ago_sk" },
+  d: { key: "d", group: "_week_ago_sk" },
+  j: { key: "j", group: "_week_ago_sk" },
+  rsi5: { key: "rsi5", group: "_week_ago_sk" },
+  rsi10: { key: "rsi10", group: "_week_ago_sk" },
+  布林上軌: { key: "bollUb", group: "_week_ago_sk" },
+  布林中軌: { key: "bollMa", group: "_week_ago_sk" },
+  布林下軌: { key: "bollLb", group: "_week_ago_sk" },
+  obv: { key: "obv", group: "_week_ago_sk" },
+  obv_ma5: { key: "obv_ma5", group: "_week_ago_sk" },
+  obv_ma10: { key: "obv_ma10", group: "_week_ago_sk" },
+  obv_ma20: { key: "obv_ma20", group: "_week_ago_sk" },
+  obv_ma60: { key: "obv_ma60", group: "_week_ago_sk" },
+  obv_ema5: { key: "obv_ema5", group: "_week_ago_sk" },
+  obv_ema10: { key: "obv_ema10", group: "_week_ago_sk" },
+  obv_ema20: { key: "obv_ema20", group: "_week_ago_sk" },
+  obv_ema60: { key: "obv_ema60", group: "_week_ago_sk" },
+  mfi: { key: "mfi", group: "_week_ago_sk" },
+};
+
+export interface WeeklySqlOptions {
+  conditions: string[];
+  dates: string[];
+  weeksRange?: number;
+}
+
 export class StockWeeklyQueryBuilder extends BaseQueryBuilder {
-  protected mapping: Record<string, QueryBuilderMappingItem> = {
-    收盤價: { key: "c", group: "_week_ago" },
-    開盤價: { key: "o", group: "_week_ago" },
-    成交量: { key: "v", group: "_week_ago" },
-    最低價: { key: "l", group: "_week_ago" },
-    最高價: { key: "h", group: "_week_ago" },
-    ma5: { key: "ma5", group: "_week_ago_sk" },
-    ma5扣抵: { key: "ma5_ded", group: "_week_ago_sk" },
-    ma10: { key: "ma10", group: "_week_ago_sk" },
-    ma10扣抵: { key: "ma10_ded", group: "_week_ago_sk" },
-    ma20: { key: "ma20", group: "_week_ago_sk" },
-    ma20扣抵: { key: "ma20_ded", group: "_week_ago_sk" },
-    ma60: { key: "ma60", group: "_week_ago_sk" },
-    ma60扣抵: { key: "ma60_ded", group: "_week_ago_sk" },
-    ma120: { key: "ma120", group: "_week_ago_sk" },
-    ma120扣抵: { key: "ma120_ded", group: "_week_ago_sk" },
-    ema5: { key: "ema5", group: "_week_ago_sk" },
-    ema10: { key: "ema10", group: "_week_ago_sk" },
-    ema20: { key: "ema20", group: "_week_ago_sk" },
-    ema60: { key: "ema60", group: "_week_ago_sk" },
-    ema120: { key: "ema120", group: "_week_ago_sk" },
-    macd: { key: "macd", group: "_week_ago_sk" },
-    dif: { key: "dif", group: "_week_ago_sk" },
-    osc: { key: "osc", group: "_week_ago_sk" },
-    k: { key: "k", group: "_week_ago_sk" },
-    d: { key: "d", group: "_week_ago_sk" },
-    j: { key: "j", group: "_week_ago_sk" },
-    rsi5: { key: "rsi5", group: "_week_ago_sk" },
-    rsi10: { key: "rsi10", group: "_week_ago_sk" },
-    布林上軌: { key: "bollUb", group: "_week_ago_sk" },
-    布林中軌: { key: "bollMa", group: "_week_ago_sk" },
-    布林下軌: { key: "bollLb", group: "_week_ago_sk" },
-    obv: { key: "obv", group: "_week_ago_sk" },
-    obv_ma5: { key: "obv_ma5", group: "_week_ago_sk" },
-    obv_ma10: { key: "obv_ma10", group: "_week_ago_sk" },
-    obv_ma20: { key: "obv_ma20", group: "_week_ago_sk" },
-    obv_ma60: { key: "obv_ma60", group: "_week_ago_sk" },
-    obv_ema5: { key: "obv_ema5", group: "_week_ago_sk" },
-    obv_ema10: { key: "obv_ema10", group: "_week_ago_sk" },
-    obv_ema20: { key: "obv_ema20", group: "_week_ago_sk" },
-    obv_ema60: { key: "obv_ema60", group: "_week_ago_sk" },
-    mfi: { key: "mfi", group: "_week_ago_sk" },
-  };
+  protected mapping = WEEKLY_MAPPING;
 
   static getSpecificOptions(): Record<string, readonly string[]> {
     return {
@@ -57,7 +66,7 @@ export class StockWeeklyQueryBuilder extends BaseQueryBuilder {
         "5週前",
         "自定義數值",
       ],
-      indicators: Object.keys(new StockWeeklyQueryBuilder().mapping),
+      indicators: Object.keys(WEEKLY_MAPPING),
       operators: ["大於", "小於", "等於", "大於等於", "小於等於"],
     };
   }
@@ -74,36 +83,34 @@ export class StockWeeklyQueryBuilder extends BaseQueryBuilder {
     return dayMapping[day] || 0;
   }
 
-  public generateExpression(prompt: StorePrompt): string[] {
+  /**
+   * 產生單一條件 SQL 表達式
+   */
+  public generateExpression(prompt: StorePrompt): string {
     const { day1, indicator1, operator, day2, indicator2 } = prompt;
     const operatorKey = this.convertOperator(operator);
-
     const day1Mapping = this.mapping[indicator1];
     const day1Key = `"${this.convertDayToNumber(day1)}${day1Mapping.group}".${
       day1Mapping.key
     }`;
-
     if (day2 === "自定義數值") {
-      return [day1Key, operatorKey, indicator2];
+      return `${day1Key} ${operatorKey} ${indicator2}`;
     }
-
     const day2Mapping = this.mapping[indicator2];
     const day2Key = `"${this.convertDayToNumber(day2)}${day2Mapping.group}".${
       day2Mapping.key
     }`;
-
-    return [day1Key, operatorKey, day2Key];
+    return `${day1Key} ${operatorKey} ${day2Key}`;
   }
 
+  /**
+   * 產生完整 SQL 查詢
+   */
   public generateSqlQuery({
     conditions,
     dates,
-    weeksRange = 4,
-  }: {
-    conditions: string[];
-    dates: string[];
-    weeksRange?: number;
-  }): string {
+    weeksRange = 1,
+  }: WeeklySqlOptions): string {
     const weekJoins = Array.from({ length: weeksRange - 1 }, (_, i) => i + 1)
       .map(
         (number) => `
@@ -112,7 +119,6 @@ export class StockWeeklyQueryBuilder extends BaseQueryBuilder {
         `
       )
       .join("");
-
     const query = `
       SELECT "0_week_ago".stock_id as stock_id
       FROM weekly_deal "0_week_ago"
@@ -120,7 +126,6 @@ export class StockWeeklyQueryBuilder extends BaseQueryBuilder {
       ${weekJoins}
       WHERE "0_week_ago".t = "${dates[0]}" AND ${conditions.join(" AND ")}
     `;
-
     return query.trim();
   }
 }

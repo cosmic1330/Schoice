@@ -6,53 +6,65 @@ import { stockHourlyQueryBuilder } from "../classes/StockHourlyQueryBuilder";
 import { stockWeeklyQueryBuilder } from "../classes/StockWeeklyQueryBuilder";
 import { DatabaseContext } from "../context/DatabaseContext";
 import useSchoiceStore from "../store/Schoice.store";
-import { PromptItem } from "../types";
+import { StorePrompt } from "../types";
 import useDatabaseQuery from "./useDatabaseQuery";
 
+/**
+ * 統一條件格式，支援 daily/weekly/hourly
+ */
+export type PromptCondition = {
+  type: "daily" | "weekly" | "hourly";
+  prompt: StorePrompt;
+};
+
+/**
+ * 查詢股票條件組合的 hook
+ * 用法：
+ *   const { getPromptSqlScripts, getCombinedSqlScript } = useFindStocksByPrompt();
+ *   const sqls = await getPromptSqlScripts([ { type: 'weekly', prompt: ... }, ... ]);
+ *   const finalSql = getCombinedSqlScript(sqls, 'INTERSECT');
+ */
 export default function useFindStocksByPrompt() {
   const { dates } = useContext(DatabaseContext);
-  const { todayDate, filterStocks } = useSchoiceStore();
+  const { todayDate } = useSchoiceStore();
   const query = useDatabaseQuery();
 
+  /**
+   * 取得最近幾週的週資料日期
+   */
   const getWeekDates = useCallback(
-    async (date: string) => {
+    async (date: string, count = 4) => {
       try {
-        // 查詢週線數據的實際日期，按照週的間隔來選取
         const queryWeekDate = `
-        SELECT DISTINCT t
-        FROM weekly_deal
-        WHERE t <= "${date}"
-        ORDER BY t DESC
-        LIMIT 20;
-      `;
+          SELECT DISTINCT t
+          FROM weekly_deal
+          WHERE t <= "${date}"
+          ORDER BY t DESC
+          LIMIT 20;
+        `;
         const allWeeklyDates = await query(queryWeekDate);
-
         if (!allWeeklyDates || allWeeklyDates.length === 0) {
           return [];
         }
-
-        // 從所有週線日期中選取符合週間隔的日期
-        // 通常週線數據是每週五或每週最後交易日，間隔約7天
         const selectedDates = [];
-        const dates = allWeeklyDates.map((item: any) => item.t);
-
-        selectedDates.push(dates[0]); // 最近的一週
-
-        let lastSelectedDate = new Date(dates[0]);
-        for (let i = 1; i < dates.length && selectedDates.length < 4; i++) {
-          const currentDate = new Date(dates[i]);
+        const dateList = allWeeklyDates.map((item: any) => item.t);
+        selectedDates.push(dateList[0]);
+        let lastSelectedDate = new Date(dateList[0]);
+        for (
+          let i = 1;
+          i < dateList.length && selectedDates.length < count;
+          i++
+        ) {
+          const currentDate = new Date(dateList[i]);
           const daysDiff =
             (lastSelectedDate.getTime() - currentDate.getTime()) /
             (1000 * 60 * 60 * 24);
-
-          // 如果日期間隔大於等於6天，認為是不同的週
           if (daysDiff >= 6) {
-            selectedDates.push(dates[i]);
+            selectedDates.push(dateList[i]);
             lastSelectedDate = currentDate;
           }
         }
-
-        return selectedDates.map((date) => ({ t: date }));
+        return selectedDates;
       } catch (error) {
         console.error("getWeekDates error", error);
         return [];
@@ -61,22 +73,25 @@ export default function useFindStocksByPrompt() {
     [query]
   );
 
+  /**
+   * 取得最近幾小時的時資料 timestamp
+   */
   const getHourDates = useCallback(
-    async (date: string) => {
+    async (date: string, count = 6) => {
       try {
         const num = dateFormat(date, Mode.StringToNumber) * 10000 + 1400;
-        // 取得明天的timestamp
         const queryHourDate = `
-        SELECT DISTINCT ts
-        FROM hourly_deal
-        WHERE ts <= ${num}
-        ORDER BY ts DESC
-        LIMIT 24;
-      `;
+          SELECT DISTINCT ts
+          FROM hourly_deal
+          WHERE ts <= ${num}
+          ORDER BY ts DESC
+          LIMIT 24;
+        `;
         const hourlyDates: { ts: number }[] | undefined = await query(
           queryHourDate
         );
-        return hourlyDates || [];
+        if (!hourlyDates || hourlyDates.length === 0) return [];
+        return hourlyDates.map((item) => item.ts);
       } catch (error) {
         return [];
       }
@@ -84,92 +99,76 @@ export default function useFindStocksByPrompt() {
     [query]
   );
 
+  /**
+   * 傳入條件陣列，產生對應 SQL 陣列
+   * @param conditions PromptCondition[]
+   * @param stockIds 可選，限制股票 id
+   */
   const getPromptSqlScripts = useCallback(
-    async (select: PromptItem, stockIds?: string[]) => {
-      if (
-        select.conditions.daily.length === 0 &&
-        select.conditions.weekly.length === 0 &&
-        select.conditions.hourly.length === 0
-      ) {
-        return [];
-      }
-
-      let dailySQL = "";
-      if (select.conditions.daily.length > 0) {
-        const customDailyConditions = select.conditions.daily.map((prompt) =>
-          stockDailyQueryBuilder.generateExpression(prompt).join(" ")
-        );
-        const sqlDailyQuery = stockDailyQueryBuilder.generateSqlQuery({
-          conditions: customDailyConditions,
-          dates: dates.filter((_, index) => index >= todayDate),
-          stockIds,
-        });
-        dailySQL = sqlDailyQuery;
-      }
-
-      let weeklySQL = "";
-      if (select.conditions.weekly.length > 0) {
-        const customWeeklyConditions = select.conditions.weekly.map((prompt) =>
-          stockWeeklyQueryBuilder.generateExpression(prompt).join(" ")
-        );
-
-        const weeklyDateResults = await getWeekDates(dates[todayDate]);
-
-        if (weeklyDateResults && weeklyDateResults.length > 0) {
-          // 修正: 如果只有一個 weekly 條件，weeksRange 傳 1，dates 只傳一個
-          const weeksRange =
-            customWeeklyConditions.length === 1 ? 1 : weeklyDateResults.length;
-          const sqlWeeklyQuery = stockWeeklyQueryBuilder.generateSqlQuery({
-            conditions: customWeeklyConditions,
-            dates: weeklyDateResults
-              .map((result) => result.t)
-              .slice(0, weeksRange),
-            weeksRange,
-          });
-          weeklySQL = sqlWeeklyQuery;
-        }
-      }
-
-      let hourlySQL = "";
-      if (select.conditions.hourly?.length > 0) {
-        const customHourlyConditions = select.conditions.hourly.map((prompt) =>
-          stockHourlyQueryBuilder.generateExpression(prompt).join(" ")
-        );
-        const hourlyDateResults = await getHourDates(dates[todayDate]);
-        if (hourlyDateResults) {
-          const sqlHourlyQuery = stockHourlyQueryBuilder.generateSqlQuery({
-            conditions: customHourlyConditions,
-            dates: hourlyDateResults.map((result) => result.ts),
+    async (conditions: PromptCondition[], stockIds?: string[]) => {
+      const sqls: string[] = [];
+      for (const cond of conditions) {
+        if (cond.type === "daily") {
+          const expr = stockDailyQueryBuilder.generateExpression(cond.prompt);
+          const sql = stockDailyQueryBuilder.generateSqlQuery({
+            conditions: [expr],
+            dates: dates.filter((_, index) => index >= todayDate),
             stockIds,
           });
-          hourlySQL = sqlHourlyQuery;
+          sqls.push(sql);
+        } else if (cond.type === "weekly") {
+          const expr = stockWeeklyQueryBuilder.generateExpression(cond.prompt);
+          const weekDates = await getWeekDates(dates[todayDate], 4);
+          if (weekDates.length > 0) {
+            const sql = stockWeeklyQueryBuilder.generateSqlQuery({
+              conditions: [expr],
+              dates: [weekDates[0]],
+              weeksRange: 1,
+            });
+            sqls.push(sql);
+          }
+        } else if (cond.type === "hourly") {
+          const expr = stockHourlyQueryBuilder.generateExpression(cond.prompt);
+          const hourDates = await getHourDates(dates[todayDate], 6);
+          if (hourDates.length > 0) {
+            const sql = stockHourlyQueryBuilder.generateSqlQuery({
+              conditions: [expr],
+              dates: [hourDates[0]],
+              stockIds,
+              hoursRange: 1,
+            });
+            sqls.push(sql);
+          }
         }
       }
-
-      return [dailySQL, weeklySQL, hourlySQL];
+      return sqls;
     },
-    [dates, todayDate, filterStocks, getWeekDates, getHourDates]
+    [dates, todayDate, getWeekDates, getHourDates]
   );
 
-  const getCombinedSqlScript = useCallback((sqls: string[]) => {
-    // 過濾出有效的 SQL 查詢
-    const validSqls = sqls.filter((sql) => sql && sql.trim());
+  /**
+   * 組合多個 SQL 查詢
+   * @param sqls SQL 陣列
+   * @param combineType 'INTERSECT' | 'UNION'
+   */
+  const getCombinedSqlScript = useCallback(
+    (sqls: string[], combineType: "INTERSECT" | "UNION" = "INTERSECT") => {
+      const validSqls = sqls.filter((sql) => sql && sql.trim());
+      if (validSqls.length === 1) return validSqls[0];
+      if (combineType === "INTERSECT") return validSqls.join("\nINTERSECT\n");
+      if (combineType === "UNION") return validSqls.join("\nUNION\n");
+      return validSqls.join("\nINTERSECT\n");
+    },
+    []
+  );
 
-    // 如果只有一個有效的 SQL，直接返回
-    if (validSqls.length === 1) {
-      return validSqls[0];
-    }
-
-    // 如果有多個有效的 SQL，使用 INTERSECT 合併
-    return validSqls.join("\nINTERSECT\n");
-  }, []);
-
+  /**
+   * 查詢單一股票單一天的日資料
+   */
   const getOneDateDailyDataByStockId = useCallback(
     async (date: string, id: string) => {
       try {
-        const sql = `SELECT * FROM daily_deal
-            WHERE t="${date}" 
-            AND daily_deal.stock_id = '${id}'`;
+        const sql = `SELECT * FROM daily_deal WHERE t="${date}" AND daily_deal.stock_id = '${id}'`;
         const res = await query(sql);
         return res;
       } catch (error) {
@@ -181,8 +180,8 @@ export default function useFindStocksByPrompt() {
   );
 
   return {
-    getPromptSqlScripts,
-    getCombinedSqlScript,
+    getPromptSqlScripts, // (conditions: PromptCondition[], stockIds?) => Promise<string[]>
+    getCombinedSqlScript, // (sqls: string[], combineType?) => string
     getOneDateDailyDataByStockId,
   };
 }
