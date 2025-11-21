@@ -116,10 +116,15 @@ export default function useFindStocksByPrompt() {
         const weeklyDateResults = await getWeekDates(dates[todayDate]);
 
         if (weeklyDateResults && weeklyDateResults.length > 0) {
+          // 修正: 如果只有一個 weekly 條件，weeksRange 傳 1，dates 只傳一個
+          const weeksRange =
+            customWeeklyConditions.length === 1 ? 1 : weeklyDateResults.length;
           const sqlWeeklyQuery = stockWeeklyQueryBuilder.generateSqlQuery({
             conditions: customWeeklyConditions,
-            dates: weeklyDateResults.map((result: any) => result.t), // 直接傳入查詢到的週資料日期
-            weeksRange: weeklyDateResults.length,
+            dates: weeklyDateResults
+              .map((result) => result.t)
+              .slice(0, weeksRange),
+            weeksRange,
           });
           weeklySQL = sqlWeeklyQuery;
         }
