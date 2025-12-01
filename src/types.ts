@@ -221,6 +221,11 @@ export type SkillsTableType = {
   obv_ema20: number;
   obv_ema60: number;
   mfi: number | null;
+  tenkan: number | null;
+  kijun: number | null;
+  senkouA: number | null;
+  senkouB: number | null;
+  chikou: number | null;
 };
 
 export type TickDealsType = {
@@ -282,6 +287,11 @@ export type TimeSharingSkillsTableType = {
   obv_ema20: number;
   obv_ema60: number;
   mfi: number | null;
+  tenkan: number | null;
+  kijun: number | null;
+  senkouA: number | null;
+  senkouB: number | null;
+  chikou: number | null;
 };
 
 /****

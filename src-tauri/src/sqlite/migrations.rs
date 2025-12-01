@@ -244,5 +244,44 @@ pub fn value() -> Vec<Migration> {
             ",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 4,
+            description: "add_ichimoku",
+            sql: "
+                ALTER TABLE daily_skills
+                    ADD COLUMN tenkan REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN kijun REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN senkouA REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN senkouB REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN chikou REAL;
+
+                ALTER TABLE weekly_skills
+                    ADD COLUMN tenkan REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN kijun REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN senkouA REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN senkouB REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN chikou REAL;
+
+                ALTER TABLE hourly_skills
+                    ADD COLUMN tenkan REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN kijun REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN senkouA REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN senkouB REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN chikou REAL;
+            ",
+            kind: MigrationKind::Up,
+        },
     ]
 }

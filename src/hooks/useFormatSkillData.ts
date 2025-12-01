@@ -8,6 +8,7 @@ import {
   Obv,
   ObvEma,
   Rsi,
+  Ichimoku,
 } from "@ch20026103/anysis";
 import { useMemo } from "react";
 import { SkillsTableType, TaListType } from "../types";
@@ -35,6 +36,7 @@ export default function useFormatSkillData(data: TaListType) {
     const obv = new Obv();
     const obvEma = new ObvEma();
     const mfi = new Mfi();
+    const ichimoku = new Ichimoku();
 
     const init = data[0];
     let ma5_data = ma.init(init, 5);
@@ -58,6 +60,7 @@ export default function useFormatSkillData(data: TaListType) {
     let obv_ma20_data = obvEma.init(obv_data.obv, 20);
     let obv_ma60_data = obvEma.init(obv_data.obv, 60);
     let mfi_data = mfi.init(init, 14);
+    let ichimoku_data = ichimoku.init(init);
 
     deals.push({
       ...init,
@@ -97,6 +100,11 @@ export default function useFormatSkillData(data: TaListType) {
       obv_ema20: obv_ma20_data.ema,
       obv_ema60: obv_ma60_data.ema,
       mfi: mfi_data.mfi,
+      tenkan: ichimoku_data.ichimoku.tenkan,
+      kijun: ichimoku_data.ichimoku.kijun,
+      senkouA: ichimoku_data.ichimoku.senkouA,
+      senkouB: ichimoku_data.ichimoku.senkouB,
+      chikou: ichimoku_data.ichimoku.chikou,
     });
 
     for (let i = 1; i < data.length; i++) {
@@ -122,6 +130,7 @@ export default function useFormatSkillData(data: TaListType) {
       obv_ma20_data = obvEma.next(obv_data.obv, obv_ma20_data, 20);
       obv_ma60_data = obvEma.next(obv_data.obv, obv_ma60_data, 60);
       mfi_data = mfi.next(value, mfi_data, 14);
+      ichimoku_data = ichimoku.next(value, ichimoku_data);
 
       deals.push({
         ...value,
@@ -161,6 +170,12 @@ export default function useFormatSkillData(data: TaListType) {
         obv_ema20: obv_ma20_data.ema,
         obv_ema60: obv_ma60_data.ema,
         mfi: mfi_data.mfi,
+        tenkan: ichimoku_data.ichimoku.tenkan,
+        kijun: ichimoku_data.ichimoku.kijun,
+        senkouA: ichimoku_data.ichimoku.senkouA,
+        senkouB: ichimoku_data.ichimoku.senkouB,
+        chikou: ichimoku_data.ichimoku.chikou,
+
       });
     }
     return deals;

@@ -1,6 +1,7 @@
 import {
   Boll,
   Ema,
+  Ichimoku,
   Kd,
   Ma,
   Macd,
@@ -124,6 +125,7 @@ export default class SqliteDataManager {
       const obv = new Obv();
       const obvEma = new ObvEma();
       const mfi = new Mfi();
+      const ichimoku = new Ichimoku();
 
       const init = ta[0];
       let ma5_data = ma.init(init, 5);
@@ -147,6 +149,7 @@ export default class SqliteDataManager {
       let obv_ma20_data = obvEma.init(obv_data.obv, 20);
       let obv_ma60_data = obvEma.init(obv_data.obv, 60);
       let mfi_data = mfi.init(init, 14);
+      let ichimoku_data = ichimoku.init(init);
 
       const deals: TimeSharingDealTableType[] = [];
       const skills: TimeSharingSkillsTableType[] = [];
@@ -176,6 +179,7 @@ export default class SqliteDataManager {
           obv_ma20_data = obvEma.next(obv_data.obv, obv_ma20_data, 20);
           obv_ma60_data = obvEma.next(obv_data.obv, obv_ma60_data, 60);
           mfi_data = mfi.next(value, mfi_data, 14);
+          ichimoku_data = ichimoku.next(value, ichimoku_data);
         }
 
         if (sets.lose_deal_set.has(value.t)) {
@@ -230,6 +234,11 @@ export default class SqliteDataManager {
             obv_ema20: obv_ma20_data.ema,
             obv_ema60: obv_ma60_data.ema,
             mfi: mfi_data.mfi,
+            tenkan: ichimoku_data.ichimoku.tenkan,
+            kijun: ichimoku_data.ichimoku.kijun,
+            senkouA: ichimoku_data.ichimoku.senkouA,
+            senkouB: ichimoku_data.ichimoku.senkouB,
+            chikou: ichimoku_data.ichimoku.chikou,
           });
         }
       }
@@ -276,6 +285,7 @@ export default class SqliteDataManager {
       const obv = new Obv();
       const obvEma = new ObvEma();
       const mfi = new Mfi();
+      const ichimoku = new Ichimoku();
 
       const init = ta[0];
       let ma5_data = ma.init(init, 5);
@@ -299,6 +309,7 @@ export default class SqliteDataManager {
       let obv_ma20_data = obvEma.init(obv_data.obv, 20);
       let obv_ma60_data = obvEma.init(obv_data.obv, 60);
       let mfi_data = mfi.init(init, 14);
+      let ichimoku_data = ichimoku.init(init);
 
       const deals: DealTableType[] = [];
       const skills: SkillsTableType[] = [];
@@ -328,6 +339,7 @@ export default class SqliteDataManager {
           obv_ma20_data = obvEma.next(obv_data.obv, obv_ma20_data, 20);
           obv_ma60_data = obvEma.next(obv_data.obv, obv_ma60_data, 60);
           mfi_data = mfi.next(value, mfi_data, 14);
+          ichimoku_data = ichimoku.next(value, ichimoku_data);
         }
 
         if (sets.lose_deal_set.has(t)) {
@@ -382,6 +394,11 @@ export default class SqliteDataManager {
             obv_ema20: obv_ma20_data.ema,
             obv_ema60: obv_ma60_data.ema,
             mfi: mfi_data.mfi,
+            tenkan: ichimoku_data.ichimoku.tenkan,
+            kijun: ichimoku_data.ichimoku.kijun,
+            senkouA: ichimoku_data.ichimoku.senkouA,
+            senkouB: ichimoku_data.ichimoku.senkouB,
+            chikou: ichimoku_data.ichimoku.chikou,
           });
         }
       }
@@ -481,10 +498,16 @@ export default class SqliteDataManager {
           obv_ema10,
           obv_ema20,
           obv_ema60,
-          mfi) VALUES ${skills
+          mfi,
+          tenkan,
+          kijun,
+          senkouA,
+          senkouB,
+          chikou
+          ) VALUES ${skills
             .map(
               (skill) =>
-                `(${skill.stock_id}, '${skill.t}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi})`
+                `(${skill.stock_id}, '${skill.t}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou})`
             )
             .join(", ")}`;
       await this.db.execute(sql);
@@ -557,10 +580,15 @@ export default class SqliteDataManager {
           obv_ema10,
           obv_ema20,
           obv_ema60,
-          mfi) VALUES ${skills
+          mfi,
+          tenkan,
+          kijun,
+          senkouA,
+          senkouB,
+          chikou) VALUES ${skills
             .map(
               (skill) =>
-                `(${skill.stock_id}, ${skill.ts}, ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi})`
+                `(${skill.stock_id}, ${skill.ts}, ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}), ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou})`
             )
             .join(", ")}`;
       await this.db.execute(sql);
