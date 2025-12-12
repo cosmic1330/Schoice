@@ -3,6 +3,56 @@ import Database from "@tauri-apps/plugin-sql";
 import { useCallback, useEffect, useState } from "react";
 import getPostgresInstance from "../database/postgres";
 
+// Wrapper function to intercept and log database queries
+const wrapDatabaseWithLogging = (db: Database, dbType: string): Database => {
+  return new Proxy(db, {
+    get(target, prop, receiver) {
+      const originalValue = Reflect.get(target, prop, receiver);
+
+      // Intercept 'execute' and 'select' methods
+      if (prop === "execute" || prop === "select") {
+        return async (...args: any[]) => {
+          const sql = args[0];
+          // Truncate long SQL queries for cleaner logs if needed, but for now log full
+          let logSql = sql;
+          if (logSql.length > 200) {
+            logSql = logSql.substring(0, 200) + "...";
+          }
+          const params = args[1];
+          const queryId = Math.random().toString(36).substring(7); // Basic ID for correlation
+
+          info(
+            `[DB][${dbType}][${String(
+              prop
+            )}][${queryId}] START SQL: ${logSql} ${
+              params ? `| Params: ${JSON.stringify(params)}` : ""
+            }`
+          );
+
+          try {
+            const start = performance.now();
+            const result = await originalValue.apply(target, args);
+            const duration = performance.now() - start;
+            info(
+              `[DB][${dbType}][${String(
+                prop
+              )}][${queryId}] END Success (${duration.toFixed(2)}ms)`
+            );
+            return result;
+          } catch (e: any) {
+            error(
+              `[DB][${dbType}][${String(prop)}][${queryId}] END Error: ${e}`
+            );
+            throw e;
+          }
+        };
+      }
+
+      return originalValue;
+    },
+  });
+};
+
 export default function useDatabase() {
   const [db, setDb] = useState<Database | null>(null);
   const [dbType, setDbType] = useState<"sqlite" | "postgres">("sqlite");
@@ -42,20 +92,26 @@ export default function useDatabase() {
             postgresPromise,
             timeoutPromise,
           ]);
-          await postgresDb.select("SELECT 1"); // 測試連線
+
+          // Wrap with logging
+          const wrappedDb = wrapDatabaseWithLogging(postgresDb, "postgres");
+          await wrappedDb.select("SELECT 1"); // 測試連線 (using wrapped db to log check)
 
           console.log("PostgreSQL 連線成功");
-          setDb(postgresDb);
+          setDb(wrappedDb);
           setDbType("postgres");
           localStorage.setItem("schoice:db_type", "postgres");
           info("PostgreSQL 資料庫初始化成功");
         } else {
           console.log("開始初始化 SQLite 資料庫...");
           const database = await Database.load("sqlite:schoice.db");
-          await database.select("SELECT 1"); // 測試連線
+
+          // Wrap with logging
+          const wrappedDb = wrapDatabaseWithLogging(database, "sqlite");
+          await wrappedDb.select("SELECT 1"); // 測試連線
 
           console.log("SQLite 資料庫連線成功");
-          setDb(database);
+          setDb(wrappedDb);
           setDbType("sqlite");
           localStorage.setItem("schoice:db_type", "sqlite");
           info("SQLite 資料庫初始化成功");
@@ -73,7 +129,9 @@ export default function useDatabase() {
           // 但為了 UX，直接在這裡執行 sqlite 初始化邏輯比較快
           try {
             const database = await Database.load("sqlite:schoice.db");
-            setDb(database);
+            const wrappedDb = wrapDatabaseWithLogging(database, "sqlite");
+
+            setDb(wrappedDb);
             setDbType("sqlite");
             localStorage.setItem("schoice:db_type", "sqlite"); // 自動改回 sqlite setting? 或者保留設定但當次用 sqlite?
             // 這裡選擇自動改回 sqlite 以免下次打開又卡住

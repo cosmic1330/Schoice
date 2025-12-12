@@ -20,7 +20,7 @@ const DailyOscLineChart = ({
       (item) => item.key
     ).join(
       ","
-    )} FROM daily_deal JOIN daily_skills ON daily_deal.t = daily_skills.t AND daily_deal.stock_id = daily_skills.stock_id WHERE daily_deal.stock_id = ${stock_id} AND daily_deal.t <= '${t}' ORDER BY daily_deal.t DESC LIMIT ${daily_count}`;
+    )} FROM daily_deal JOIN daily_skills ON daily_deal.t = daily_skills.t AND daily_deal.stock_id = daily_skills.stock_id WHERE daily_deal.stock_id = '${stock_id}' AND daily_deal.t <= '${t}' ORDER BY daily_deal.t DESC LIMIT ${daily_count}`;
     if (!db) return;
 
     db?.select(sqlQuery).then((res: any) => {

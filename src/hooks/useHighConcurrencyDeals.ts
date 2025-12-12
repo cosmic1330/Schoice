@@ -1,6 +1,6 @@
 import { dateFormat } from "@ch20026103/anysis";
 import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
-import { fetch } from "@tauri-apps/plugin-http";
+import { fetchWithLog as fetch } from "../utils/logFetch";
 import { error, info } from "@tauri-apps/plugin-log";
 import pLimit from "p-limit";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
