@@ -92,18 +92,16 @@ export class StockHourlyQueryBuilder extends BaseQueryBuilder {
     const operatorKey = this.convertOperator(operator);
 
     const day1Mapping = this.mapping[indicator1];
-    const day1Key = `'${this.converthourToNumber(day1)}${day1Mapping.group}'.${
-      day1Mapping.key
-    }`;
+    const day1Key = `"${this.converthourToNumber(day1)}${day1Mapping.group}".${day1Mapping.key
+      }`;
 
     if (day2 === "自定義數值") {
       return [day1Key, operatorKey, indicator2];
     }
 
     const day2Mapping = this.mapping[indicator2];
-    const day2Key = `'${this.converthourToNumber(day2)}${day2Mapping.group}'.${
-      day2Mapping.key
-    }`;
+    const day2Key = `"${this.converthourToNumber(day2)}${day2Mapping.group}".${day2Mapping.key
+      }`;
 
     return [day1Key, operatorKey, day2Key];
   }
@@ -111,22 +109,57 @@ export class StockHourlyQueryBuilder extends BaseQueryBuilder {
   public generateSqlQuery({
     conditions,
     dates,
-    hoursRange = 4,
     stockIds,
   }: {
     conditions: string[];
     dates: number[];
-    hoursRange?: number;
     stockIds?: string[];
   }): string {
-    const hourJoins = Array.from({ length: hoursRange }, (_, i) => i + 1)
-      .map(
-        (number) => `
-          JOIN hourly_deal "${number}_hour_ago" ON "0_hour_ago".stock_id = "${number}_hour_ago".stock_id AND "${number}_hour_ago".ts = "${dates[number]}"
-          JOIN hourly_skills "${number}_hour_ago_sk" ON "0_hour_ago".stock_id = "${number}_hour_ago_sk".stock_id AND "${number}_hour_ago_sk".ts = "${dates[number]}"
-        `
-      )
-      .join("");
+    const conditionsStr = conditions.join(" ");
+
+    // 1. 提取所有需要的 alias
+    const aliasRegex = /"(\d+)_hour_ago(_sk)?"/g;
+    const requiredAliases = new Set<string>();
+    let match;
+    while ((match = aliasRegex.exec(conditionsStr)) !== null) {
+      if (match[1] !== "0") {
+        requiredAliases.add(match[0].replace(/"/g, ""));
+      }
+    }
+
+    // 2. 確定哪些小時需要 JOIN
+    const requiredHours = new Set<string>();
+    requiredAliases.forEach((alias) => {
+      const match = alias.match(/^(\d+)_hour_ago/);
+      if (match) {
+        requiredHours.add(match[1]);
+      }
+    });
+
+    // 3. 生成 JOIN
+    const hourJoins = Array.from(requiredHours)
+      .sort()
+      .map((number) => {
+        const needDeal =
+          conditionsStr.includes(`"${number}_hour_ago"`) ||
+          conditionsStr.includes(`'${number}_hour_ago'`);
+        const needSkills =
+          conditionsStr.includes(`"${number}_hour_ago_sk"`) ||
+          conditionsStr.includes(`'${number}_hour_ago_sk'`);
+
+        let joins = "";
+        const idx = parseInt(number);
+        if (!dates[idx]) return "";
+
+        if (needDeal) {
+          joins += ` JOIN hourly_deal "${number}_hour_ago" ON "0_hour_ago".stock_id = "${number}_hour_ago".stock_id AND "${number}_hour_ago".ts = '${dates[idx]}'`;
+        }
+        if (needSkills) {
+          joins += ` JOIN hourly_skills "${number}_hour_ago_sk" ON "0_hour_ago".stock_id = "${number}_hour_ago_sk".stock_id AND "${number}_hour_ago_sk".ts = '${dates[idx]}'`;
+        }
+        return joins;
+      })
+      .join("\n");
 
     const stockIdCondition = stockIds
       ? ` AND "0_hour_ago".stock_id IN ('${stockIds.join("','")}')`
@@ -137,9 +170,8 @@ export class StockHourlyQueryBuilder extends BaseQueryBuilder {
       FROM hourly_deal "0_hour_ago"
       JOIN hourly_skills "0_hour_ago_sk" ON "0_hour_ago".stock_id = "0_hour_ago_sk".stock_id AND "0_hour_ago".ts = "0_hour_ago_sk".ts
       ${hourJoins}
-      WHERE "0_hour_ago".ts = "${
-        dates[0]
-      }" ${stockIdCondition} AND ${conditions.join(" AND ")}
+      WHERE "0_hour_ago".ts = '${dates[0]
+      }' ${stockIdCondition} AND ${conditions.join(" AND ")}
     `;
 
     return query.trim();

@@ -109,12 +109,11 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
     let day1Key = "";
     if (day1 === "其他") {
       const day1Mapping = this.othersMapping[indicator1];
-      day1Key = `'${day1Mapping.group}'.${day1Mapping.key}`;
+      day1Key = `"${day1Mapping.group}".${day1Mapping.key}`;
     } else {
       const day1Mapping = this.mapping[indicator1];
-      day1Key = `'${this.convertDayToNumber(day1)}${day1Mapping.group}'.${
-        day1Mapping.key
-      }`;
+      day1Key = `"${this.convertDayToNumber(day1)}${day1Mapping.group}".${day1Mapping.key
+        }`;
     }
 
     let day2Key = "";
@@ -122,12 +121,11 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
       day2Key = indicator2;
     } else if (day2 === "其他") {
       const day2Mapping = this.othersMapping[indicator2];
-      day2Key = `'${day2Mapping.group}'.${day2Mapping.key}`;
+      day2Key = `"${day2Mapping.group}".${day2Mapping.key}`;
     } else {
       const day2Mapping = this.mapping[indicator2];
-      day2Key = `'${this.convertDayToNumber(day2)}${day2Mapping.group}'.${
-        day2Mapping.key
-      }`;
+      day2Key = `"${this.convertDayToNumber(day2)}${day2Mapping.group}".${day2Mapping.key
+        }`;
     }
     return [day1Key, operatorKey, day2Key];
   }
@@ -135,27 +133,64 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
   public generateSqlQuery({
     conditions,
     dates,
-    daysRange = 4,
     stockIds,
   }: {
     conditions: string[];
     dates: string[];
-    daysRange?: number;
     stockIds?: string[];
   }): string {
-    const dayJoins = Array.from({ length: daysRange }, (_, i) => i + 1)
-      .map(
-        (number) => `
-          JOIN daily_deal "${number}_day_ago" ON "0_day_ago".stock_id = "${number}_day_ago".stock_id AND "${number}_day_ago".t = "${dates[number]}"
-          JOIN daily_skills "${number}_day_ago_sk" ON "0_day_ago".stock_id = "${number}_day_ago_sk".stock_id AND "${number}_day_ago_sk".t = "${dates[number]}"
-        `
-      )
-      .join("");
+    const conditionsStr = conditions.join(" ");
 
-    // const otherJoins = `
-    //   JOIN investor_positions ON investor_positions.stock_id = "0_day_ago".stock_id
-    //   JOIN recent_fundamental ON recent_fundamental.stock_id = "0_day_ago".stock_id
-    // `;
+    // 1. 提取所有需要的 alias，例如 "1_day_ago", "2_day_ago_sk" 等
+    // Regex: 尋找 "數字_day_ago(_sk)?" 這樣的pattern
+    // 注意: 我們現在使用雙引號包覆 alias
+    const aliasRegex = /"(\d+)_day_ago(_sk)?"/g;
+    const requiredAliases = new Set<string>();
+    let match;
+    while ((match = aliasRegex.exec(conditionsStr)) !== null) {
+      if (match[1] !== "0") {
+        // 0_day_ago 是主表，不需要額外 join
+        requiredAliases.add(match[0].replace(/"/g, ""));
+      }
+    }
+
+    // 2. 為了確保同一天若同時用到 deal 和 skills，或者是為了邏輯簡單，我們可以用 Set 來記錄哪幾天需要 join
+    const requiredDays = new Set<string>();
+    requiredAliases.forEach((alias) => {
+      const match = alias.match(/^(\d+)_day_ago/);
+      if (match) {
+        requiredDays.add(match[1]);
+      }
+    });
+
+    // 3. 根據需要的天下生成 JOIN
+    const dayJoins = Array.from(requiredDays)
+      .sort() // 排序讓 SQL 比較好讀
+      .map((number) => {
+        // 如果 conditions 裡面有明確用到 _day_ago (deal) 或是 _day_ago_sk (skills)
+        // 為了保險起見，簡單的做法是: 如果該天有被用到，就兩個都 join (或根據需要優化)
+        // 但為了效能最佳化，我們檢查具體是哪張表被用到
+        const needDeal =
+          conditionsStr.includes(`"${number}_day_ago"`) ||
+          conditionsStr.includes(`'${number}_day_ago'`); // 相容可能殘留的單引號
+        const needSkills =
+          conditionsStr.includes(`"${number}_day_ago_sk"`) ||
+          conditionsStr.includes(`'${number}_day_ago_sk'`);
+
+        let joins = "";
+        const idx = parseInt(number);
+        // 如果 dates 長度不足，防呆
+        if (!dates[idx]) return "";
+
+        if (needDeal) {
+          joins += ` JOIN daily_deal "${number}_day_ago" ON "0_day_ago".stock_id = "${number}_day_ago".stock_id AND "${number}_day_ago".t = '${dates[idx]}'`;
+        }
+        if (needSkills) {
+          joins += ` JOIN daily_skills "${number}_day_ago_sk" ON "0_day_ago".stock_id = "${number}_day_ago_sk".stock_id AND "${number}_day_ago_sk".t = '${dates[idx]}'`;
+        }
+        return joins;
+      })
+      .join("\n");
 
     const stockIdCondition = stockIds
       ? ` AND "0_day_ago".stock_id IN ('${stockIds.join("','")}')`
@@ -166,9 +201,8 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
       FROM daily_deal "0_day_ago"
       JOIN daily_skills "0_day_ago_sk" ON "0_day_ago".stock_id = "0_day_ago_sk".stock_id AND "0_day_ago".t = "0_day_ago_sk".t
       ${dayJoins}
-      WHERE "0_day_ago".t = "${
-        dates[0]
-      }" ${stockIdCondition} AND ${conditions.join(" AND ")}
+      WHERE "0_day_ago".t = '${dates[0]
+      }' ${stockIdCondition} AND ${conditions.join(" AND ")}
     `;
 
     return query.trim();

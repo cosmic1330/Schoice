@@ -21,7 +21,7 @@ export default function useFindStocksByPrompt() {
         const queryWeekDate = `
         SELECT DISTINCT t
         FROM weekly_deal
-        WHERE t <= "${date}"
+        WHERE t <= '${date}'
         ORDER BY t DESC
         LIMIT 20;
       `;
@@ -116,15 +116,9 @@ export default function useFindStocksByPrompt() {
         const weeklyDateResults = await getWeekDates(dates[todayDate]);
 
         if (weeklyDateResults && weeklyDateResults.length > 0) {
-          // 修正: 如果只有一個 weekly 條件，weeksRange 傳 1，dates 只傳一個
-          const weeksRange =
-            customWeeklyConditions.length === 1 ? 1 : weeklyDateResults.length;
           const sqlWeeklyQuery = stockWeeklyQueryBuilder.generateSqlQuery({
             conditions: customWeeklyConditions,
-            dates: weeklyDateResults
-              .map((result) => result.t)
-              .slice(0, weeksRange),
-            weeksRange,
+            dates: weeklyDateResults.map((result) => result.t),
           });
           weeklySQL = sqlWeeklyQuery;
         }
@@ -168,7 +162,7 @@ export default function useFindStocksByPrompt() {
     async (date: string, id: string) => {
       try {
         const sql = `SELECT * FROM daily_deal
-            WHERE t="${date}" 
+            WHERE t='${date}' 
             AND daily_deal.stock_id = '${id}'`;
         const res = await query(sql);
         return res;
