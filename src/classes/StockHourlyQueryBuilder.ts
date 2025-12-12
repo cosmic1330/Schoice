@@ -88,16 +88,18 @@ export class StockHourlyQueryBuilder extends BaseQueryBuilder {
     const operatorKey = this.convertOperator(operator);
 
     const day1Mapping = this.mapping[indicator1];
-    const day1Key = `"${this.converthourToNumber(day1)}${day1Mapping.group}".${day1Mapping.key
-      }`;
+    const day1Key = `"${this.converthourToNumber(day1)}${day1Mapping.group}".${
+      day1Mapping.key
+    }`;
 
     if (day2 === "自定義數值") {
       return [day1Key, operatorKey, indicator2];
     }
 
     const day2Mapping = this.mapping[indicator2];
-    const day2Key = `"${this.converthourToNumber(day2)}${day2Mapping.group}".${day2Mapping.key
-      }`;
+    const day2Key = `"${this.converthourToNumber(day2)}${day2Mapping.group}".${
+      day2Mapping.key
+    }`;
 
     return [day1Key, operatorKey, day2Key];
   }
@@ -148,10 +150,10 @@ export class StockHourlyQueryBuilder extends BaseQueryBuilder {
         if (!dates[idx]) return "";
 
         if (needDeal) {
-          joins += ` JOIN hourly_deal "${number}_hour_ago" ON "0_hour_ago".stock_id = "${number}_hour_ago".stock_id AND "${number}_hour_ago".ts = '${dates[idx]}'`;
+          joins += ` JOIN hourly_deal "${number}_hour_ago" ON "0_hour_ago".stock_id = "${number}_hour_ago".stock_id AND "${number}_hour_ago".ts = ${dates[idx]}`;
         }
         if (needSkills) {
-          joins += ` JOIN hourly_skills "${number}_hour_ago_sk" ON "0_hour_ago".stock_id = "${number}_hour_ago_sk".stock_id AND "${number}_hour_ago_sk".ts = '${dates[idx]}'`;
+          joins += ` JOIN hourly_skills "${number}_hour_ago_sk" ON "0_hour_ago".stock_id = "${number}_hour_ago_sk".stock_id AND "${number}_hour_ago_sk".ts = ${dates[idx]}`;
         }
         return joins;
       })
@@ -166,8 +168,9 @@ export class StockHourlyQueryBuilder extends BaseQueryBuilder {
       FROM hourly_deal "0_hour_ago"
       JOIN hourly_skills "0_hour_ago_sk" ON "0_hour_ago".stock_id = "0_hour_ago_sk".stock_id AND "0_hour_ago".ts = "0_hour_ago_sk".ts
       ${hourJoins}
-      WHERE "0_hour_ago".ts = '${dates[0]
-      }' ${stockIdCondition} AND ${conditions.join(" AND ")}
+      WHERE "0_hour_ago".ts = ${
+        dates[0]
+      } ${stockIdCondition} AND ${conditions.join(" AND ")}
     `;
 
     return query.trim();

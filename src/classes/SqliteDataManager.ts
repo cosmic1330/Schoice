@@ -63,22 +63,22 @@ export default class SqliteDataManager {
       const num = dateFormat(t, Mode.StringToNumber) * 10000 + 1400;
       info(`刪除 ${stock_id}: ${num} 和 ${t} 之後的資料`);
       await this.db.execute(
-        `DELETE FROM hourly_skills WHERE stock_id = ${stock_id} AND ts > '${num}';`
+        `DELETE FROM hourly_skills WHERE stock_id = '${stock_id}' AND ts > ${num};`
       );
       await this.db.execute(
-        `DELETE FROM hourly_deal WHERE  stock_id = ${stock_id} AND ts > '${num}';`
+        `DELETE FROM hourly_deal WHERE  stock_id = '${stock_id}' AND ts > ${num};`
       );
       await this.db.execute(
-        `DELETE FROM weekly_skills WHERE  stock_id = ${stock_id} AND t > '${t}';`
+        `DELETE FROM weekly_skills WHERE  stock_id = '${stock_id}' AND t > '${t}';`
       );
       await this.db.execute(
-        `DELETE FROM weekly_deal WHERE  stock_id = ${stock_id} AND t > '${t}';`
+        `DELETE FROM weekly_deal WHERE  stock_id = '${stock_id}' AND t > '${t}';`
       );
       await this.db.execute(
-        `DELETE FROM daily_skills WHERE  stock_id = ${stock_id} AND t > '${t}';`
+        `DELETE FROM daily_skills WHERE  stock_id = '${stock_id}' AND t > '${t}';`
       );
       await this.db.execute(
-        `DELETE FROM daily_deal WHERE  stock_id = ${stock_id} AND t > '${t}';`
+        `DELETE FROM daily_deal WHERE  stock_id = '${stock_id}' AND t > '${t}';`
       );
       return true;
     } catch (e) {
@@ -445,7 +445,7 @@ export default class SqliteDataManager {
       const sql = `INSERT INTO ${table} (stock_id, t, c, o, h, l, v) VALUES ${deals
         .map(
           (deal) =>
-            `(${deal.stock_id}, '${deal.t}', ${deal.c}, ${deal.o}, ${deal.h}, ${deal.l}, ${deal.v})`
+            `('${deal.stock_id}', '${deal.t}', ${deal.c}, ${deal.o}, ${deal.h}, ${deal.l}, ${deal.v})`
         )
         .join(", ")}`;
       await this.db.execute(sql);
@@ -507,7 +507,7 @@ export default class SqliteDataManager {
           ) VALUES ${skills
             .map(
               (skill) =>
-                `(${skill.stock_id}, '${skill.t}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou})`
+                `('${skill.stock_id}', '${skill.t}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou})`
             )
             .join(", ")}`;
       await this.db.execute(sql);
@@ -527,7 +527,7 @@ export default class SqliteDataManager {
       const sql = `INSERT INTO ${table} (stock_id, ts, c, o, h, l, v) VALUES ${deal
         .map(
           (deal) =>
-            `(${deal.stock_id}, ${deal.ts}, ${deal.c}, ${deal.o}, ${deal.h}, ${deal.l}, ${deal.v})`
+            `('${deal.stock_id}', ${deal.ts}, ${deal.c}, ${deal.o}, ${deal.h}, ${deal.l}, ${deal.v})`
         )
         .join(", ")}`;
       await this.db.execute(sql);
@@ -588,7 +588,7 @@ export default class SqliteDataManager {
           chikou) VALUES ${skills
             .map(
               (skill) =>
-                `(${skill.stock_id}, ${skill.ts}, ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}), ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou})`
+                `('${skill.stock_id}', ${skill.ts}, ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}), ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou})`
             )
             .join(", ")}`;
       await this.db.execute(sql);
@@ -604,7 +604,7 @@ export default class SqliteDataManager {
   ) {
     try {
       const result: [{ t: string }] = await this.db.select(
-        `SELECT t FROM ${table} WHERE stock_id = ${stock.stock_id};`
+        `SELECT t FROM ${table} WHERE stock_id = '${stock.stock_id}';`
       );
       return result;
     } catch (e) {
@@ -619,7 +619,7 @@ export default class SqliteDataManager {
   ) {
     try {
       const result: [{ ts: number }] = await this.db.select(
-        `SELECT ts FROM ${table} WHERE stock_id = ${stock.stock_id};`
+        `SELECT ts FROM ${table} WHERE stock_id = '${stock.stock_id}';`
       );
       return result;
     } catch (e) {

@@ -8,7 +8,7 @@ import useSchoiceStore from "../../../../../../store/Schoice.store";
 
 export default function DataCount() {
   const { data_count, changeDataCount } = useSchoiceStore();
-  const { db } = useContext(DatabaseContext);
+  const { db, dbType } = useContext(DatabaseContext);
 
   useEffect(() => {
     if (!db) return;
@@ -22,6 +22,9 @@ export default function DataCount() {
         error(`Error getting latest daily deal count: ${e}`);
       });
   }, [db]);
+
+  const sourceLabel = dbType === "postgres" ? "(Postgres)" : "(SQLite)";
+
   return (
     <Stack
       direction="row"
@@ -36,7 +39,7 @@ export default function DataCount() {
       <BarChartIcon color="primary" />
       <Box>
         <Typography variant="body2" color="primary">
-          資料統計
+          資料統計 {sourceLabel}
         </Typography>
         <Typography variant="body2" fontWeight={700} color="primary">
           {data_count} 檔

@@ -1,14 +1,16 @@
 import SyncIcon from "@mui/icons-material/Sync";
 import { Button, Stack, Typography } from "@mui/material";
-import { useCallback } from "react";
+import { useCallback, useContext } from "react";
 import useHighConcurrencyDeals, {
   Status,
 } from "../../../../../../hooks/useHighConcurrencyDeals";
 import useSchoiceStore from "../../../../../../store/Schoice.store";
+import { DatabaseContext } from "../../../../../../context/DatabaseContext";
 
 export default function UpdateDeals() {
   const { update_progress } = useSchoiceStore();
   const { run, status, stop } = useHighConcurrencyDeals();
+  const { dbType } = useContext(DatabaseContext);
 
   const handleClick = useCallback(async () => {
     if (status === Status.Idle) {
@@ -18,6 +20,10 @@ export default function UpdateDeals() {
       stop();
     }
   }, [status, run, stop]);
+
+  if (dbType === "postgres") {
+    return null;
+  }
 
   return (
     <Stack direction="row" alignItems="center" spacing={1}>

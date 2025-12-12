@@ -44,7 +44,7 @@ const Main = styled(Box)`
 
 function Schoice() {
   const { session, loading } = useUser();
-  const db = useDatabase();
+  const { db, dbType, switchDatabase, isSwitching } = useDatabase();
   const [isAppReady, setIsAppReady] = useState(false);
   const navigate = useNavigate();
   const { dates, fetchDates, isLoading } = useDatabaseDates(db);
@@ -58,7 +58,6 @@ function Schoice() {
   const handleReady = () => {
     setIsAppReady(true);
   };
-
 
   // 監聽系統的深色模式設定
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
@@ -118,7 +117,17 @@ function Schoice() {
   }
 
   return (
-    <DatabaseContext.Provider value={{ db, dates, fetchDates, isLoading }}>
+    <DatabaseContext.Provider
+      value={{
+        db,
+        dates,
+        fetchDates,
+        isLoading,
+        dbType,
+        switchDatabase,
+        isSwitching,
+      }}
+    >
       <ThemeProvider theme={themeConfig}>
         <CssBaseline />
         <Main>

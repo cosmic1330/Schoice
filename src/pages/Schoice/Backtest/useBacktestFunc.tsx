@@ -176,7 +176,6 @@ export default function useBacktestFunc() {
                 dates: weeklyDateResults.map(
                   (result: { t: string }) => result.t
                 ), // 直接傳入查詢到的週資料日期
-                weeksRange: weeklyDateResults.length,
               });
               weeklySQL = sqlWeeklyQuery;
             }

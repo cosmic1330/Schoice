@@ -1,5 +1,6 @@
 import { Container, Grid, Typography } from "@mui/material";
 import CheckUpdate from "./CheckUpdate";
+import DatabaseSettings from "./DatabaseSettings";
 import ExampleSelector from "./ExampleSelector";
 import OtherSettings from "./OtherSettings";
 import SystemStatus from "./SystemStatus";
@@ -11,6 +12,7 @@ export default function Setting() {
         系統管理
       </Typography>
       <Grid container spacing={2}>
+        <DatabaseSettings />
         {/* <DatabaseRepair />
         <DatabaseDeletion />
         <CacheManagement /> */}
