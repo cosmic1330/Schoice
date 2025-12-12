@@ -11,6 +11,7 @@ import {
   YAxis,
   ZAxis,
 } from "recharts";
+import { stockDailyQueryBuilder } from "../../classes/StockDailyQueryBuilder";
 import useFormatSkillData, {
   FormatDataRow,
 } from "../../hooks/useFormatSkillData";
@@ -39,49 +40,12 @@ interface PromptChartProps {
 }
 
 // 指標顯示名稱到欄位 key 的對應（參考 StockDailyQueryBuilder.mapping）
-const indicatorMap: Record<string, keyof FormatDataRow> = {
-  收盤價: "c",
-  開盤價: "o",
-  成交量: "v",
-  最低價: "l",
-  最高價: "h",
-  ma5: "ma5",
-  ma5扣抵: "ma5_ded",
-  ma10: "ma10",
-  ma10扣抵: "ma10_ded",
-  ma20: "ma20",
-  ma20扣抵: "ma20_ded",
-  ma60: "ma60",
-  ma60扣抵: "ma60_ded",
-  ma120: "ma120",
-  ma120扣抵: "ma120_ded",
-  ema5: "ema5",
-  ema10: "ema10",
-  ema20: "ema20",
-  ema60: "ema60",
-  ema120: "ema120",
-  macd: "macd",
-  dif: "dif",
-  osc: "osc",
-  k: "k",
-  d: "d",
-  j: "j",
-  rsi5: "rsi5",
-  rsi10: "rsi10",
-  布林上軌: "bollUb",
-  布林中軌: "bollMa",
-  布林下軌: "bollLb",
-  obv: "obv",
-  obv_ma5: "obv_ma5",
-  obv_ma10: "obv_ma10",
-  obv_ma20: "obv_ma20",
-  obv_ma60: "obv_ma60",
-  obv_ema5: "obv_ema5",
-  obv_ema10: "obv_ema10",
-  obv_ema20: "obv_ema20",
-  obv_ema60: "obv_ema60",
-  mfi: "mfi",
-};
+const indicatorMap: Record<string, keyof FormatDataRow> = Object.entries(
+  stockDailyQueryBuilder.getMapping()
+).reduce((acc, [name, item]) => {
+  acc[name] = item.key as keyof FormatDataRow;
+  return acc;
+}, {} as Record<string, keyof FormatDataRow>);
 
 const hourMapping: Record<string, number> = {
   現在: 0,
@@ -179,8 +143,8 @@ export default function PromptChart({
           const right = isCustom
             ? Number(p.indicator2)
             : (getVal(hourlyFormatData[i - offset2], indicator2Key) as
-                | number
-                | undefined);
+              | number
+              | undefined);
 
           if (left === undefined || right === undefined) continue;
 
@@ -227,8 +191,8 @@ export default function PromptChart({
         const right = isCustom
           ? Number(p.indicator2)
           : (getVal(dailyFormatData[i - offset2], indicator2Key) as
-              | number
-              | undefined);
+            | number
+            | undefined);
 
         if (left === undefined || right === undefined) return false;
         return compare(left, right, p.operator);

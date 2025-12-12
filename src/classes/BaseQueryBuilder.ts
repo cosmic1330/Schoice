@@ -36,6 +36,10 @@ export abstract class BaseQueryBuilder {
     return operatorMapping[operator] || "=";
   }
 
+  public getMapping(): Record<string, QueryBuilderMappingItem> {
+    return { ...this.mapping };
+  }
+
   public abstract generateExpression(prompt: StorePrompt): string[];
 
   public abstract generateSqlQuery(args: any): string;
