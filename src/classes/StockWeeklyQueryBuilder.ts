@@ -46,20 +46,16 @@ export class StockWeeklyQueryBuilder extends BaseQueryBuilder {
     mfi: { key: "mfi", group: "_week_ago_sk" },
   };
 
-  static getSpecificOptions(): Record<string, readonly string[]> {
-    return {
-      weeks: [
-        "本週",
-        "上週",
-        "上上週",
-        "3週前",
-        "4週前",
-        "5週前",
-        "自定義數值",
-      ],
-      indicators: Object.keys(new StockWeeklyQueryBuilder().mapping),
-      operators: ["大於", "小於", "等於", "大於等於", "小於等於"],
-    };
+  protected getTimeOptions(): readonly string[] {
+    return [
+      "本週",
+      "上週",
+      "上上週",
+      "3週前",
+      "4週前",
+      "5週前",
+      "自定義數值",
+    ];
   }
 
   private convertDayToNumber(day: string): number {

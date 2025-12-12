@@ -70,22 +70,21 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
     },
   };
 
-  static getSpecificOptions(): Record<string, readonly string[]> {
-    return {
-      days: [
-        "今天",
-        "昨天",
-        "前天",
-        "3天前",
-        "4天前",
-        "5天前",
-        "自定義數值",
-        // "其他",
-      ],
-      indicators: Object.keys(new StockDailyQueryBuilder().mapping),
-      operators: ["大於", "小於", "等於", "大於等於", "小於等於"],
-      otherIndicators: Object.keys(new StockDailyQueryBuilder().othersMapping),
-    };
+  protected getTimeOptions(): readonly string[] {
+    return [
+      "今天",
+      "昨天",
+      "前天",
+      "3天前",
+      "4天前",
+      "5天前",
+      "自定義數值",
+      // "其他",
+    ];
+  }
+
+  protected getOtherIndicators(): string[] {
+    return Object.keys(this.othersMapping);
   }
 
   private convertDayToNumber(day: string): number {

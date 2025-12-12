@@ -9,10 +9,16 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from "@mui/material";
-import { Dispatch, SetStateAction, useState } from "react";
-import { StockDailyQueryBuilder } from "../../classes/StockDailyQueryBuilder";
-import { StockHourlyQueryBuilder } from "../../classes/StockHourlyQueryBuilder";
-import { StockWeeklyQueryBuilder } from "../../classes/StockWeeklyQueryBuilder";
+import { Dispatch, SetStateAction, useMemo, useState } from "react";
+import {
+  stockDailyQueryBuilder,
+} from "../../classes/StockDailyQueryBuilder";
+import {
+  stockHourlyQueryBuilder,
+} from "../../classes/StockHourlyQueryBuilder";
+import {
+  stockWeeklyQueryBuilder,
+} from "../../classes/StockWeeklyQueryBuilder";
 import { Prompts, StorePrompt } from "../../types";
 
 type TimeFrame = "hour" | "day" | "week";
@@ -27,28 +33,26 @@ function ExpressionGenerator({
   setWeekPrompts: Dispatch<SetStateAction<Prompts>>;
 }) {
   const [timeFrame, setTimeFrame] = useState<TimeFrame>("day");
+
+  // Helper to get current builder options
+  const currentOptions = useMemo(() => {
+    switch (timeFrame) {
+      case "hour":
+        return stockHourlyQueryBuilder.getOptions();
+      case "week":
+        return stockWeeklyQueryBuilder.getOptions();
+      case "day":
+      default:
+        return stockDailyQueryBuilder.getOptions();
+    }
+  }, [timeFrame]);
+
   const [selects, setSelects] = useState<StorePrompt>({
-    day1:
-      timeFrame === "hour"
-        ? StockHourlyQueryBuilder.getSpecificOptions().hours[0]
-        : timeFrame === "day"
-        ? StockDailyQueryBuilder.getSpecificOptions().days[0]
-        : StockWeeklyQueryBuilder.getSpecificOptions().weeks[0],
-    indicator1:
-      timeFrame === "hour"
-        ? StockHourlyQueryBuilder.getSpecificOptions().indicators[0]
-        : StockDailyQueryBuilder.getSpecificOptions().indicators[0],
-    operator: StockDailyQueryBuilder.getSpecificOptions().operators[0],
-    day2:
-      timeFrame === "hour"
-        ? StockHourlyQueryBuilder.getSpecificOptions().hours[0]
-        : timeFrame === "day"
-        ? StockDailyQueryBuilder.getSpecificOptions().days[0]
-        : StockWeeklyQueryBuilder.getSpecificOptions().weeks[0],
-    indicator2:
-      timeFrame === "hour"
-        ? StockHourlyQueryBuilder.getSpecificOptions().indicators[0]
-        : StockDailyQueryBuilder.getSpecificOptions().indicators[0],
+    day1: currentOptions.timeOptions[0],
+    indicator1: currentOptions.indicators[0],
+    operator: currentOptions.operators[0],
+    day2: currentOptions.timeOptions[0],
+    indicator2: currentOptions.indicators[0],
   });
 
   const handleTimeFrameChange = (
@@ -57,33 +61,29 @@ function ExpressionGenerator({
   ) => {
     if (newTimeFrame !== null) {
       setTimeFrame(newTimeFrame);
-      setSelects((prev) => ({
-        ...prev,
-        day1:
-          newTimeFrame === "hour"
-            ? StockHourlyQueryBuilder.getSpecificOptions().hours[0]
-            : newTimeFrame === "day"
-            ? StockDailyQueryBuilder.getSpecificOptions().days[0]
-            : StockWeeklyQueryBuilder.getSpecificOptions().weeks[0],
-        day2:
-          newTimeFrame === "hour"
-            ? StockHourlyQueryBuilder.getSpecificOptions().hours[0]
-            : newTimeFrame === "day"
-            ? StockDailyQueryBuilder.getSpecificOptions().days[0]
-            : StockWeeklyQueryBuilder.getSpecificOptions().weeks[0],
-        indicator1:
-          newTimeFrame === "hour"
-            ? StockHourlyQueryBuilder.getSpecificOptions().indicators[0]
-            : newTimeFrame === "day"
-            ? StockDailyQueryBuilder.getSpecificOptions().indicators[0]
-            : StockWeeklyQueryBuilder.getSpecificOptions().indicators[0],
-        indicator2:
-          newTimeFrame === "hour"
-            ? StockHourlyQueryBuilder.getSpecificOptions().indicators[0]
-            : newTimeFrame === "day"
-            ? StockDailyQueryBuilder.getSpecificOptions().indicators[0]
-            : StockWeeklyQueryBuilder.getSpecificOptions().indicators[0],
-      }));
+
+      // We need to fetch the options for the NEW timeFrame immediately
+      let newOptions;
+      switch (newTimeFrame) {
+        case "hour":
+          newOptions = stockHourlyQueryBuilder.getOptions();
+          break;
+        case "week":
+          newOptions = stockWeeklyQueryBuilder.getOptions();
+          break;
+        case "day":
+        default:
+          newOptions = stockDailyQueryBuilder.getOptions();
+          break;
+      }
+
+      setSelects({
+        day1: newOptions.timeOptions[0],
+        indicator1: newOptions.indicators[0],
+        operator: newOptions.operators[0],
+        day2: newOptions.timeOptions[0],
+        indicator2: newOptions.indicators[0],
+      });
     }
   };
 
@@ -103,24 +103,20 @@ function ExpressionGenerator({
     }));
   };
 
-  const timeOptions =
-    timeFrame === "hour"
-      ? StockHourlyQueryBuilder.getSpecificOptions().hours
-      : timeFrame === "day"
-      ? StockDailyQueryBuilder.getSpecificOptions().days
-      : StockWeeklyQueryBuilder.getSpecificOptions().weeks;
+  const timeOptions = currentOptions.timeOptions;
 
-  const indicators =
-    timeFrame === "hour"
-      ? StockHourlyQueryBuilder.getSpecificOptions().indicators
-      : (timeFrame === "day" && selects.day1 === "其他") ||
-        selects.day2 === "其他"
-      ? StockDailyQueryBuilder.getSpecificOptions().otherIndicators
-      : timeFrame === "day"
-      ? StockDailyQueryBuilder.getSpecificOptions().indicators
-      : StockWeeklyQueryBuilder.getSpecificOptions().indicators;
+  const indicators = useMemo(() => {
+    // Handling "Other" category logic if present
+    if (
+      selects.day1 === "其他" ||
+      selects.day2 === "其他"
+    ) {
+      return currentOptions.otherIndicators || [];
+    }
+    return currentOptions.indicators;
+  }, [currentOptions, selects.day1, selects.day2]);
 
-  const operators = StockDailyQueryBuilder.getSpecificOptions().operators;
+  const operators = currentOptions.operators;
 
   return (
     <Box>

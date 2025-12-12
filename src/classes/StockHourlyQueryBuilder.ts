@@ -2,20 +2,16 @@ import { QueryBuilderMappingItem, StorePrompt } from "../types";
 import { BaseQueryBuilder } from "./BaseQueryBuilder";
 
 export class StockHourlyQueryBuilder extends BaseQueryBuilder {
-  static getSpecificOptions(): Record<string, readonly string[]> {
-    return {
-      hours: [
-        "現在",
-        "1小時前",
-        "2小時前",
-        "3小時前",
-        "4小時前",
-        "5小時前",
-        "自定義數值",
-      ],
-      indicators: Object.keys(new StockHourlyQueryBuilder().mapping),
-      operators: ["大於", "小於", "等於", "大於等於", "小於等於"],
-    };
+  protected getTimeOptions(): readonly string[] {
+    return [
+      "現在",
+      "1小時前",
+      "2小時前",
+      "3小時前",
+      "4小時前",
+      "5小時前",
+      "自定義數值",
+    ];
   }
   protected mapping: Record<string, QueryBuilderMappingItem> = {
     收盤價: { key: "c", group: "_hour_ago" },
