@@ -13,6 +13,8 @@
     "notification:allow-request-permission",
     "shell:default",
     "sql:allow-execute",
+    "sql:allow-load",
+    "sql:allow-select",
     "core:window:allow-set-title",
     "core:webview:allow-create-webview-window",
     "core:window:allow-set-always-on-top",
