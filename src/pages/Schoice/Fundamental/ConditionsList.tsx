@@ -1,4 +1,5 @@
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import {
   Card,
@@ -18,9 +19,11 @@ import ConditionsListResult from "./ConditionsListResult";
 export default function ConditionsList({
   prompts,
   handleDeleteCondition,
+  handleEditCondition,
 }: {
   prompts: FundamentalPrompts;
   handleDeleteCondition: (index: number) => void;
+  handleEditCondition: (index: number) => void;
 }) {
   return (
     <Paper variant="outlined" sx={{ padding: 2, borderRadius: 2 }}>
@@ -84,7 +87,15 @@ export default function ConditionsList({
                     </Typography>
                   </Stack>
                 </Stack>
-                <Stack direction="row" justifyContent="flex-end">
+                <Stack direction="row" justifyContent="flex-end" spacing={1}>
+                  <Tooltip title="编辑条件">
+                    <IconButton
+                      size="small"
+                      onClick={() => handleEditCondition(index)}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                   <Tooltip title="删除条件">
                     <IconButton
                       color="error"

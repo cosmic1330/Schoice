@@ -1,4 +1,11 @@
-import { Box, Button, Chip, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { stockFundamentalQueryBuilder } from "../../../classes/StockFundamentalQueryBuilder";
@@ -15,26 +22,39 @@ export default function ConditionsListResult({
 }) {
   const query = useDatabaseQuery();
   const [results, setResults] = useState<StockTableType[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // For button action
+  const [isFetching, setIsFetching] = useState(false); // For background query
   const { setFilterStocks } = useSchoiceStore();
   const { setFundamentalCondition } = useCloudStore();
   const { user } = useUser();
 
   useEffect(() => {
-    stockFundamentalQueryBuilder
-      .getStocksByConditions({ conditions: prompts })
-      .then((stockIds) => {
-        if (stockIds.length === 0) {
-          setResults([]);
-        } else {
-          query(
-            `SELECT * FROM stock WHERE stock_id IN (${stockIds.join(",")})`
-          ).then((data: StockTableType[] | null) => {
-            if (data && data.length > 0) setResults(data);
-          });
-        }
-      });
-  }, [prompts]);
+    setIsFetching(true);
+    setResults([]); // Clear previous results while fetching
+
+    // Slight delay to prevent flickering for instant queries and ensure UI update
+    const timer = setTimeout(() => {
+      stockFundamentalQueryBuilder
+        .getStocksByConditions({ conditions: prompts })
+        .then((stockIds) => {
+          if (stockIds.length === 0) {
+            setResults([]);
+            setIsFetching(false);
+          } else {
+            query(
+              `SELECT * FROM stock WHERE stock_id IN (${stockIds
+                .map((id) => `'${id}'`)
+                .join(",")})`
+            ).then((data: StockTableType[] | null) => {
+              if (data && data.length > 0) setResults(data);
+              setIsFetching(false);
+            });
+          }
+        });
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [prompts, query]);
 
   const handleClick = useCallback(async () => {
     // 檢查是否正在載入中
@@ -69,23 +89,34 @@ export default function ConditionsListResult({
 
   return (
     <Stack direction="row" justifyContent="space-between" alignItems="center">
-      <Box>
-        <Typography variant="h6" gutterBottom fontWeight="bold">
-          匹配结果摘要
-        </Typography>
-        <Chip
-          label={`总计: ${results.length} 筆符合`}
-          color="primary"
-          sx={{
-            fontWeight: 700,
-          }}
-        />
+      <Box display="flex" alignItems="center" gap={2}>
+        <Box>
+          <Typography
+            variant="h6"
+            gutterBottom
+            fontWeight="bold"
+            sx={{ mb: 0 }}
+          >
+            匹配结果摘要
+          </Typography>
+        </Box>
+        {isFetching ? (
+          <CircularProgress size={24} />
+        ) : (
+          <Chip
+            label={`总计: ${results.length} 筆符合`}
+            color="primary"
+            sx={{
+              fontWeight: 700,
+            }}
+          />
+        )}
       </Box>
       <Button
         variant="contained"
         color="success"
         onClick={handleClick}
-        disabled={isLoading || results.length === 0}
+        disabled={isLoading || isFetching || results.length === 0}
       >
         {isLoading ? "處理中..." : "確定"}
       </Button>

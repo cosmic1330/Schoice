@@ -13,11 +13,12 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { stockFundamentalQueryBuilder } from "../../../classes/StockFundamentalQueryBuilder";
+import { useUser } from "../../../context/UserContext";
+import useCloudStore from "../../../store/Cloud.store";
 import { FundamentalPrompt, FundamentalPrompts } from "../../../types";
 import ConditionsList from "./ConditionsList";
-import ConditionsTable from "./ConditionsTable";
 import FundamentalResult from "./FundamentalResult";
 
 export default function Fundamental() {
@@ -30,6 +31,22 @@ export default function Fundamental() {
     operator: operators[0],
     value: valuesByIndicator[indicators[0]][0] || "1",
   });
+
+  // Persistence Logic
+  const { user } = useUser();
+  const { fundamentalCondition, reload } = useCloudStore();
+
+  useEffect(() => {
+    if (user) {
+      reload(user.id);
+    }
+  }, [user, reload]);
+
+  useEffect(() => {
+    if (fundamentalCondition) {
+      setPrompts(fundamentalCondition);
+    }
+  }, [fundamentalCondition]);
 
   const handleIndicatorChange = (event: SelectChangeEvent<string>) => {
     const { value } = event.target;
@@ -67,10 +84,31 @@ export default function Fundamental() {
     setPrompts((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleEditCondition = (index: number) => {
+    const target = prompts[index];
+    if (!target) return;
+
+    // Check if value is in the standard list
+    const standardValues = valuesByIndicator[target.indicator] || [];
+    const isCustomValue = !standardValues.includes(target.value);
+
+    setSelects(target);
+    setOpen(isCustomValue);
+
+    // Remove from list so it can be re-added after edit
+    handleDeleteCondition(index);
+  };
+
   return (
     <Grid container spacing={2} px={2}>
       <Grid size={6}>
-        <ConditionsTable />
+        <ConditionsList
+          {...{
+            prompts,
+            handleDeleteCondition,
+            handleEditCondition,
+          }}
+        />
       </Grid>
       <Grid size={6} sx={{ overflowY: "auto" }}>
         <Paper
@@ -156,12 +194,6 @@ export default function Fundamental() {
             </Tooltip>
           </Box>
         </Paper>
-        <ConditionsList
-          {...{
-            prompts,
-            handleDeleteCondition,
-          }}
-        />
       </Grid>
       <Grid size={12}>
         <FundamentalResult />

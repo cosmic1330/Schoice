@@ -15,7 +15,7 @@ export default function Favorite() {
 
   useEffect(() => {
     query(
-      `SELECT * FROM stock WHERE stock_id IN (${watchStocks.join(",")})`
+      `SELECT * FROM stock WHERE stock_id IN (${watchStocks.map((id) => `'${id}'`).join(",")})`
     ).then((data: StockTableType[] | null) => {
       if (data && data.length > 0) setStocks(data);
     });

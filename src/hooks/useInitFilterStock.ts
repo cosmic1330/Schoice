@@ -18,7 +18,7 @@ export default function useInitFilterStock() {
         if (stockIds.length === 0) {
           setFilterStocks([]);
         }
-        query(`SELECT * FROM stock WHERE stock_id IN (${stockIds.join(",")})`).then(
+        query(`SELECT * FROM stock WHERE stock_id IN (${stockIds.map((id) => `'${id}'`).join(",")})`).then(
           (data: StockTableType[] | null) => {
             if (!data || data.length === 0) {
               setFilterStocks([]);

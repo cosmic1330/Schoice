@@ -88,7 +88,7 @@ export default function Backtest() {
       return;
     }
     let stocksValue = await query(
-      `SELECT * FROM stock WHERE stock_id IN (${watchStocks.join(",")})`
+      `SELECT * FROM stock WHERE stock_id IN (${watchStocks.map((id) => `'${id}'`).join(",")})`
     );
     if (selectedStocks === SelectedStocks.FilterStocks && filterStocks) {
       stocksValue = filterStocks;
