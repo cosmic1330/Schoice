@@ -1,12 +1,23 @@
+import CancelIcon from "@mui/icons-material/Cancel";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import {
   Box,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
   Container,
-  Tooltip as MuiTooltip,
+  Divider,
   Stack,
+  Step,
+  StepButton,
+  Stepper,
   Typography,
 } from "@mui/material";
-import { useContext, useMemo } from "react";
+import { useContext, useMemo, useState, useRef, useEffect } from "react";
 import {
+  CartesianGrid,
   ComposedChart,
   Customized,
   Line,
@@ -23,164 +34,582 @@ import { DealsContext } from "../../context/DealsContext";
 import { DivergenceSignalType } from "../../types";
 import detectKdDivergence from "../../utils/detectKdDivergence";
 
+interface KdChartData
+  extends Partial<{
+    t: number | string;
+    o: number | null;
+    h: number | null;
+    l: number | null;
+    c: number | null;
+    v: number | null;
+  }> {
+  k: number | null;
+  d: number | null;
+  ma20: number | null;
+  volMa20?: number | null;
+}
+
+type CheckStatus = "pass" | "fail" | "manual";
+
+interface StepCheck {
+  label: string;
+  status: CheckStatus;
+}
+
+interface KdStep {
+  label: string;
+  description: string;
+  checks: StepCheck[];
+}
+
 export default function Kd() {
   const deals = useContext(DealsContext);
+  const [activeStep, setActiveStep] = useState(0);
 
-  const chartData = useMemo(() => {
-    if (deals?.length === 0) return [];
-    const response = [];
-    let pre = kd.init(deals[0], 9);
-    response.push({
-      t: deals[0].t,
-      k: pre.k,
-      d: pre.d,
-      o: deals[0].o,
-      c: deals[0].c,
-      l: deals[0].l,
-      h: deals[0].h,
-      prevL: null, // 第一天沒有前一天的資料
-    });
-    for (let i = 1; i < deals.length; i++) {
-      const deal = deals[i];
-      pre = kd.next(deal, pre, 9);
-      response.push({
-        t: deal.t,
-        k: pre.k,
-        d: pre.d,
-        o: deal.o,
-        c: deal.c,
-        l: deal.l,
-        h: deal.h,
-        prevL: deals[i - 1].h, // 前一天的最低價
+  // Zoom & Pan Control
+  const [visibleCount, setVisibleCount] = useState(180);
+  const [rightOffset, setRightOffset] = useState(0);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const lastX = useRef(0);
+  const startOffset = useRef(0);
+
+
+  useEffect(() => {
+    const container = chartContainerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const delta = Math.sign(e.deltaY);
+      const step = 4;
+
+      setVisibleCount((prev) => {
+        const next = prev + delta * step;
+        const minBars = 30;
+        const maxBars = deals.length > 0 ? deals.length : 1000;
+        
+        if (next < minBars) return minBars;
+        if (next > maxBars) return maxBars;
+        return next;
       });
-    }
-    return response.splice(-160);
-  }, [deals]);
+    };
 
-  const singals = useMemo(() => {
-    return detectKdDivergence(chartData);
+    const handleMouseDown = (e: MouseEvent) => {
+      isDragging.current = true;
+      lastX.current = e.clientX;
+      startOffset.current = rightOffset;
+      e.preventDefault();
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      e.preventDefault();
+      
+      const deltaX = e.clientX - lastX.current;
+      const sensitivity = visibleCount / (container.clientWidth || 500); 
+      const barDelta = Math.round(deltaX * sensitivity * 1.5); 
+      
+      if (barDelta === 0) return;
+
+      setRightOffset((prev) => {
+        let next = prev + barDelta;
+        if (next < 0) next = 0;
+        const maxOffset = Math.max(0, deals.length - visibleCount); 
+        if (next > maxOffset) next = maxOffset;
+        return next;
+      });
+      
+      lastX.current = e.clientX;
+    };
+
+    const handleMouseUp = () => {
+      isDragging.current = false;
+    };
+
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    container.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      container.removeEventListener("wheel", handleWheel);
+      container.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [deals.length, visibleCount, rightOffset]);
+
+  const chartData = useMemo((): KdChartData[] => {
+    if (!deals || deals.length === 0) return [];
+
+    let kdData = kd.init(deals[0], 9);
+
+    return deals
+      .map((deal, i) => {
+        if (i > 0) {
+          kdData = kd.next(deal, kdData, 9);
+        }
+
+        // Simple SMA 20 for Price and Volume
+        let ma20: number | null = null;
+        let volMa20: number | null = null;
+
+        if (i >= 19) {
+          let sumC = 0;
+          let sumV = 0;
+          for (let j = 0; j < 20; j++) {
+            sumC += deals[i - j].c || 0;
+            sumV += deals[i - j].v || 0;
+          }
+          ma20 = sumC / 20;
+          volMa20 = sumV / 20;
+        }
+
+        return {
+          ...deal,
+          k: kdData.k,
+          d: kdData.d,
+          ma20,
+          volMa20,
+        };
+      })
+      .slice(
+        -(visibleCount + rightOffset), 
+        rightOffset === 0 ? undefined : -rightOffset
+      );
+  }, [deals, visibleCount, rightOffset]);
+
+  const signals = useMemo(() => {
+    // We need to convert chartData back to the format detectKdDivergence expects if possible,
+    // or just run it on the source deals slice if needed.
+    // detectKdDivergence expects {t, h, l, k, d}.
+    // We can map from chartData which has all of these.
+    const inputForDivergence = chartData.map((d) => ({
+      t: typeof d.t === "string" ? 0 : (d.t as number), // Assuming safe cast or ignored if not relevant
+      h: d.h || 0,
+      l: d.l || 0,
+      k: d.k || 0,
+      d: d.d || 0,
+    }));
+    return detectKdDivergence(inputForDivergence);
   }, [chartData]);
 
+  const { steps, score, recommendation } = useMemo(() => {
+    if (chartData.length === 0)
+      return { steps: [], score: 0, recommendation: "" };
+
+    const current = chartData[chartData.length - 1];
+    const prev = chartData[chartData.length - 2] || current;
+
+    const isNum = (n: any): n is number => typeof n === "number";
+
+    const price = current.c;
+    const kVal = current.k;
+    const dVal = current.d;
+    const ma = current.ma20;
+    const vol = current.v;
+    const volMa = current.volMa20;
+    const prevK = prev.k || 0;
+    const prevD = prev.d || 0;
+
+    if (
+      !isNum(price) ||
+      !isNum(kVal) ||
+      !isNum(dVal) ||
+      !isNum(ma) ||
+      !isNum(vol) ||
+      !isNum(volMa)
+    ) {
+      return { steps: [], score: 0, recommendation: "Data Error" };
+    }
+
+    // I. Regime
+    const volRatio = vol / volMa;
+    const isVolStable = volRatio > 0.6;
+    const maRising = ma > (prev.ma20 || 0);
+    const trendStatus = maRising ? "Uptrend" : "Downtrend/Flat";
+
+    // II. Entry
+    const isOversold = kVal < 20 && dVal < 20;
+    const isOverbought = kVal > 80 && dVal > 80;
+    const goldCross = prevK < prevD && kVal > dVal;
+    const deathCross = prevK > prevD && kVal < dVal;
+
+    // Check for recent bullish divergence (last 3 candles)
+    const recentBullishDiv = signals.some(
+      (s) =>
+        s.type === DivergenceSignalType.BULLISH_DIVERGENCE && s.t === current.t
+    );
+    const recentBearishDiv = signals.some(
+      (s) =>
+        s.type === DivergenceSignalType.BEARISH_DIVERGENCE && s.t === current.t
+    );
+
+    // III. Risk
+    const stopLoss = (price * 0.97).toFixed(2); // 3% trail
+
+    // Score
+    let totalScore = 0;
+    // 1. Volume (20)
+    if (isVolStable) totalScore += 20;
+    // 2. Trend (20)
+    if (maRising || price > ma) totalScore += 20;
+    // 3. KD Position (40)
+    if (isOversold && goldCross) totalScore += 40; // Strong buy
+    else if (goldCross && price > ma) totalScore += 30; // Trend Buy
+    else if (recentBullishDiv) totalScore += 30; // Divergence Buy
+    else if (kVal > dVal && kVal > prevK) totalScore += 10; // Momentum
+
+    if (isOverbought || deathCross || recentBearishDiv) totalScore -= 20;
+
+    // 4. Price Action (20)
+    if (price > (current.o || 0)) totalScore += 20;
+
+    if (totalScore < 0) totalScore = 0;
+
+    let rec = "Reject";
+    if (totalScore >= 80) rec = "Strong Buy";
+    else if (totalScore >= 60) rec = "Watch";
+    else if (deathCross || isOverbought) rec = "Sell/Exit";
+    else rec = "Neutral";
+
+    const kdSteps: KdStep[] = [
+      {
+        label: "I. 市場環境",
+        description: "流動性與趨勢 (Regime)",
+        checks: [
+          {
+            label: `成交量穩定 (>60% MA): ${(volRatio * 100).toFixed(0)}%`,
+            status: isVolStable ? "pass" : "fail",
+          },
+          {
+            label: `趨勢方向 (MA20): ${trendStatus}`,
+            status: maRising ? "pass" : "manual",
+          },
+          { label: "波動度正常 (ATR)", status: "manual" },
+        ],
+      },
+      {
+        label: "II. 入場條件",
+        description: "交叉與背離 (Entry)",
+        checks: [
+          {
+            label: `KD 黃金交叉: ${goldCross ? "Yes" : "No"}`,
+            status: goldCross ? "pass" : "fail",
+          },
+          {
+            label: `超賣區 (<20): ${isOversold ? "Yes" : "No"}`,
+            status: isOversold ? "pass" : "fail",
+          },
+          {
+            label: `底背離信號: ${recentBullishDiv ? "Yes" : "No"}`,
+            status: recentBullishDiv ? "pass" : "manual",
+          },
+        ],
+      },
+      {
+        label: "III. 風險控管",
+        description: "停損與部位 (Risk)",
+        checks: [
+          { label: `建議停損: ${stopLoss}`, status: "manual" },
+          {
+            label: "KD 極端值減倉 (>85)",
+            status: kVal > 85 ? "fail" : "pass",
+          },
+          { label: "死亡交叉警示", status: deathCross ? "fail" : "pass" },
+        ],
+      },
+      {
+        label: "IV. 綜合評估",
+        description: `得分: ${totalScore} - ${rec}`,
+        checks: [
+          {
+            label: "趨勢動能強 (K > D)",
+            status: kVal > dVal ? "pass" : "fail",
+          },
+          {
+            label: "無頂部背離",
+            status: recentBearishDiv ? "fail" : "pass",
+          },
+          { label: "量價配合", status: isVolStable ? "pass" : "manual" },
+        ],
+      },
+    ];
+
+    return { steps: kdSteps, score: totalScore, recommendation: rec };
+  }, [chartData, signals]);
+
+  const handleStep = (step: number) => () => {
+    setActiveStep(step);
+  };
+
+  const getStatusIcon = (status: CheckStatus) => {
+    switch (status) {
+      case "pass":
+        return <CheckCircleIcon fontSize="small" color="success" />;
+      case "fail":
+        return <CancelIcon fontSize="small" color="error" />;
+      case "manual":
+      default:
+        return <HelpOutlineIcon fontSize="small" color="disabled" />;
+    }
+  };
+
+  if (chartData.length === 0) {
+    return (
+      <Box
+        height="100vh"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
-    <Container component="main">
-      <Stack spacing={1} direction="row" alignItems="center">
-        <MuiTooltip
-          title={
-            <Box>
-              <Typography variant="body2" gutterBottom>
-                KD 背離指標用於判斷股價與 KD 指標之間的背離情況。
-              </Typography>
-              <Typography variant="body2" gutterBottom>
-                當股價創新高而 KD 沒有同步創新高，或股價創新低而 KD
-                沒有同步創新低時，可能預示著趨勢的轉變。
+    <Container
+      component="main"
+      maxWidth={false}
+      sx={{ height: "100vh", display: "flex", flexDirection: "column", pt: 1, px: 2, pb: 1 }}
+    >
+      <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
+        <Typography variant="h6" component="div" color="white">
+          KD Strategy
+        </Typography>
+
+        <Chip
+          label={`${score}分 - ${recommendation}`}
+          color={score >= 80 ? "success" : score >= 60 ? "warning" : "error"}
+          variant="outlined"
+          size="small"
+        />
+
+        <Divider orientation="vertical" flexItem />
+        <Box sx={{ flexGrow: 1 }}>
+          <Stepper nonLinear activeStep={activeStep}>
+            {steps.map((step, index) => (
+              <Step key={step.label}>
+                <StepButton color="inherit" onClick={handleStep(index)}>
+                  {step.label}
+                </StepButton>
+              </Step>
+            ))}
+          </Stepper>
+        </Box>
+      </Stack>
+
+      <Card variant="outlined" sx={{ mb: 1, bgcolor: "background.default" }}>
+        <CardContent sx={{ py: 1, "&:last-child": { pb: 1 } }}>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={2}
+            alignItems="center"
+          >
+            <Box sx={{ minWidth: 200, flexShrink: 0 }}>
+              <Typography variant="subtitle1" color="primary" fontWeight="bold">
+                {steps[activeStep]?.description}
               </Typography>
             </Box>
-          }
-          arrow
-        >
-          <Typography variant="h5" gutterBottom>
-            KD 背離指標
-          </Typography>
-        </MuiTooltip>
-        {singals.length > 0 && (
-          <MuiTooltip
-            title={singals?.map((signal) => (
-              <Typography variant="body2" key={signal.t}>
-                {signal.t} {signal.type}
-              </Typography>
-            ))}
-          >
-            <Typography variant="body2" color="textSecondary">
-              {`${singals[singals.length - 1].t} ${
-                singals[singals.length - 1].type
-              }`}
-            </Typography>
-          </MuiTooltip>
-        )}
-      </Stack>
-      <Box height="calc(100vh - 32px)" width="100%">
-        <ResponsiveContainer width="100%" height="50%">
-          <ComposedChart data={chartData} syncId="anySyncId">
-            <XAxis dataKey="t" />
-            <YAxis domain={[0, 100]} />
-            <Tooltip offset={50} />
-            <ReferenceLine y={80} stroke="#ff0000" strokeDasharray="5 5" />
-            <ReferenceLine y={20} stroke="#ff0000" strokeDasharray="5 5" />
-            <Line
-              dataKey="k"
-              stroke="#589bf3"
-              dot={false}
-              activeDot={false}
-              legendType="none"
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{ display: { xs: "none", md: "block" } }}
             />
-            <Line
-              dataKey="d"
-              stroke="#ff7300"
-              dot={false}
-              activeDot={false}
-              legendType="none"
-            />
-            {singals.map((signal) => (
-              <ReferenceDot
-                key={signal.t}
-                x={signal.t}
-                y={signal.k}
-                r={3}
-                stroke={"none"}
-                fill={
-                  signal.type === DivergenceSignalType.BEARISH_DIVERGENCE
-                    ? "green"
-                    : "red"
-                }
-              />
-            ))}
-          </ComposedChart>
-        </ResponsiveContainer>
+            <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+              {steps[activeStep]?.checks.map((check, idx) => (
+                <Chip
+                  key={idx}
+                  icon={getStatusIcon(check.status)}
+                  label={check.label}
+                  variant="outlined"
+                  color={
+                    check.status === "pass"
+                      ? "success"
+                      : check.status === "fail"
+                      ? "error"
+                      : "default"
+                  }
+                  size="small"
+                />
+              ))}
+            </Stack>
+          </Stack>
+        </CardContent>
+      </Card>
 
-        <ResponsiveContainer width="100%" height="50%">
-          <ComposedChart data={chartData} syncId="anySyncId">
-            <XAxis dataKey="t" />
-            <YAxis domain={["dataMin", "dataMax"]} />
-            <Tooltip offset={50} />
+      <Box 
+        ref={chartContainerRef}
+        sx={{ flexGrow: 1, minHeight: 0 }}
+      >
+        {/* Price Chart */}
+        <ResponsiveContainer width="100%" height="60%">
+          <ComposedChart data={chartData} syncId="kdSync">
+            <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+            <XAxis dataKey="t" hide />
+            <YAxis domain={["auto", "auto"]} />
+            <Tooltip
+              offset={50}
+              contentStyle={{
+                backgroundColor: "#222",
+                border: "none",
+                borderRadius: 4,
+              }}
+              itemStyle={{ fontSize: 12 }}
+              labelStyle={{ color: "#aaa", marginBottom: 5 }}
+            />
             <Line
               dataKey="h"
-              stroke="#000"
-              opacity={0} // 設置透明度為 0，隱藏線條
+              stroke="#fff"
+              opacity={0}
               dot={false}
               activeDot={false}
               legendType="none"
             />
             <Line
               dataKey="c"
-              stroke="#000"
-              opacity={0} // 設置透明度為 0，隱藏線條
+              stroke="#fff"
+              opacity={0}
               dot={false}
               activeDot={false}
               legendType="none"
             />
             <Line
               dataKey="l"
-              stroke="#000"
-              opacity={0} // 設置透明度為 0，隱藏線條
+              stroke="#fff"
+              opacity={0}
               dot={false}
               activeDot={false}
               legendType="none"
             />
             <Line
               dataKey="o"
-              stroke="#000"
-              opacity={0} // 設置透明度為 0，隱藏線條
+              stroke="#fff"
+              opacity={0}
               dot={false}
               activeDot={false}
               legendType="none"
             />
             <Customized component={BaseCandlestickRectangle} />
+
             <Line
-              dataKey="c"
-              stroke="#589bf3"
+              dataKey="ma20"
+              stroke="#ff9800"
               dot={false}
               activeDot={false}
-              legendType="none"
+              name="20 MA"
+              strokeWidth={1.5}
+            />
+
+            {/* Divergence Signals on Price Chart */}
+            {signals.map((signal) => {
+              const isBearish =
+                signal.type === DivergenceSignalType.BEARISH_DIVERGENCE;
+              // Calculate y position: slightly above High for bearish, slightly below Low for bullish
+              // We need to look up the price again because signal might only have k/d/t
+              // But we passed {t, h, l ...} to detectKdDivergence?
+              // Wait, detectKdDivergence output 'signals' only has {t, k, d, type, description}.
+              // We need to find the H or L from chartData.
+              const dataPoint = chartData.find((d) => d.t === signal.t);
+              const yPos = isBearish ? dataPoint?.h || 0 : dataPoint?.l || 0;
+
+              return (
+                <ReferenceDot
+                  key={signal.t}
+                  x={signal.t}
+                  y={yPos}
+                  shape={(props: any) => {
+                    const { cx, cy } = props;
+                    if (!cx || !cy) return <g />;
+
+                    return (
+                      <g>
+                        {isBearish ? (
+                          // Down Triangle (Green)
+                          <path
+                            d={`M${cx - 5},${cy - 10} L${cx + 5},${
+                              cy - 10
+                            } L${cx},${cy} Z`}
+                            fill="#4caf50"
+                          />
+                        ) : (
+                          // Up Triangle (Red)
+                          <path
+                            d={`M${cx - 5},${cy + 10} L${cx + 5},${
+                              cy + 10
+                            } L${cx},${cy} Z`}
+                            fill="#f44336"
+                          />
+                        )}
+                        <text
+                          x={cx}
+                          y={isBearish ? cy - 15 : cy + 20}
+                          textAnchor="middle"
+                          fill={isBearish ? "#4caf50" : "#f44336"}
+                          fontSize={12}
+                          fontWeight="bold"
+                          dy={isBearish ? 0 : 3}
+                        >
+                          {isBearish ? "頂背離" : "底背離"}
+                        </text>
+                      </g>
+                    );
+                  }}
+                />
+              );
+            })}
+          </ComposedChart>
+        </ResponsiveContainer>
+
+        {/* KD Chart */}
+        <ResponsiveContainer width="100%" height="40%">
+          <ComposedChart data={chartData} syncId="kdSync">
+            <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+            <XAxis dataKey="t" />
+            <YAxis domain={[0, 100]} ticks={[0, 20, 50, 80, 100]} />
+            <Tooltip
+              offset={50}
+              contentStyle={{
+                backgroundColor: "#222",
+                border: "none",
+                borderRadius: 4,
+              }}
+              itemStyle={{ fontSize: 12 }}
+              labelStyle={{ color: "#aaa", marginBottom: 5 }}
+            />
+            <ReferenceLine
+              y={80}
+              stroke="#f44336"
+              strokeDasharray="3 3"
+              label={{ value: "Overbought", fill: "#f44336", fontSize: 10 }}
+            />
+            <ReferenceLine
+              y={20}
+              stroke="#4caf50"
+              strokeDasharray="3 3"
+              label={{ value: "Oversold", fill: "#4caf50", fontSize: 10 }}
+            />
+            <ReferenceLine y={50} stroke="#666" strokeDasharray="3 3" />
+
+            <Line
+              dataKey="k"
+              stroke="#2196f3"
+              dot={false}
+              activeDot={false}
+              strokeWidth={2}
+              name="K"
+            />
+            <Line
+              dataKey="d"
+              stroke="#ff9800"
+              dot={false}
+              activeDot={false}
+              strokeWidth={2}
+              name="D"
             />
           </ComposedChart>
         </ResponsiveContainer>

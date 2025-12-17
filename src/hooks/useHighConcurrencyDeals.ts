@@ -19,7 +19,8 @@ import {
   UrlTaPerdOptions,
   UrlType,
 } from "../types";
-import analyzeIndicatorsData, {
+import  {
+  analyzeIndicatorsData,
   IndicatorsDateTimeType,
 } from "../utils/analyzeIndicatorsData";
 import checkTimeRange from "../utils/checkTimeRange";

@@ -3,7 +3,7 @@ import { getStore } from "../store/Example.store";
 import useSchoiceStore from "../store/Schoice.store";
 import { tauriFetcher } from "../tools/http";
 import { TaListType, UrlTaPerdOptions, UrlType } from "../types";
-import analyzeIndicatorsData, {
+import  {analyzeIndicatorsData,
   IndicatorsDateTimeType,
 } from "../utils/analyzeIndicatorsData";
 import generateDealDataDownloadUrl from "../utils/generateDealDataDownloadUrl";

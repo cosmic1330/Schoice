@@ -7,7 +7,8 @@ import useDetailWebviewWindow from "../../../../../hooks/useDetailWebviewWindow"
 import useMarketAnalysis from "../../../../../hooks/useMarketAnalysis";
 import { tauriFetcher } from "../../../../../tools/http";
 import { FutureIds, UrlTaPerdOptions, UrlType } from "../../../../../types";
-import analyzeIndicatorsData, {
+import {
+  analyzeIndicatorsData,
   IndicatorsDateTimeType,
 } from "../../../../../utils/analyzeIndicatorsData";
 import generateDealDataDownloadUrl from "../../../../../utils/generateDealDataDownloadUrl";

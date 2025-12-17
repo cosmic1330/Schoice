@@ -1,0 +1,174 @@
+//@version=5
+indicator("Ichimoku v3.2 — Auto Signals + Dashboard", overlay=true, max_labels_count=500)
+
+// ─────────────────────────────────────────────
+// ⚙️ 1. 參數設定
+// ─────────────────────────────────────────────
+grp_ichi = "一目均衡表設定"
+tenkanLength = input.int(9, "Tenkan Length", group=grp_ichi)
+kijunLength  = input.int(26, "Kijun Length", group=grp_ichi)
+senkouLength = input.int(52, "Senkou Length", group=grp_ichi)
+displacement = kijunLength
+
+grp_ui = "顯示與介面設定 (UI)"
+showLabels  = input.bool(true, "顯示圖表買賣標籤", group=grp_ui)
+showMinor   = input.bool(false, "顯示次要標籤 (Watch/Reduce) - 關閉可讓圖表更清爽", group=grp_ui)
+showDash    = input.bool(true, "顯示計分儀表板", group=grp_ui)
+dashLoc     = input.string("Bottom Right", "儀表板位置", options=["Top Right", "Bottom Right", "Bottom Left", "Top Left"], group=grp_ui)
+dashSize    = input.string("Small", "儀表板文字大小", options=["Tiny", "Small", "Normal", "Large"], group=grp_ui)
+
+// ─────────────────────────────────────────────
+// 2. 計算邏輯
+// ─────────────────────────────────────────────
+tenkan = (ta.highest(high, tenkanLength) + ta.lowest(low, tenkanLength)) / 2
+kijun  = (ta.highest(high, kijunLength)  + ta.lowest(low, kijunLength))  / 2
+senkouA = (tenkan + kijun) / 2
+senkouB = (ta.highest(high, senkouLength) + ta.lowest(low, senkouLength)) / 2
+
+// 雲的當前值
+cloudTop    = math.max(senkouA[displacement], senkouB[displacement])
+cloudBottom = math.min(senkouA[displacement], senkouB[displacement])
+isGreenCloud = senkouA[displacement] > senkouB[displacement]
+
+// 繪圖
+plot(tenkan, color=color.blue, title="Tenkan-sen")
+plot(kijun, color=color.red, title="Kijun-sen")
+plot(close, offset=-displacement, color=color.new(color.green, 60), title="Chikou Span")
+
+p1 = plot(senkouA, offset=displacement, color=color.new(color.green, 90), title="Senkou A")
+p2 = plot(senkouB, offset=displacement, color=color.new(color.red, 90), title="Senkou B")
+fill(p1, p2, color = senkouA > senkouB ? color.new(color.green, 90) : color.new(color.red, 90), title="Kumo Cloud")
+
+// ─────────────────────────────────────────────
+// 3. 訊號條件定義
+// ─────────────────────────────────────────────
+// A. 價格位置
+priceAboveCloud = close > cloudTop
+priceBelowCloud = close < cloudBottom
+
+// B. 事件觸發
+tkCrossBull = ta.crossover(tenkan, kijun)
+tkCrossBear = ta.crossunder(tenkan, kijun)
+cloudBreakoutBull = ta.crossover(close, cloudTop)
+cloudBreakoutBear = ta.crossunder(close, cloudBottom)
+
+// C. 滯後線確認
+chikouBull = close > close[displacement]
+chikouBear = close < close[displacement]
+
+// D. 未來雲
+futureCloudGreen = senkouA > senkouB
+futureCloudRed   = senkouA < senkouB
+futureCloudRising = senkouA > senkouA[1] and senkouB > senkouB[1]
+futureCloudFalling= senkouA < senkouA[1] and senkouB < senkouB[1]
+
+// ─────────────────────────────────────────────
+// 4. 買賣訊號標籤邏輯 (Labels)
+// ─────────────────────────────────────────────
+
+// --- BUY Logic ---
+isThreeSignalsBull = priceAboveCloud and chikouBull
+isStrongBuySetup   = isThreeSignalsBull and futureCloudGreen and futureCloudRising
+triggerBuy = tkCrossBull
+
+if showLabels and triggerBuy
+    if isStrongBuySetup
+        label.new(bar_index, low, "BUY++", style=label.style_label_up, color=color.green, textcolor=color.white, tooltip="完美三役 + 未來雲向上", size=size.small)
+    else if isThreeSignalsBull
+        label.new(bar_index, low, "BUY", style=label.style_label_up, color=color.new(color.green, 30), textcolor=color.white, tooltip="三役好轉", size=size.small)
+    else if priceAboveCloud
+        label.new(bar_index, low, "BUY-A", style=label.style_label_up, color=color.new(color.green, 60), textcolor=color.white, tooltip="雲上交叉", size=size.small)
+
+if showLabels and showMinor and cloudBreakoutBull
+    label.new(bar_index, low, "WATCH", style=label.style_label_up, color=color.new(color.yellow, 40), textcolor=color.black, size=size.tiny, tooltip="剛突破雲層")
+
+// --- SELL Logic ---
+isThreeSignalsBear = priceBelowCloud and chikouBear
+isStrongSellSetup  = isThreeSignalsBear and futureCloudRed and futureCloudFalling
+triggerSell = tkCrossBear
+
+if showLabels and triggerSell
+    if isStrongSellSetup
+        label.new(bar_index, high, "SELL++", style=label.style_label_down, color=color.red, textcolor=color.white, tooltip="完美三役反轉 + 未來雲向下", size=size.small)
+    else if isThreeSignalsBear
+        label.new(bar_index, high, "SELL", style=label.style_label_down, color=color.new(color.red, 30), textcolor=color.white, tooltip="三役反轉", size=size.small)
+    else if priceBelowCloud
+        label.new(bar_index, high, "SELL-A", style=label.style_label_down, color=color.new(color.red, 60), textcolor=color.white, tooltip="雲下交叉", size=size.small)
+
+if showLabels and showMinor and cloudBreakoutBear
+    label.new(bar_index, high, "WATCH", style=label.style_label_down, color=color.new(color.orange, 40), textcolor=color.black, size=size.tiny, tooltip="剛跌破雲層")
+
+// --- 出場/風控 ---
+breakTenkan = ta.crossunder(close, tenkan)
+breakKijun  = ta.crossunder(close, kijun)
+
+if showLabels and showMinor and priceAboveCloud
+    if breakTenkan
+        label.new(bar_index, high, "REDUCE", style=label.style_label_down, color=color.new(color.purple, 50), textcolor=color.white, size=size.tiny, tooltip="跌破轉換線")
+    if breakKijun
+        label.new(bar_index, high, "HALF", style=label.style_label_down, color=color.new(color.purple, 20), textcolor=color.white, size=size.small, tooltip="跌破基準線")
+
+if showLabels and cloudBreakoutBear
+    label.new(bar_index, high, "EXIT", style=label.style_label_down, color=color.red, textcolor=color.white, tooltip="趨勢反轉：離場", size=size.small)
+
+// ─────────────────────────────────────────────
+// 5. 響應式儀表板 (Responsive Dashboard)
+// ─────────────────────────────────────────────
+
+// 位置設定
+var tablePosition = position.bottom_right
+if dashLoc == "Top Right"
+    tablePosition := position.top_right
+else if dashLoc == "Bottom Left"
+    tablePosition := position.bottom_left
+else if dashLoc == "Top Left"
+    tablePosition := position.top_left
+
+// 大小設定
+var tableTextSize = size.small
+if dashSize == "Tiny"
+    tableTextSize := size.tiny
+else if dashSize == "Normal"
+    tableTextSize := size.normal
+else if dashSize == "Large"
+    tableTextSize := size.large
+
+// 建立表格
+var table scoreTable = table.new(tablePosition, 2, 5, bgcolor=color.new(color.black, 40), border_width=1, frame_color=color.gray, frame_width=1)
+
+if barstate.islast and showDash
+    // 計算分數 (0-100)
+    float score = 0.0
+    // 1. 趨勢 (30%)
+    if priceAboveCloud and isGreenCloud
+        score += 30
+    // 2. 動能 (30%)
+    if tenkan > kijun
+        score += 30
+    // 3. 確認 (20%)
+    if chikouBull
+        score += 20
+    // 4. 未來 (20%)
+    if futureCloudGreen
+        score += 20
+
+    // 顏色定義
+    c_bg_pass = color.new(color.green, 60)
+    c_bg_fail = color.new(color.red, 60)
+    c_txt = color.white
+
+    // 填充表格
+    table.cell(scoreTable, 0, 0, "Ichimoku Signal", text_color=c_txt, bgcolor=color.new(color.blue, 20), text_size=tableTextSize, text_halign=text.align_left)
+    table.cell(scoreTable, 1, 0, str.tostring(score, "#"), text_color=score>=80?color.green:color.white, bgcolor=color.black, text_size=tableTextSize, text_halign=text.align_center)
+    
+    table.cell(scoreTable, 0, 1, "趨勢 (雲上)", text_color=c_txt, text_size=tableTextSize, text_halign=text.align_left)
+    table.cell(scoreTable, 1, 1, (priceAboveCloud ? "✅" : "❌"), bgcolor=priceAboveCloud?c_bg_pass:c_bg_fail, text_size=tableTextSize)
+    
+    table.cell(scoreTable, 0, 2, "動能 (TK)", text_color=c_txt, text_size=tableTextSize, text_halign=text.align_left)
+    table.cell(scoreTable, 1, 2, (tenkan > kijun ? "✅" : "❌"), bgcolor=tenkan>kijun?c_bg_pass:c_bg_fail, text_size=tableTextSize)
+    
+    table.cell(scoreTable, 0, 3, "確認 (Chikou)", text_color=c_txt, text_size=tableTextSize, text_halign=text.align_left)
+    table.cell(scoreTable, 1, 3, (chikouBull ? "✅" : "❌"), bgcolor=chikouBull?c_bg_pass:c_bg_fail, text_size=tableTextSize)
+    
+    table.cell(scoreTable, 0, 4, "未來雲", text_color=c_txt, text_size=tableTextSize, text_halign=text.align_left)
+    table.cell(scoreTable, 1, 4, (futureCloudGreen ? "✅" : "❌"), bgcolor=futureCloudGreen?c_bg_pass:c_bg_fail, text_size=tableTextSize)
