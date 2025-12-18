@@ -22,9 +22,7 @@ const HourlyBollLineChart = ({
       (item) => item.key
     ).join(
       ","
-    )} FROM hourly_deal JOIN hourly_skills ON hourly_deal.ts = hourly_skills.ts AND hourly_deal.stock_id = hourly_skills.stock_id WHERE hourly_deal.stock_id = '${stock_id}' AND hourly_deal.ts <= '${
-      dateFormat(t, Mode.StringToNumber) * 10000 + 1400
-    }' ORDER BY hourly_deal.ts DESC LIMIT ${hourly_count}`;
+    )} FROM hourly_deal JOIN hourly_skills ON hourly_deal.ts = hourly_skills.ts AND hourly_deal.stock_id = hourly_skills.stock_id WHERE hourly_deal.stock_id = '${stock_id}' AND hourly_deal.ts <=  '${t} 14:00:00' ORDER BY hourly_deal.ts DESC LIMIT ${hourly_count}`;
 
     if (!db) return;
 

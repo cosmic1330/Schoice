@@ -1,5 +1,3 @@
-import { dateFormat } from "@ch20026103/anysis";
-import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
 import { Box, Tooltip } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import { Line, LineChart, YAxis } from "recharts";
@@ -22,9 +20,7 @@ const HourlyUltraTinyLineChart = ({
       (item) => item.key
     ).join(
       ","
-    )} FROM hourly_deal JOIN hourly_skills ON hourly_deal.ts = hourly_skills.ts AND hourly_deal.stock_id = hourly_skills.stock_id WHERE hourly_deal.stock_id = '${stock_id}' AND hourly_deal.ts <= '${
-      dateFormat(t, Mode.StringToNumber) * 10000 + 1400
-    }' ORDER BY hourly_deal.ts DESC LIMIT ${hourly_count}`;
+    )} FROM hourly_deal LEFT JOIN hourly_skills ON hourly_deal.ts = hourly_skills.ts AND hourly_deal.stock_id = hourly_skills.stock_id WHERE hourly_deal.stock_id = '${stock_id}' AND hourly_deal.ts < '${t} 14:00:00+08'::timestamptz ORDER BY hourly_deal.ts DESC LIMIT ${hourly_count}`;
     console.log(sqlQuery);
     if (!db) return;
 

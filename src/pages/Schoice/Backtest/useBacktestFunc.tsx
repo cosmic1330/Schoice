@@ -51,7 +51,7 @@ export default function useBacktestFunc() {
   const getHourDates = useCallback(
     async (date: string) => {
       try {
-        const num = dateFormat(date, Mode.StringToNumber) * 10000 + 1400;
+        const num = `${date} 14:00:00`;
         // 取得明天的timestamp
         const queryHourDate = `
         SELECT DISTINCT ts

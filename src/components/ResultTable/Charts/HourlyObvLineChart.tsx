@@ -22,9 +22,7 @@ const HourlyObvLineChart = ({
       (item) => item.key
     ).join(
       ","
-    )} FROM hourly_skills JOIN hourly_deal ON hourly_skills.ts = hourly_deal.ts AND hourly_skills.stock_id = hourly_deal.stock_id WHERE hourly_skills.stock_id = '${stock_id}' AND hourly_skills.ts <= '${
-      dateFormat(t, Mode.StringToNumber) * 10000 + 1400
-    }' ORDER BY hourly_skills.ts DESC LIMIT ${hourly_count}`;
+    )} FROM hourly_skills JOIN hourly_deal ON hourly_skills.ts = hourly_deal.ts AND hourly_skills.stock_id = hourly_deal.stock_id WHERE hourly_skills.stock_id = '${stock_id}' AND hourly_skills.ts <=  '${t} 14:00:00' ORDER BY hourly_skills.ts DESC LIMIT ${hourly_count}`;
 
     if (!db) return;
 
