@@ -3,7 +3,7 @@
  ****/
 
 export type TaType = {
-  t: number; // 20241007
+  t: number; // 20241007 or '2025-12-18 14:00:00'
   o: number; // 199.0
   h: number; // 199.0
   l: number; // 195.0
@@ -33,7 +33,6 @@ export type PromptValue = {
   weekly: Prompts;
   hourly: Prompts;
 };
-
 
 export type PromptItem = {
   name: string;
@@ -243,7 +242,7 @@ export type TickDealsType = {
 
 export type TimeSharingDealTableType = {
   stock_id: string;
-  ts: number;
+  ts: string;
   c: number;
   o: number;
   h: number;
@@ -253,7 +252,7 @@ export type TimeSharingDealTableType = {
 
 export type TimeSharingSkillsTableType = {
   stock_id: string;
-  ts: number;
+  ts: string;
   ma5: number;
   ma5_ded: number;
   ma10: number;

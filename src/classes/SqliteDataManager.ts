@@ -61,7 +61,7 @@ export default class SqliteDataManager {
     t: string;
   }) {
     try {
-      const num = `${t} 14:00:00`;
+      const num = `'${t} 14:00:00'`;
       info(`刪除 ${stock_id}: ${num} 和 ${t} 之後的資料`);
       await this.db.execute(
         `DELETE FROM hourly_skills WHERE stock_id = '${stock_id}' AND ts > ${num};`
@@ -108,8 +108,8 @@ export default class SqliteDataManager {
       skillsType: TimeSharingSkillsTableOptions;
     },
     sets: {
-      lose_deal_set: Set<number>;
-      lose_skills_set: Set<number>;
+      lose_deal_set: Set<string | number>;
+      lose_skills_set: Set<string | number>;
     }
   ) {
     try {
@@ -189,7 +189,7 @@ export default class SqliteDataManager {
         if (sets.lose_deal_set.has(value.t)) {
           deals.push({
             stock_id: stock.stock_id,
-            ts: value.t,
+            ts: `${String(value.t).slice(0, 4)}-${String(value.t).slice(4, 6)}-${String(value.t).slice(6, 8)} ${String(value.t).slice(8, 10)}:${String(value.t).slice(10, 12)}:00`,
             c: value.c,
             o: value.o,
             h: value.h,
@@ -201,7 +201,7 @@ export default class SqliteDataManager {
         if (sets.lose_skills_set.has(value.t)) {
           skills.push({
             stock_id: stock.stock_id,
-            ts: value.t,
+            ts: `${String(value.t).slice(0, 4)}-${String(value.t).slice(4, 6)}-${String(value.t).slice(6, 8)} ${String(value.t).slice(8, 10)}:${String(value.t).slice(10, 12)}:00`,
             ma5: ma5_data.ma,
             ma5_ded: ma5_data.exclusionValue["d-1"],
             ma10: ma10_data.ma,
@@ -325,7 +325,7 @@ export default class SqliteDataManager {
 
       for (let i = 0; i < ta.length; i++) {
         const value = ta[i];
-        const t = dateFormat(value.t, Mode.NumberToString);
+        const t = dateFormat(value.t as any, Mode.NumberToString);
         if (i > 0) {
           ma5_data = ma.next(value, ma5_data, 5);
           ma10_data = ma.next(value, ma10_data, 10);
@@ -543,7 +543,7 @@ export default class SqliteDataManager {
       const sql = `INSERT INTO ${table} (stock_id, ts, c, o, h, l, v) VALUES ${deal
         .map(
           (deal) =>
-            `('${deal.stock_id}', ${deal.ts}, ${deal.c}, ${deal.o}, ${deal.h}, ${deal.l}, ${deal.v})`
+            `('${deal.stock_id}', '${deal.ts}', ${deal.c}, ${deal.o}, ${deal.h}, ${deal.l}, ${deal.v})`
         )
         .join(", ")}`;
       await this.db.execute(sql);
@@ -606,9 +606,9 @@ export default class SqliteDataManager {
           di_minus,
           adx
           ) VALUES ${skills
-            .map( 
+            .map(
               (skill) =>
-                `('${skill.stock_id}', ${skill.ts}, ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}), ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou}, ${skill.di_plus}, ${skill.di_minus}, ${skill.adx})`
+                `('${skill.stock_id}', '${skill.ts}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou}, ${skill.di_plus}, ${skill.di_minus}, ${skill.adx})`
             )
             .join(", ")}`;
       await this.db.execute(sql);
@@ -638,7 +638,7 @@ export default class SqliteDataManager {
     table: TimeSharingDealTableOptions | TimeSharingSkillsTableOptions
   ) {
     try {
-      const result: [{ ts: number }] = await this.db.select(
+      const result: [{ ts: string }] = await this.db.select(
         `SELECT ts FROM ${table} WHERE stock_id = '${stock.stock_id}';`
       );
       return result;

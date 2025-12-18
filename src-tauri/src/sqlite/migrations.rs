@@ -310,5 +310,80 @@ pub fn value() -> Vec<Migration> {
             ",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 6,
+            description: "change_hourly_ts_to_text",
+            sql: "
+                -- Handle hourly_deal
+                CREATE TABLE hourly_deal_new (
+                    stock_id TEXT,
+                    ts TEXT,
+                    c REAL,
+                    o REAL,
+                    h REAL,
+                    l REAL,
+                    v INTEGER,
+                    PRIMARY KEY (stock_id, ts)
+                );
+                INSERT INTO hourly_deal_new SELECT stock_id, CAST(ts AS TEXT), c, o, h, l, v FROM hourly_deal;
+                DROP TABLE hourly_deal;
+                ALTER TABLE hourly_deal_new RENAME TO hourly_deal;
+
+                -- Handle hourly_skills
+                CREATE TABLE hourly_skills_new (
+                    stock_id TEXT,
+                    ts TEXT,
+                    ma5 REAL,
+                    ma5_ded REAL,
+                    ma10 REAL,
+                    ma10_ded REAL,
+                    ma20 REAL,
+                    ma20_ded REAL,
+                    ma60 REAL,
+                    ma60_ded REAL,
+                    ma120 REAL,
+                    ma120_ded REAL,
+                    ema5 REAL,
+                    ema10 REAL,
+                    ema20 REAL,
+                    ema60 REAL,
+                    ema120 REAL,
+                    macd REAL,
+                    dif REAL,
+                    osc REAL,
+                    k REAL,
+                    d REAL,
+                    j REAL,
+                    rsi5 REAL,
+                    rsi10 REAL,
+                    bollUb REAL,
+                    bollMa REAL,
+                    bollLb REAL,
+                    obv REAL,
+                    obv_ma5 REAL,
+                    obv_ma10 REAL,
+                    obv_ma20 REAL,
+                    obv_ma60 REAL,
+                    obv_ema5 REAL,
+                    obv_ema10 REAL,
+                    obv_ema20 REAL,
+                    obv_ema60 REAL,
+                    mfi REAL,
+                    tenkan REAL,
+                    kijun REAL,
+                    senkouA REAL,
+                    senkouB REAL,
+                    chikou REAL,
+                    di_plus REAL,
+                    di_minus REAL,
+                    adx REAL,
+                    PRIMARY KEY (stock_id, ts)
+                );
+                INSERT INTO hourly_skills_new SELECT * FROM hourly_skills;
+                DROP TABLE hourly_skills;
+                ALTER TABLE hourly_skills_new RENAME TO hourly_skills;
+            ",
+            kind: MigrationKind::Up,
+        },
     ]
 }

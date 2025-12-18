@@ -69,11 +69,11 @@ export default function useFindStocksByPrompt() {
         const queryHourDate = `
         SELECT DISTINCT ts
         FROM hourly_deal
-        WHERE ts <= ${num}
+        WHERE ts <= '${num}'
         ORDER BY ts DESC
         LIMIT 24;
       `;
-        const hourlyDates: { ts: number }[] | undefined = await query(
+        const hourlyDates: { ts: string }[] | undefined = await query(
           queryHourDate
         );
         return hourlyDates || [];
