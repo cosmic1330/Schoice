@@ -104,8 +104,6 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
 
   public generateExpression(prompt: StorePrompt): string[] {
     const { day1, indicator1, operator, day2, indicator2 } = prompt;
-    console.log(prompt);
-
     const operatorKey = this.convertOperator(operator);
 
     let day1Key = "";
