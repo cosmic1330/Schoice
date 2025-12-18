@@ -1,5 +1,3 @@
-import { dateFormat } from "@ch20026103/anysis";
-import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
 import { useCallback, useContext } from "react";
 import { stockDailyQueryBuilder } from "../classes/StockDailyQueryBuilder";
 import { stockHourlyQueryBuilder } from "../classes/StockHourlyQueryBuilder";

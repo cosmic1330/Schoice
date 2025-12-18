@@ -369,11 +369,11 @@ export default function useHighConcurrencyDeals() {
             sqlite_hourly_skills.map((item) => item.ts)
           );
           const lose_hourly_deal_set = new Set(
-            hourly_date.filter((item) => !sqlite_hourly_deal_date_set.has(item))
+            hourly_date.filter((item) => !sqlite_hourly_deal_date_set.has(`${item}`))
           );
           const lose_hourly_skills_set = new Set(
             hourly_date.filter(
-              (item) => !sqlite_hourly_skills_date_set.has(item)
+              (item) => !sqlite_hourly_skills_date_set.has(`${item}`)
             )
           );
           if (
