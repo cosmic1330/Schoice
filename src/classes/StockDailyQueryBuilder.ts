@@ -49,6 +49,9 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
     先行帶A: { key: "senkouA", group: "_day_ago_sk" },
     先行帶B: { key: "senkouB", group: "_day_ago_sk" },
     延遲線: { key: "chikou", group: "_day_ago_sk" },
+    正向動能: { key: "di_plus", group: "_day_ago_sk" },
+    負向動能: { key: "di_minus", group: "_day_ago_sk" },
+    ADX: { key: "adx", group: "_day_ago_sk" },
   };
 
   protected othersMapping: Record<string, QueryBuilderMappingItem> = {

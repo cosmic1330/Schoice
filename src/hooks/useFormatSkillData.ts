@@ -9,6 +9,7 @@ import {
   ObvEma,
   Rsi,
   Ichimoku,
+  Dmi,
 } from "@ch20026103/anysis";
 import { useMemo } from "react";
 import { SkillsTableType, TaListType } from "../types";
@@ -37,6 +38,7 @@ export default function useFormatSkillData(data: TaListType) {
     const obvEma = new ObvEma();
     const mfi = new Mfi();
     const ichimoku = new Ichimoku();
+    const dmi = new Dmi();
 
     const init = data[0];
     let ma5_data = ma.init(init, 5);
@@ -61,6 +63,7 @@ export default function useFormatSkillData(data: TaListType) {
     let obv_ma60_data = obvEma.init(obv_data.obv, 60);
     let mfi_data = mfi.init(init, 14);
     let ichimoku_data = ichimoku.init(init);
+    let dmi_data = dmi.init(init, 14);
 
     deals.push({
       ...init,
@@ -105,6 +108,9 @@ export default function useFormatSkillData(data: TaListType) {
       senkouA: ichimoku_data.ichimoku.senkouA,
       senkouB: ichimoku_data.ichimoku.senkouB,
       chikou: ichimoku_data.ichimoku.chikou,
+      di_plus: dmi_data.pDi,
+      di_minus: dmi_data.mDi,
+      adx: dmi_data.adx,
     });
 
     for (let i = 1; i < data.length; i++) {
@@ -131,6 +137,7 @@ export default function useFormatSkillData(data: TaListType) {
       obv_ma60_data = obvEma.next(obv_data.obv, obv_ma60_data, 60);
       mfi_data = mfi.next(value, mfi_data, 14);
       ichimoku_data = ichimoku.next(value, ichimoku_data);
+      dmi_data = dmi.next(value, dmi_data, 14);
 
       deals.push({
         ...value,
@@ -175,7 +182,9 @@ export default function useFormatSkillData(data: TaListType) {
         senkouA: ichimoku_data.ichimoku.senkouA,
         senkouB: ichimoku_data.ichimoku.senkouB,
         chikou: ichimoku_data.ichimoku.chikou,
-
+        di_plus: dmi_data.pDi,
+        di_minus: dmi_data.mDi,
+        adx: dmi_data.adx,
       });
     }
     return deals;

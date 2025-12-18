@@ -226,6 +226,9 @@ export type SkillsTableType = {
   senkouA: number | null;
   senkouB: number | null;
   chikou: number | null;
+  di_plus: number;
+  di_minus: number;
+  adx: number;
 };
 
 export type TickDealsType = {
@@ -292,6 +295,9 @@ export type TimeSharingSkillsTableType = {
   senkouA: number | null;
   senkouB: number | null;
   chikou: number | null;
+  di_plus: number;
+  di_minus: number;
+  adx: number;
 };
 
 /****

@@ -55,6 +55,14 @@ export class StockHourlyQueryBuilder extends BaseQueryBuilder {
     obv_ema20: { key: "obv_ema20", group: "_hour_ago_sk" },
     obv_ema60: { key: "obv_ema60", group: "_hour_ago_sk" },
     mfi: { key: "mfi", group: "_hour_ago_sk" },
+    轉換線: { key: "tenkan", group: "_hour_ago_sk" },
+    基準線: { key: "kijun", group: "_hour_ago_sk" },
+    先行帶A: { key: "senkouA", group: "_hour_ago_sk" },
+    先行帶B: { key: "senkouB", group: "_hour_ago_sk" },
+    延遲線: { key: "chikou", group: "_hour_ago_sk" },
+    正向動能: { key: "di_plus", group: "_hour_ago_sk" },
+    負向動能: { key: "di_minus", group: "_hour_ago_sk" },
+    ADX: { key: "adx", group: "_hour_ago_sk" },
   };
 
   protected getSpecificOptions(): Record<string, readonly string[]> {

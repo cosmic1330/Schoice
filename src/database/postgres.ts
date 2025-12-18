@@ -1,4 +1,4 @@
-import Database from '@tauri-apps/plugin-sql';
+import Database from "@tauri-apps/plugin-sql";
 
 let dbInstance: Database | null = null;
 let pendingPromise: Promise<Database> | null = null;
@@ -18,7 +18,12 @@ export default async function getDbInstance(): Promise<Database> {
   // 3. 發起新的連線請求
   pendingPromise = (async () => {
     try {
-      const db = await Database.load('postgres://root:secret@yangjuiyu.tplinkdns.com:5432/app');
+      const DEFAULT_PG_URL =
+        "postgres://root:secret@yangjuiyu.tplinkdns.com:5433/app";
+      const pgUrl =
+        (import.meta.env && (import.meta.env.VITE_POSTGRES_URL as string)) ||
+        DEFAULT_PG_URL;
+      const db = await Database.load(pgUrl);
       dbInstance = db; // 連線成功，儲存實例
       return db;
     } catch (error) {

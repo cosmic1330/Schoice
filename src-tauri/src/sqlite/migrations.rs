@@ -283,5 +283,32 @@ pub fn value() -> Vec<Migration> {
             ",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 5,
+            description: "add_dmi",
+            sql: "
+                ALTER TABLE daily_skills
+                    ADD COLUMN di_plus REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN di_minus REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN adx REAL;
+
+                ALTER TABLE weekly_skills
+                    ADD COLUMN di_plus REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN di_minus REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN adx REAL;
+
+                ALTER TABLE hourly_skills
+                    ADD COLUMN di_plus REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN di_minus REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN adx REAL;
+            ",
+            kind: MigrationKind::Up,
+        },
     ]
 }
