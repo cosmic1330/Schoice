@@ -1,3 +1,4 @@
+import { Fragment } from "react/jsx-runtime";
 import { Rectangle } from "recharts";
 
 type FormattedGraphicalItem = {
@@ -32,7 +33,7 @@ const BaseCandlestickRectangle = (props: any) => {
       closeSeriesPoint.value > openSeriesPoint.value ? true : false;
 
     return (
-      <>
+      <Fragment key={`candle-${index}`}>
         {/* Thin line for high-low */}
         <Rectangle
           key={`line-${index}`}
@@ -51,7 +52,7 @@ const BaseCandlestickRectangle = (props: any) => {
           y={Math.min(openSeriesPoint.y, closeSeriesPoint.y)}
           fill={isRising ? "#ff4d4f" : "#52c41a"}
         />
-      </>
+      </Fragment>
     );
   });
 };

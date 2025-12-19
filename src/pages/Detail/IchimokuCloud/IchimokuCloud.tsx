@@ -1,41 +1,41 @@
+import { dateFormat } from "@ch20026103/anysis";
+import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
+import CancelIcon from "@mui/icons-material/Cancel";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import {
   Box,
-  Container,
-  Divider,
-  Stack,
-  Typography,
-  Stepper,
-  Step,
-  StepButton,
   Card,
   CardContent,
   Chip,
   CircularProgress,
+  Container,
+  Divider,
+  Stack,
+  Step,
+  StepButton,
+  Stepper,
+  Typography,
 } from "@mui/material";
-import { useContext, useMemo, useState, useRef, useEffect } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
   Bar,
+  CartesianGrid,
   ComposedChart,
   Customized,
   Line,
   ResponsiveContainer,
+  Scatter,
   Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Scatter,
 } from "recharts";
-import ichimoku from "./ichimoku";
-import { DealsContext } from "../../../context/DealsContext";
 import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
-import { dateFormat } from "@ch20026103/anysis";
-import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
+import { DealsContext } from "../../../context/DealsContext";
 import { UrlTaPerdOptions } from "../../../types";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
 import formatDateTime from "../../../utils/formatDateTime";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import ichimoku from "./ichimoku";
 
 // Define the structure for the chart data, including Ichimoku values
 interface IchimokuChartData
@@ -199,14 +199,10 @@ const parseTradeTime = (t: number, perd: UrlTaPerdOptions): Date => {
   }
 };
 
-export default function Ichimoku({
-  perd,
-}: {
-  perd: UrlTaPerdOptions;
-}) {
+export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
   const deals = useContext(DealsContext);
   const [activeStep, setActiveStep] = useState(0);
-  
+
   // Zoom & Pan Control
   const [visibleCount, setVisibleCount] = useState(180);
   const [rightOffset, setRightOffset] = useState(0);
@@ -231,7 +227,7 @@ export default function Ichimoku({
         const next = prev + delta * step;
         const minBars = 52; // Minimum for Ichimoku
         const maxBars = deals.length > 0 ? deals.length + 26 : 1000;
-        
+
         if (next < minBars) return minBars;
         if (next > maxBars) return maxBars;
         return next;
@@ -248,21 +244,21 @@ export default function Ichimoku({
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
       e.preventDefault();
-      
+
       const deltaX = e.clientX - lastX.current;
-      const sensitivity = visibleCount / (container.clientWidth || 500); 
-      const barDelta = Math.round(deltaX * sensitivity * 1.5); 
-      
+      const sensitivity = visibleCount / (container.clientWidth || 500);
+      const barDelta = Math.round(deltaX * sensitivity * 1.5);
+
       if (barDelta === 0) return;
 
       setRightOffset((prev) => {
         let next = prev + barDelta;
         if (next < 0) next = 0;
-        const maxOffset = Math.max(0, deals.length + 26 - visibleCount); 
+        const maxOffset = Math.max(0, deals.length + 26 - visibleCount);
         if (next > maxOffset) next = maxOffset;
         return next;
       });
-      
+
       lastX.current = e.clientX;
     };
 
@@ -448,11 +444,10 @@ export default function Ichimoku({
     // 3. Add future data points for the cloud to extend beyond the last price
     const lastDataPoint = baseData[baseData.length - 1];
     if (lastDataPoint) {
-        let currentDate = parseTradeTime(lastDataPoint.t as number, perd);
+      let currentDate = parseTradeTime(lastDataPoint.t as number, perd);
 
-        for (let i = 1; i <= 26; i++) {
-          currentDate = getNextTradingTime(currentDate, perd);
-
+      for (let i = 1; i <= 26; i++) {
+        currentDate = getNextTradingTime(currentDate, perd);
 
         const sourceIndex = baseData.length - 27 + i;
         const sourceForFutureSpans =
@@ -498,7 +493,7 @@ export default function Ichimoku({
         return { ...d, kumo_bull, kumo_bear };
       })
       .slice(
-        -(visibleCount + rightOffset), 
+        -(visibleCount + rightOffset),
         rightOffset === 0 ? undefined : -rightOffset
       );
   }, [deals, perd, visibleCount, rightOffset]);
@@ -734,8 +729,6 @@ export default function Ichimoku({
   };
 
   // Visibility logic
-  const showKumo = activeStep >= 0;
-  const showTK = activeStep >= 1;
   const showChikou = activeStep >= 2;
   const showVolume = activeStep >= 4;
 
@@ -756,7 +749,14 @@ export default function Ichimoku({
     <Container
       component="main"
       maxWidth={false}
-      sx={{ height: "100vh", display: "flex", flexDirection: "column", pt: 1, px: 2, pb: 1 }}
+      sx={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        pt: 1,
+        px: 2,
+        pb: 1,
+      }}
     >
       <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
         <Typography variant="h6" component="div" color="white">
@@ -824,10 +824,7 @@ export default function Ichimoku({
         </CardContent>
       </Card>
 
-      <Box 
-        ref={chartContainerRef}
-        sx={{ flexGrow: 1, minHeight: 0 }}
-      >
+      <Box ref={chartContainerRef} sx={{ flexGrow: 1, minHeight: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={chartData}
@@ -901,79 +898,64 @@ export default function Ichimoku({
               />
             )}
 
-            {/* Signals */}
-            {activeStep >= 4 && (
-              <>
-                <Scatter
-                  dataKey="buySignal"
-                  shape={<BuyArrow />}
-                  legendType="none"
-                />
-                <Scatter
-                  dataKey="exitSignal"
-                  shape={<ExitArrow />}
-                  legendType="none"
-                />
-              </>
-            )}
+            <Scatter
+              dataKey="buySignal"
+              shape={<BuyArrow />}
+              legendType="none"
+            />
+            <Scatter
+              dataKey="exitSignal"
+              shape={<ExitArrow />}
+              legendType="none"
+            />
 
-            {/* Cloud */}
-            {showKumo && (
-              <>
-                <Area
-                  type="monotone"
-                  dataKey="kumo_bull"
-                  fill="rgba(244, 67, 54, 0.2)"
-                  stroke="none"
-                  name="Bullish Cloud"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="kumo_bear"
-                  fill="rgba(76, 175, 80, 0.2)"
-                  stroke="none"
-                  name="Bearish Cloud"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="senkouA"
-                  stroke="rgba(244, 67, 54, 0.6)"
-                  strokeWidth={2}
-                  dot={false}
-                  name="Senkou A"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="senkouB"
-                  stroke="rgba(76, 175, 80, 0.6)"
-                  strokeWidth={2}
-                  dot={false}
-                  name="Senkou B"
-                />
-              </>
-            )}
+            <Area
+              type="monotone"
+              dataKey="kumo_bull"
+              fill="rgba(244, 67, 54, 0.2)"
+              stroke="none"
+              name="Bullish Cloud"
+            />
+            <Area
+              type="monotone"
+              dataKey="kumo_bear"
+              fill="rgba(76, 175, 80, 0.2)"
+              stroke="none"
+              name="Bearish Cloud"
+            />
+            <Line
+              type="monotone"
+              dataKey="senkouA"
+              stroke="rgba(244, 67, 54, 0.6)"
+              strokeWidth={2}
+              dot={false}
+              name="Senkou A"
+            />
+            <Line
+              type="monotone"
+              dataKey="senkouB"
+              stroke="rgba(76, 175, 80, 0.6)"
+              strokeWidth={2}
+              dot={false}
+              name="Senkou B"
+            />
 
-            {/* TK Lines */}
-            {showTK && (
-              <>
-                <Line
-                  type="monotone"
-                  dataKey="tenkan"
-                  stroke="#29b6f6"
-                  strokeWidth={1}
-                  dot={false}
-                  name="Tenkan-sen (轉換)"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="kijun"
-                  stroke="#efaa50"
-                  strokeWidth={2}
-                  dot={false}
-                  name="Kijun-sen (基準)"
-                />
-              </>
-            )}
+            <Line
+              type="monotone"
+              dataKey="tenkan"
+              stroke="#29b6f6"
+              strokeWidth={1}
+              dot={false}
+              name="Tenkan-sen (轉換)"
+            />
+            <Line
+              type="monotone"
+              dataKey="kijun"
+              stroke="#efaa50"
+              strokeWidth={2}
+              dot={false}
+              name="Kijun-sen (基準)"
+            />
 
             {/* Chikou */}
             {showChikou && (
