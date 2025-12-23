@@ -12,32 +12,34 @@ import {
   Container,
   Divider,
   FormControlLabel,
-  Switch,
   Stack,
   Step,
   StepButton,
   Stepper,
+  Switch,
   Typography,
 } from "@mui/material";
-import { useContext, useMemo, useState, useRef, useEffect } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   Bar,
   CartesianGrid,
   ComposedChart,
   Customized,
   Line,
+  ReferenceDot,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
-  ReferenceDot,
 } from "recharts";
 import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
 import { DealsContext } from "../../../context/DealsContext";
 import { useGapDetection } from "../../../hooks/useGapDetection";
 import { useGapVisualization } from "../../../hooks/useGapVisualization";
+import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
 import useMarketAnalysis from "../../../hooks/useMarketAnalysis";
 import { UrlTaPerdOptions } from "../../../types";
+import { calculateIndicators } from "../../../utils/indicatorUtils";
 
 type CheckStatus = "pass" | "fail" | "manual";
 
@@ -52,18 +54,30 @@ interface StrategyStep {
   checks: StepCheck[];
 }
 
-export default function MaKbar({ perd }: { perd: UrlTaPerdOptions }) {
+export default function MaKbar({
+  perd,
+  visibleCount,
+  setVisibleCount,
+  rightOffset,
+  setRightOffset,
+}: {
+  perd: UrlTaPerdOptions;
+  visibleCount: number;
+  setVisibleCount: React.Dispatch<React.SetStateAction<number>>;
+  rightOffset: number;
+  setRightOffset: React.Dispatch<React.SetStateAction<number>>;
+}) {
+  const { settings } = useIndicatorSettings();
   const deals = useContext(DealsContext);
   const [activeStep, setActiveStep] = useState(0);
 
   // Zoom & Pan Control
-  const [visibleCount, setVisibleCount] = useState(160);
-  const [rightOffset, setRightOffset] = useState(0);
+  // const [visibleCount, setVisibleCount] = useState(160);
+  // const [rightOffset, setRightOffset] = useState(0);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const lastX = useRef(0);
   const startOffset = useRef(0);
-
 
   // Gap Controls
   const [showGaps, setShowGaps] = useState(true);
@@ -72,10 +86,15 @@ export default function MaKbar({ perd }: { perd: UrlTaPerdOptions }) {
     undefined
   );
 
-  const { trends: chartData, power } = useMarketAnalysis({
+  const { power } = useMarketAnalysis({
     ta: deals,
     perd,
   });
+
+  // Re-calculate indicators based on custom settings
+  const chartData = useMemo(() => {
+    return calculateIndicators(deals, settings);
+  }, [deals, settings]);
 
   // Handle Zoom (Wheel)
   useEffect(() => {
@@ -93,7 +112,7 @@ export default function MaKbar({ perd }: { perd: UrlTaPerdOptions }) {
         const next = prev + delta * step;
         const minBars = 30;
         const maxBars = chartData.length > 0 ? chartData.length : 1000;
-        
+
         if (next < minBars) return minBars;
         if (next > maxBars) return maxBars;
         return next;
@@ -110,21 +129,21 @@ export default function MaKbar({ perd }: { perd: UrlTaPerdOptions }) {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
       e.preventDefault();
-      
+
       const deltaX = e.clientX - lastX.current;
-      const sensitivity = visibleCount / (container.clientWidth || 500); 
-      const barDelta = Math.round(deltaX * sensitivity * 1.5); 
-      
+      const sensitivity = visibleCount / (container.clientWidth || 500);
+      const barDelta = Math.round(deltaX * sensitivity * 1.5);
+
       if (barDelta === 0) return;
 
       setRightOffset((prev) => {
         let next = prev + barDelta;
         if (next < 0) next = 0;
-        const maxOffset = Math.max(0, chartData.length - visibleCount); 
+        const maxOffset = Math.max(0, chartData.length - visibleCount);
         if (next > maxOffset) next = maxOffset;
         return next;
       });
-      
+
       lastX.current = e.clientX;
     };
 
@@ -155,7 +174,6 @@ export default function MaKbar({ perd }: { perd: UrlTaPerdOptions }) {
   // Gap Detection
   const { gapsWithFillStatus, unfilledGaps, recentGaps, unfilledGapsCount } =
     useGapDetection(slicedChartData, 0.7);
-
 
   // Gap Visualization Data
   const { gapLines, enhancedChartData } = useGapVisualization({
@@ -222,10 +240,11 @@ export default function MaKbar({ perd }: { perd: UrlTaPerdOptions }) {
     const trend = current.trend as string;
     const ma5 = current.ma5;
     const ma20 = current.ma20;
+    const ma240 = current.ma240;
 
     const isNum = (n: any): n is number => typeof n === "number";
 
-    if (!isNum(price) || !isNum(ma5) || !isNum(ma20)) {
+    if (!isNum(price) || !isNum(ma5) || !isNum(ma20) || !isNum(ma240)) {
       return { steps: [], score: 0, recommendation: "Data Error" };
     }
 
@@ -290,11 +309,11 @@ export default function MaKbar({ perd }: { perd: UrlTaPerdOptions }) {
         description: `MA 排列: ${trend}`,
         checks: [
           {
-            label: "均線多頭排列",
+            label: `均線多頭排列 (${settings.ma5}>${settings.ma10}>${settings.ma20}>${settings.ma60}>${settings.ma240})`,
             status: isBullish ? "pass" : isBearish ? "fail" : "manual",
           },
           {
-            label: `MA5 > MA20: ${maStackOk}`,
+            label: `MA${settings.ma5} > MA${settings.ma20}: ${maStackOk}`,
             status: maStackOk ? "pass" : "fail",
           },
         ],
@@ -461,7 +480,14 @@ export default function MaKbar({ perd }: { perd: UrlTaPerdOptions }) {
     <Container
       component="main"
       maxWidth={false}
-      sx={{ height: "100vh", display: "flex", flexDirection: "column", pt: 1, px: 2, pb: 1 }}
+      sx={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        pt: 1,
+        px: 2,
+        pb: 1,
+      }}
     >
       <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
         <Typography variant="h6" component="div" color="white">
@@ -486,7 +512,11 @@ export default function MaKbar({ perd }: { perd: UrlTaPerdOptions }) {
               onChange={(e) => setShowGaps(e.target.checked)}
             />
           }
-          label={<Typography variant="caption">顯示缺口</Typography>}
+          label={
+            <Typography variant="caption" color="white">
+              顯示缺口
+            </Typography>
+          }
           sx={{ mr: 1 }}
         />
         <FormControlLabel
@@ -499,7 +529,11 @@ export default function MaKbar({ perd }: { perd: UrlTaPerdOptions }) {
               color="secondary"
             />
           }
-          label={<Typography variant="caption">僅未補</Typography>}
+          label={
+            <Typography variant="caption" color="white">
+              僅未補
+            </Typography>
+          }
           sx={{ mr: 1 }}
         />
 
@@ -559,7 +593,7 @@ export default function MaKbar({ perd }: { perd: UrlTaPerdOptions }) {
       </Card>
 
       {/* Combined Chart: Price (Main) + Volume (Overlay at bottom) */}
-      <Box 
+      <Box
         ref={chartContainerRef}
         sx={{ flexGrow: 1, minHeight: 0, width: "100%" }}
       >
@@ -649,7 +683,7 @@ export default function MaKbar({ perd }: { perd: UrlTaPerdOptions }) {
               dot={false}
               activeDot={false}
               strokeWidth={1}
-              name="MA5"
+              name={`MA${settings.ma5}`}
             />
             <Line
               dataKey="ma10"
@@ -657,7 +691,7 @@ export default function MaKbar({ perd }: { perd: UrlTaPerdOptions }) {
               dot={false}
               activeDot={false}
               strokeWidth={1}
-              name="MA10"
+              name={`MA${settings.ma10}`}
             />
             <Line
               dataKey="ma20"
@@ -665,7 +699,7 @@ export default function MaKbar({ perd }: { perd: UrlTaPerdOptions }) {
               dot={false}
               activeDot={false}
               strokeWidth={1.5}
-              name="MA20"
+              name={`MA${settings.ma20}`}
             />
             <Line
               dataKey="ma60"
@@ -673,7 +707,16 @@ export default function MaKbar({ perd }: { perd: UrlTaPerdOptions }) {
               dot={false}
               activeDot={false}
               strokeWidth={1}
-              name="MA60"
+              name={`MA${settings.ma60}`}
+            />
+            <Line
+              dataKey="ma240"
+              stroke="#9e9e9e"
+              dot={false}
+              activeDot={false}
+              strokeWidth={1}
+              strokeDasharray="5 5"
+              name={`MA${settings.ma240}`}
             />
 
             {/* Signal Markers */}

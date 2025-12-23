@@ -195,13 +195,23 @@ const CustomTooltip = ({ active, payload, label, showSignals = true }: any) => {
   return null;
 };
 
-export default function Obv() {
+export default function Obv({
+  visibleCount,
+  setVisibleCount,
+  rightOffset,
+  setRightOffset,
+}: {
+  visibleCount: number;
+  setVisibleCount: React.Dispatch<React.SetStateAction<number>>;
+  rightOffset: number;
+  setRightOffset: React.Dispatch<React.SetStateAction<number>>;
+}) {
   const fullDeals = useContext(DealsContext);
   const [activeStep, setActiveStep] = useState(0);
 
   // Zoom & Pan Control
-  const [visibleCount, setVisibleCount] = useState(150);
-  const [rightOffset, setRightOffset] = useState(0);
+  // const [visibleCount, setVisibleCount] = useState(150);
+  // const [rightOffset, setRightOffset] = useState(0);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const lastX = useRef(0);

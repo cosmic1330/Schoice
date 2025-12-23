@@ -15,7 +15,7 @@ import {
   Stepper,
   Typography,
 } from "@mui/material";
-import { useContext, useMemo, useState, useRef, useEffect } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   CartesianGrid,
   ComposedChart,
@@ -28,25 +28,18 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import kd from "../../cls_tools/kd";
-import BaseCandlestickRectangle from "../../components/RechartCustoms/BaseCandlestickRectangle";
-import { DealsContext } from "../../context/DealsContext";
-import { DivergenceSignalType } from "../../types";
-import detectKdDivergence from "../../utils/detectKdDivergence";
+import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
+import { DealsContext } from "../../../context/DealsContext";
+import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
+import { DivergenceSignalType } from "../../../types";
+import detectKdDivergence from "../../../utils/detectKdDivergence";
+import {
+  calculateIndicators,
+  EnhancedDealData,
+} from "../../../utils/indicatorUtils";
 
-interface KdChartData
-  extends Partial<{
-    t: number | string;
-    o: number | null;
-    h: number | null;
-    l: number | null;
-    c: number | null;
-    v: number | null;
-  }> {
-  k: number | null;
-  d: number | null;
-  ma20: number | null;
-  volMa20?: number | null;
+interface KdChartData extends Partial<EnhancedDealData> {
+  // signals and other properties if needed
 }
 
 type CheckStatus = "pass" | "fail" | "manual";
@@ -62,18 +55,26 @@ interface KdStep {
   checks: StepCheck[];
 }
 
-export default function Kd() {
+export default function Kd({
+  visibleCount,
+  setVisibleCount,
+  rightOffset,
+  setRightOffset,
+}: {
+  visibleCount: number;
+  setVisibleCount: React.Dispatch<React.SetStateAction<number>>;
+  rightOffset: number;
+  setRightOffset: React.Dispatch<React.SetStateAction<number>>;
+}) {
+  const { settings } = useIndicatorSettings();
   const deals = useContext(DealsContext);
   const [activeStep, setActiveStep] = useState(0);
 
   // Zoom & Pan Control
-  const [visibleCount, setVisibleCount] = useState(180);
-  const [rightOffset, setRightOffset] = useState(0);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const lastX = useRef(0);
   const startOffset = useRef(0);
-
 
   useEffect(() => {
     const container = chartContainerRef.current;
@@ -90,7 +91,7 @@ export default function Kd() {
         const next = prev + delta * step;
         const minBars = 30;
         const maxBars = deals.length > 0 ? deals.length : 1000;
-        
+
         if (next < minBars) return minBars;
         if (next > maxBars) return maxBars;
         return next;
@@ -107,21 +108,21 @@ export default function Kd() {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
       e.preventDefault();
-      
+
       const deltaX = e.clientX - lastX.current;
-      const sensitivity = visibleCount / (container.clientWidth || 500); 
-      const barDelta = Math.round(deltaX * sensitivity * 1.5); 
-      
+      const sensitivity = visibleCount / (container.clientWidth || 500);
+      const barDelta = Math.round(deltaX * sensitivity * 1.5);
+
       if (barDelta === 0) return;
 
       setRightOffset((prev) => {
         let next = prev + barDelta;
         if (next < 0) next = 0;
-        const maxOffset = Math.max(0, deals.length - visibleCount); 
+        const maxOffset = Math.max(0, deals.length - visibleCount);
         if (next > maxOffset) next = maxOffset;
         return next;
       });
-      
+
       lastX.current = e.clientX;
     };
 
@@ -143,44 +144,11 @@ export default function Kd() {
   }, [deals.length, visibleCount, rightOffset]);
 
   const chartData = useMemo((): KdChartData[] => {
-    if (!deals || deals.length === 0) return [];
-
-    let kdData = kd.init(deals[0], 9);
-
-    return deals
-      .map((deal, i) => {
-        if (i > 0) {
-          kdData = kd.next(deal, kdData, 9);
-        }
-
-        // Simple SMA 20 for Price and Volume
-        let ma20: number | null = null;
-        let volMa20: number | null = null;
-
-        if (i >= 19) {
-          let sumC = 0;
-          let sumV = 0;
-          for (let j = 0; j < 20; j++) {
-            sumC += deals[i - j].c || 0;
-            sumV += deals[i - j].v || 0;
-          }
-          ma20 = sumC / 20;
-          volMa20 = sumV / 20;
-        }
-
-        return {
-          ...deal,
-          k: kdData.k,
-          d: kdData.d,
-          ma20,
-          volMa20,
-        };
-      })
-      .slice(
-        -(visibleCount + rightOffset), 
-        rightOffset === 0 ? undefined : -rightOffset
-      );
-  }, [deals, visibleCount, rightOffset]);
+    return calculateIndicators(deals, settings).slice(
+      -(visibleCount + rightOffset),
+      rightOffset === 0 ? undefined : -rightOffset
+    ) as KdChartData[];
+  }, [deals, settings, visibleCount, rightOffset]);
 
   const signals = useMemo(() => {
     // We need to convert chartData back to the format detectKdDivergence expects if possible,
@@ -188,11 +156,11 @@ export default function Kd() {
     // detectKdDivergence expects {t, h, l, k, d}.
     // We can map from chartData which has all of these.
     const inputForDivergence = chartData.map((d) => ({
-      t: typeof d.t === "string" ? 0 : (d.t as number), // Assuming safe cast or ignored if not relevant
-      h: d.h || 0,
-      l: d.l || 0,
-      k: d.k || 0,
-      d: d.d || 0,
+      t: d.t as number,
+      h: d.h as number,
+      l: d.l as number,
+      k: d.k as number,
+      d: d.d as number,
     }));
     return detectKdDivergence(inputForDivergence);
   }, [chartData]);
@@ -286,7 +254,7 @@ export default function Kd() {
             status: isVolStable ? "pass" : "fail",
           },
           {
-            label: `趨勢方向 (MA20): ${trendStatus}`,
+            label: `趨勢方向 (MA${settings.ma20}): ${trendStatus}`,
             status: maRising ? "pass" : "manual",
           },
           { label: "波動度正常 (ATR)", status: "manual" },
@@ -375,11 +343,18 @@ export default function Kd() {
     <Container
       component="main"
       maxWidth={false}
-      sx={{ height: "100vh", display: "flex", flexDirection: "column", pt: 1, px: 2, pb: 1 }}
+      sx={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        pt: 1,
+        px: 2,
+        pb: 1,
+      }}
     >
       <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
         <Typography variant="h6" component="div" color="white">
-          KD Strategy
+          KD
         </Typography>
 
         <Chip
@@ -442,10 +417,7 @@ export default function Kd() {
         </CardContent>
       </Card>
 
-      <Box 
-        ref={chartContainerRef}
-        sx={{ flexGrow: 1, minHeight: 0 }}
-      >
+      <Box ref={chartContainerRef} sx={{ flexGrow: 1, minHeight: 0 }}>
         {/* Price Chart */}
         <ResponsiveContainer width="100%" height="60%">
           <ComposedChart data={chartData} syncId="kdSync">
@@ -501,7 +473,7 @@ export default function Kd() {
               stroke="#ff9800"
               dot={false}
               activeDot={false}
-              name="20 MA"
+              name={`${settings.ma20} MA`}
               strokeWidth={1.5}
             />
 

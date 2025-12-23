@@ -1,41 +1,41 @@
-import { dateFormat } from "@ch20026103/anysis";
-import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
-import CancelIcon from "@mui/icons-material/Cancel";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import {
   Box,
+  Container,
+  Divider,
+  Stack,
+  Typography,
+  Stepper,
+  Step,
+  StepButton,
   Card,
   CardContent,
   Chip,
   CircularProgress,
-  Container,
-  Divider,
-  Stack,
-  Step,
-  StepButton,
-  Stepper,
-  Typography,
 } from "@mui/material";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useMemo, useState, useRef, useEffect } from "react";
 import {
   Area,
   Bar,
-  CartesianGrid,
   ComposedChart,
   Customized,
   Line,
   ResponsiveContainer,
-  Scatter,
   Tooltip,
   XAxis,
   YAxis,
+  CartesianGrid,
+  Scatter,
 } from "recharts";
-import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
-import { DealsContext } from "../../../context/DealsContext";
-import { UrlTaPerdOptions } from "../../../types";
-import formatDateTime from "../../../utils/formatDateTime";
 import ichimoku from "./ichimoku";
+import { DealsContext } from "../../../context/DealsContext";
+import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
+import { dateFormat } from "@ch20026103/anysis";
+import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
+import { UrlTaPerdOptions } from "../../../types";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
+import formatDateTime from "../../../utils/formatDateTime";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 
 // Define the structure for the chart data, including Ichimoku values
 interface IchimokuChartData
@@ -729,6 +729,8 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
   };
 
   // Visibility logic
+  const showKumo = activeStep >= 0;
+  const showTK = activeStep >= 1;
   const showChikou = activeStep >= 2;
   const showVolume = activeStep >= 4;
 
@@ -898,64 +900,79 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
               />
             )}
 
-            <Scatter
-              dataKey="buySignal"
-              shape={<BuyArrow />}
-              legendType="none"
-            />
-            <Scatter
-              dataKey="exitSignal"
-              shape={<ExitArrow />}
-              legendType="none"
-            />
+            {/* Signals */}
+            {activeStep >= 4 && (
+              <>
+                <Scatter
+                  dataKey="buySignal"
+                  shape={<BuyArrow />}
+                  legendType="none"
+                />
+                <Scatter
+                  dataKey="exitSignal"
+                  shape={<ExitArrow />}
+                  legendType="none"
+                />
+              </>
+            )}
 
-            <Area
-              type="monotone"
-              dataKey="kumo_bull"
-              fill="rgba(244, 67, 54, 0.2)"
-              stroke="none"
-              name="Bullish Cloud"
-            />
-            <Area
-              type="monotone"
-              dataKey="kumo_bear"
-              fill="rgba(76, 175, 80, 0.2)"
-              stroke="none"
-              name="Bearish Cloud"
-            />
-            <Line
-              type="monotone"
-              dataKey="senkouA"
-              stroke="rgba(244, 67, 54, 0.6)"
-              strokeWidth={2}
-              dot={false}
-              name="Senkou A"
-            />
-            <Line
-              type="monotone"
-              dataKey="senkouB"
-              stroke="rgba(76, 175, 80, 0.6)"
-              strokeWidth={2}
-              dot={false}
-              name="Senkou B"
-            />
+            {/* Cloud */}
+            {showKumo && (
+              <>
+                <Area
+                  type="monotone"
+                  dataKey="kumo_bull"
+                  fill="rgba(244, 67, 54, 0.2)"
+                  stroke="none"
+                  name="Bullish Cloud"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="kumo_bear"
+                  fill="rgba(76, 175, 80, 0.2)"
+                  stroke="none"
+                  name="Bearish Cloud"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="senkouA"
+                  stroke="rgba(244, 67, 54, 0.6)"
+                  strokeWidth={2}
+                  dot={false}
+                  name="Senkou A"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="senkouB"
+                  stroke="rgba(76, 175, 80, 0.6)"
+                  strokeWidth={2}
+                  dot={false}
+                  name="Senkou B"
+                />
+              </>
+            )}
 
-            <Line
-              type="monotone"
-              dataKey="tenkan"
-              stroke="#29b6f6"
-              strokeWidth={1}
-              dot={false}
-              name="Tenkan-sen (轉換)"
-            />
-            <Line
-              type="monotone"
-              dataKey="kijun"
-              stroke="#efaa50"
-              strokeWidth={2}
-              dot={false}
-              name="Kijun-sen (基準)"
-            />
+            {/* TK Lines */}
+            {showTK && (
+              <>
+                <Line
+                  type="monotone"
+                  dataKey="tenkan"
+                  stroke="#29b6f6"
+                  strokeWidth={1}
+                  dot={false}
+                  name="Tenkan-sen (轉換)"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="kijun"
+                  stroke="#efaa50"
+                  strokeWidth={2}
+                  dot={false}
+                  name="Kijun-sen (基準)"
+                />
+              </>
+            )}
 
             {/* Chikou */}
             {showChikou && (

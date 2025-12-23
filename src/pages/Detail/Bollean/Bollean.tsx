@@ -1,36 +1,37 @@
+import CancelIcon from "@mui/icons-material/Cancel";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import {
   Box,
-  Container,
-  Divider,
-  Stack,
-  Typography,
-  Stepper,
-  Step,
-  StepButton,
   Card,
   CardContent,
   Chip,
   CircularProgress,
+  Container,
+  Divider,
+  Stack,
+  Step,
+  StepButton,
+  Stepper,
+  Typography,
 } from "@mui/material";
-import { useContext, useMemo, useState, useRef, useEffect } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   Bar,
+  CartesianGrid,
   ComposedChart,
   Customized,
   Line,
   ResponsiveContainer,
+  Scatter,
   Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Scatter,
 } from "recharts";
-import boll from "../../../cls_tools/boll";
-import { DealsContext } from "../../../context/DealsContext";
 import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import { DealsContext } from "../../../context/DealsContext";
+import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
+import { calculateIndicators } from "../../../utils/indicatorUtils";
 
 interface BolleanChartData
   extends Partial<{
@@ -114,13 +115,22 @@ const ExitArrow = (props: any) => {
   );
 };
 
-export default function Bollean() {
+export default function Bollean({
+  visibleCount,
+  setVisibleCount,
+  rightOffset,
+  setRightOffset,
+}: {
+  visibleCount: number;
+  setVisibleCount: React.Dispatch<React.SetStateAction<number>>;
+  rightOffset: number;
+  setRightOffset: React.Dispatch<React.SetStateAction<number>>;
+}) {
+  const { settings } = useIndicatorSettings();
   const deals = useContext(DealsContext);
   const [activeStep, setActiveStep] = useState(0);
 
   // Zoom & Pan Control
-  const [visibleCount, setVisibleCount] = useState(180);
-  const [rightOffset, setRightOffset] = useState(0);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const lastX = useRef(0);
@@ -141,7 +151,7 @@ export default function Bollean() {
         const next = prev + delta * step;
         const minBars = 30;
         const maxBars = deals.length > 0 ? deals.length : 1000;
-        
+
         if (next < minBars) return minBars;
         if (next > maxBars) return maxBars;
         return next;
@@ -158,21 +168,21 @@ export default function Bollean() {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
       e.preventDefault();
-      
+
       const deltaX = e.clientX - lastX.current;
-      const sensitivity = visibleCount / (container.clientWidth || 500); 
-      const barDelta = Math.round(deltaX * sensitivity * 1.5); 
-      
+      const sensitivity = visibleCount / (container.clientWidth || 500);
+      const barDelta = Math.round(deltaX * sensitivity * 1.5);
+
       if (barDelta === 0) return;
 
       setRightOffset((prev) => {
         let next = prev + barDelta;
         if (next < 0) next = 0;
-        const maxOffset = Math.max(0, deals.length - visibleCount); 
+        const maxOffset = Math.max(0, deals.length - visibleCount);
         if (next > maxOffset) next = maxOffset;
         return next;
       });
-      
+
       lastX.current = e.clientX;
     };
 
@@ -196,31 +206,8 @@ export default function Bollean() {
   const chartData = useMemo((): BolleanChartData[] => {
     if (!deals || deals.length === 0) return [];
 
-    let boll_data = boll.init(deals[0]);
-
-    // Initial pass: Calculate Bands
-    const baseData = deals.map((deal, i) => {
-      if (i > 0) {
-        boll_data = boll.next(deal, boll_data, 20);
-      }
-
-      const ub = boll_data.bollUb || null;
-      const ma = boll_data.bollMa || null;
-      const lb = boll_data.bollLb || null;
-
-      let bandWidth = null;
-      if (ub !== null && lb !== null && ma !== null && ma !== 0) {
-        bandWidth = (ub - lb) / ma;
-      }
-
-      return {
-        ...deal,
-        bollUb: ub,
-        bollMa: ma,
-        bollLb: lb,
-        bandWidth,
-      };
-    });
+    // Initial pass: Calculate Bands using centralized utility
+    const baseData = calculateIndicators(deals, settings);
 
     // Second pass: Calculate Signals & Logic
     let lastSignalState: "buy" | "neutral" = "neutral";
@@ -230,7 +217,7 @@ export default function Bollean() {
 
     return baseData
       .map((d, i) => {
-        if (i < 20) return d; // Skip initial stabilization
+        if (i < settings.boll) return d; // Skip initial stabilization
 
         const prev = baseData[i - 1];
 
@@ -242,10 +229,10 @@ export default function Bollean() {
 
         if (
           !isNum(price) ||
-          !isNum(ub) ||
-          !isNum(lb) ||
-          !isNum(ma) ||
-          !isNum(width)
+          ub === null ||
+          lb === null ||
+          ma === null ||
+          width === null
         )
           return d;
 
@@ -309,7 +296,7 @@ export default function Bollean() {
         };
       })
       .slice(
-        -(visibleCount + rightOffset), 
+        -(visibleCount + rightOffset),
         rightOffset === 0 ? undefined : -rightOffset
       );
   }, [deals, visibleCount, rightOffset]);
@@ -473,7 +460,14 @@ export default function Bollean() {
     <Container
       component="main"
       maxWidth={false}
-      sx={{ height: "100vh", display: "flex", flexDirection: "column", pt: 1, px: 2, pb: 1 }}
+      sx={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        pt: 1,
+        px: 2,
+        pb: 1,
+      }}
     >
       <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
         <Typography variant="h6" component="div" color="white">
@@ -540,10 +534,7 @@ export default function Bollean() {
         </CardContent>
       </Card>
 
-      <Box 
-        ref={chartContainerRef}
-        sx={{ flexGrow: 1, minHeight: 0 }}
-      >
+      <Box ref={chartContainerRef} sx={{ flexGrow: 1, minHeight: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={chartData}
@@ -621,7 +612,7 @@ export default function Bollean() {
               strokeWidth={1.5}
               dot={false}
               activeDot={false}
-              name="20 MA (Mid)"
+              name={`${settings.boll} MA (Mid)`}
             />
             <Line
               dataKey="bollUb"

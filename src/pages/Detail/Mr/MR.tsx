@@ -15,7 +15,7 @@ import {
   Stepper,
   Typography,
 } from "@mui/material";
-import { useContext, useMemo, useState, useRef, useEffect } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
   Bar,
@@ -30,10 +30,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import macd from "../../cls_tools/macd";
-import rsi from "../../cls_tools/rsi";
-import BaseCandlestickRectangle from "../../components/RechartCustoms/BaseCandlestickRectangle";
-import { DealsContext } from "../../context/DealsContext";
+import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
+import { DealsContext } from "../../../context/DealsContext";
+import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
+import { calculateIndicators } from "../../../utils/indicatorUtils";
 
 interface MrChartData
   extends Partial<{
@@ -101,13 +101,24 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export default function MR() {
+export default function MR({
+  visibleCount,
+  setVisibleCount,
+  rightOffset,
+  setRightOffset,
+}: {
+  visibleCount: number;
+  setVisibleCount: React.Dispatch<React.SetStateAction<number>>;
+  rightOffset: number;
+  setRightOffset: React.Dispatch<React.SetStateAction<number>>;
+}) {
   const deals = useContext(DealsContext);
+  const { settings } = useIndicatorSettings();
   const [activeStep, setActiveStep] = useState(0);
 
   // Zoom & Pan Control
-  const [visibleCount, setVisibleCount] = useState(160);
-  const [rightOffset, setRightOffset] = useState(0);
+  // const [visibleCount, setVisibleCount] = useState(160);
+  // const [rightOffset, setRightOffset] = useState(0);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const lastX = useRef(0);
@@ -128,7 +139,7 @@ export default function MR() {
         const next = prev + delta * step;
         const minBars = 30;
         const maxBars = deals.length > 0 ? deals.length : 1000;
-        
+
         if (next < minBars) return minBars;
         if (next > maxBars) return maxBars;
         return next;
@@ -145,21 +156,21 @@ export default function MR() {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
       e.preventDefault();
-      
+
       const deltaX = e.clientX - lastX.current;
-      const sensitivity = visibleCount / (container.clientWidth || 500); 
-      const barDelta = Math.round(deltaX * sensitivity * 1.5); 
-      
+      const sensitivity = visibleCount / (container.clientWidth || 500);
+      const barDelta = Math.round(deltaX * sensitivity * 1.5);
+
       if (barDelta === 0) return;
 
       setRightOffset((prev) => {
         let next = prev + barDelta;
         if (next < 0) next = 0;
-        const maxOffset = Math.max(0, deals.length - visibleCount); 
+        const maxOffset = Math.max(0, deals.length - visibleCount);
         if (next > maxOffset) next = maxOffset;
         return next;
       });
-      
+
       lastX.current = e.clientX;
     };
 
@@ -181,67 +192,31 @@ export default function MR() {
   }, [deals.length, visibleCount, rightOffset]);
 
   const chartData = useMemo((): MrChartData[] => {
-    if (!deals || deals.length === 0) return [];
+    const data = calculateIndicators(deals, settings);
 
-    let rsi_data = rsi.init(deals[0], 5); // RSI Period 5
-    let macd_data = macd.init(deals[0]);
+    return data
+      .map((item) => {
+        const { rsi: rsiVal, osc } = item;
 
-    const response: MrChartData[] = [];
+        // Logic:
+        // Long Zone: RSI > 50 && Osc > 0
+        // Short Zone: RSI < 50 && Osc < 0
+        const isLong = (rsiVal || 0) > 50 && (osc || 0) > 0;
+        const isShort = (rsiVal || 0) < 50 && (osc || 0) < 0;
 
-    // First item
-    response.push({
-      ...deals[0],
-      rsi: rsi_data.rsi || null,
-      osc: macd_data.osc || null,
-      ma20: null,
-      longZone: null,
-      shortZone: null,
-      positiveOsc: macd_data.osc > 0 ? macd_data.osc : 0,
-      negativeOsc: macd_data.osc < 0 ? macd_data.osc : 0,
-    });
-
-    for (let i = 1; i < deals.length; i++) {
-      const deal = deals[i];
-
-      // Indicator calc
-      rsi_data = rsi.next(deal, rsi_data, 5);
-      macd_data = macd.next(deal, macd_data);
-
-      // MA20
-      let ma20: number | null = null;
-      if (i >= 19) {
-        let sumC = 0;
-        for (let j = 0; j < 20; j++) {
-          sumC += deals[i - j].c || 0;
-        }
-        ma20 = sumC / 20;
-      }
-
-      const rsiVal = rsi_data.rsi || 0;
-      const osc = macd_data.osc || 0;
-
-      // Logic:
-      // Long Zone: RSI > 50 && Osc > 0
-      // Short Zone: RSI < 50 && Osc < 0
-      const isLong = rsiVal > 50 && osc > 0;
-      const isShort = rsiVal < 50 && osc < 0;
-
-      response.push({
-        ...deal,
-        rsi: rsiVal,
-        osc: osc,
-        ma20,
-        longZone: isLong ? rsiVal : null,
-        shortZone: isShort ? rsiVal : null,
-        positiveOsc: osc > 0 ? osc : 0,
-        negativeOsc: osc < 0 ? osc : 0,
-      });
-    }
-    return response.slice(
-      -(visibleCount + rightOffset), 
-      rightOffset === 0 ? undefined : -rightOffset
-    );
-  }, [deals, visibleCount, rightOffset]);
+        return {
+          ...item,
+          longZone: isLong ? rsiVal : null,
+          shortZone: isShort ? rsiVal : null,
+          positiveOsc: (osc || 0) > 0 ? osc : 0,
+          negativeOsc: (osc || 0) < 0 ? osc : 0,
+        };
+      })
+      .slice(
+        -(visibleCount + rightOffset),
+        rightOffset === 0 ? undefined : -rightOffset
+      );
+  }, [deals, visibleCount, rightOffset, settings]);
 
   // Calculate Entry Signals (State Transition)
   const signals = useMemo(() => {
@@ -404,7 +379,14 @@ export default function MR() {
     <Container
       component="main"
       maxWidth={false}
-      sx={{ height: "100vh", display: "flex", flexDirection: "column", pt: 1, px: 2, pb: 1 }}
+      sx={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        pt: 1,
+        px: 2,
+        pb: 1,
+      }}
     >
       <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
         <Typography variant="h6" component="div" color="white">
@@ -471,10 +453,7 @@ export default function MR() {
         </CardContent>
       </Card>
 
-      <Box 
-        ref={chartContainerRef}
-        sx={{ flexGrow: 1, minHeight: 0 }}
-      >
+      <Box ref={chartContainerRef} sx={{ flexGrow: 1, minHeight: 0 }}>
         {/* Main Price Chart (65%) */}
         <ResponsiveContainer width="100%" height="65%">
           <ComposedChart data={chartData} syncId="mrSync">

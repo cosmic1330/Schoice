@@ -1,19 +1,4 @@
-import {
-  KeyboardArrowDown,
-  KeyboardArrowUp,
-  DragIndicator,
-  UnfoldLess,
-  UnfoldMore,
-} from "@mui/icons-material";
-import {
-  Box,
-  Button,
-  IconButton,
-  styled,
-  Stack,
-  createTheme,
-  ThemeProvider,
-} from "@mui/material";
+import { Box, styled, createTheme, ThemeProvider } from "@mui/material";
 import { listen } from "@tauri-apps/api/event";
 import { AnimatePresence, motion, Variants } from "framer-motion";
 import React, {
@@ -36,19 +21,18 @@ import {
   IndicatorsDateTimeType,
 } from "../../utils/analyzeIndicatorsData";
 import generateDealDataDownloadUrl from "../../utils/generateDealDataDownloadUrl";
-import AvgMaKbar from "./Kbar/EmaAvgKbar";
+import AvgMaKbar from "./Ema/EmaAvgKbar";
 import Bollean from "./Bollean/Bollean";
 
 // lazy load components
 const MaKbar = lazy(() => import("./Ma/MaKbar"));
 const Obv = lazy(() => import("./Obv/Obv"));
 const IchimokuCloud = lazy(() => import("./IchimokuCloud/IchimokuCloud"));
-const MJ = lazy(() => import("./MJ"));
-const MR = lazy(() => import("./MR"));
-const Kd = lazy(() => import("./Kd"));
+const MJ = lazy(() => import("./Mj/MJ"));
+const MR = lazy(() => import("./Mr/MR"));
+const Kd = lazy(() => import("./Kd/Kd"));
 const Mfi = lazy(() => import("./Mfi/Mfi"));
-
-// --- Styled Components ---
+import GlassBar from "./GlassBar";
 
 const PageContainer = styled(Box)`
   width: 100vw;
@@ -68,53 +52,7 @@ const PageContainer = styled(Box)`
   background-repeat: no-repeat, no-repeat, no-repeat, repeat;
 `;
 
-const GlassBar = styled(motion.div)(({ theme }) => ({
-  position: "absolute",
-  left: theme.spacing(0),
-  top: "20%",
-  transform: "translateY(-50%)",
-  background: "rgba(30, 30, 40, 0.6)",
-  backdropFilter: "blur(12px)",
-  WebkitBackdropFilter: "blur(12px)",
-  borderRadius: "16px",
-  border: "1px solid rgba(255, 255, 255, 0.08)",
-  boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.3)",
-  padding: theme.spacing(1.5),
-  display: "flex",
-  flexDirection: "column",
-  gap: theme.spacing(1),
-  zIndex: 10,
-}));
-
-const ControlButton = styled(Button, {
-  shouldForwardProp: (prop) => prop !== "active",
-})<{ active?: boolean }>(({ active }) => ({
-  minWidth: "auto",
-  padding: "6px 12px",
-  borderRadius: "8px",
-  color: active ? "#fff" : "rgba(255, 255, 255, 0.6)",
-  backgroundColor: active ? "rgba(255, 255, 255, 0.15)" : "transparent",
-  border: active
-    ? "1px solid rgba(255, 255, 255, 0.1)"
-    : "1px solid transparent",
-  fontSize: "0.75rem",
-  fontWeight: 600,
-  "&:hover": {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    color: "#fff",
-  },
-}));
-
-const NavIconButton = styled(IconButton)(() => ({
-  color: "rgba(255, 255, 255, 0.7)",
-  border: "1px solid rgba(255, 255, 255, 0.08)",
-  borderRadius: "8px",
-  padding: "6px",
-  "&:hover": {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    color: "#fff",
-  },
-}));
+// --- Styled Components ---
 
 // Create a dark theme instance
 const darkTheme = createTheme({
@@ -156,44 +94,108 @@ const FullscreenVerticalCarousel: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const pageRef = useRef(null);
 
+  // Shared zoom and pan state
+  const [visibleCount, setVisibleCount] = useState(180);
+  const [rightOffset, setRightOffset] = useState(0);
+
   // slides 需依賴 perd，移到 useMemo 內
   const slides = useMemo(
     () => [
       {
         id: "bollean",
-        content: <Bollean />,
+        content: (
+          <Bollean
+            visibleCount={visibleCount}
+            setVisibleCount={setVisibleCount}
+            rightOffset={rightOffset}
+            setRightOffset={setRightOffset}
+          />
+        ),
       },
       {
         id: "ma_k",
-        content: <MaKbar perd={perd} />,
+        content: (
+          <MaKbar
+            perd={perd}
+            visibleCount={visibleCount}
+            setVisibleCount={setVisibleCount}
+            rightOffset={rightOffset}
+            setRightOffset={setRightOffset}
+          />
+        ),
       },
-      { id: "avg_k", content: <AvgMaKbar /> },
       {
-        id: "mj",
-        content: <MJ />,
-      },
-      {
-        id: "mr",
-        content: <MR />,
-      },
-      {
-        id: "kd",
-        content: <Kd />,
+        id: "ema",
+        content: (
+          <AvgMaKbar
+            visibleCount={visibleCount}
+            setVisibleCount={setVisibleCount}
+            rightOffset={rightOffset}
+            setRightOffset={setRightOffset}
+          />
+        ),
       },
       {
         id: "obv",
-        content: <Obv />,
+        content: (
+          <Obv
+            visibleCount={visibleCount}
+            setVisibleCount={setVisibleCount}
+            rightOffset={rightOffset}
+            setRightOffset={setRightOffset}
+          />
+        ),
+      },
+      {
+        id: "mj",
+        content: (
+          <MJ
+            visibleCount={visibleCount}
+            setVisibleCount={setVisibleCount}
+            rightOffset={rightOffset}
+            setRightOffset={setRightOffset}
+          />
+        ),
+      },
+      {
+        id: "mr",
+        content: (
+          <MR
+            visibleCount={visibleCount}
+            setVisibleCount={setVisibleCount}
+            rightOffset={rightOffset}
+            setRightOffset={setRightOffset}
+          />
+        ),
+      },
+      {
+        id: "kd",
+        content: (
+          <Kd
+            visibleCount={visibleCount}
+            setVisibleCount={setVisibleCount}
+            rightOffset={rightOffset}
+            setRightOffset={setRightOffset}
+          />
+        ),
       },
       {
         id: "mfi",
-        content: <Mfi />,
+        content: (
+          <Mfi
+            visibleCount={visibleCount}
+            setVisibleCount={setVisibleCount}
+            rightOffset={rightOffset}
+            setRightOffset={setRightOffset}
+          />
+        ),
       },
       {
         id: "ichimoku_cloud",
         content: <IchimokuCloud perd={perd} />,
       },
     ],
-    [perd]
+    [perd, visibleCount, rightOffset]
   );
 
   const goToSlide = useCallback((index: number) => {
@@ -257,7 +259,7 @@ const FullscreenVerticalCarousel: React.FC = () => {
     });
 
     return () => {
-      unlisten.then((fn) => fn()); // 清理监听器
+      unlisten.then((fn: any) => fn()); // 清理监听器
     };
   }, []);
 
@@ -333,149 +335,14 @@ const FullscreenVerticalCarousel: React.FC = () => {
           </AnimatePresence>
 
           <GlassBar
-            drag
-            dragMomentum={false}
-            dragConstraints={pageRef}
-            initial={{ x: 0, opacity: 0.9 }}
-            whileHover={{ opacity: 1 }}
-            animate={{
-              width: isCollapsed ? "auto" : "auto",
-              transition: { type: "spring", stiffness: 300, damping: 30 },
-            }}
-          >
-            <Stack spacing={1} alignItems="center">
-              {/* Drag Handle */}
-              <Box
-                sx={{
-                  cursor: "grab",
-                  display: "flex",
-                  justifyContent: "center",
-                  width: "100%",
-                  py: 0.2,
-                }}
-              >
-                <DragIndicator
-                  style={{ fontSize: 16, color: "rgba(255,255,255,0.3)" }}
-                />
-              </Box>
-
-              {/* Collapse Toggle */}
-              <IconButton
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                size="small"
-                sx={{
-                  p: 0.5,
-                  color: "rgba(255,255,255,0.5)",
-                  "&:hover": {
-                    color: "#fff",
-                    bgcolor: "rgba(255,255,255,0.1)",
-                  },
-                }}
-              >
-                {isCollapsed ? (
-                    <UnfoldMore fontSize="small" />
-                ) : (
-                  <UnfoldLess fontSize="small" />
-                )}
-              </IconButton>
-              {isCollapsed && (<Box 
-                sx={{ 
-                  fontSize: '10px', 
-                  color: '#90caf9', 
-                  fontWeight: 'bold',
-                  writingMode: 'vertical-rl',
-                  textOrientation: 'upright',
-                  letterSpacing: '2px'
-                }}
-              >
-                {perd === UrlTaPerdOptions.Hour ? "小時" : perd === UrlTaPerdOptions.Week ? "週線" : "日線"}
-              </Box>)}
-
-              {!isCollapsed && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 8,
-                    alignItems: "center",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: "20px",
-                      height: "1px",
-                      backgroundColor: "rgba(255,255,255,0.1)",
-                      my: 0.5,
-                    }}
-                  />
-
-                  {/* Navigation Arrows */}
-                  <NavIconButton
-                    onClick={() => goToSlide(current - 1)}
-                    size="small"
-                  >
-                    <KeyboardArrowUp fontSize="small" />
-                  </NavIconButton>
-                  <NavIconButton
-                    onClick={() => goToSlide(current + 1)}
-                    size="small"
-                  >
-                    <KeyboardArrowDown fontSize="small" />
-                  </NavIconButton>
-
-                  <Box
-                    sx={{
-                      width: "20px",
-                      height: "1px",
-                      backgroundColor: "rgba(255,255,255,0.1)",
-                      my: 0.5,
-                    }}
-                  />
-
-                  {/* Time Period Controls */}
-                  <ControlButton
-                    active={perd === UrlTaPerdOptions.Hour}
-                    onClick={() => {
-                      localStorage.setItem(
-                        "detail:perd:type",
-                        UrlTaPerdOptions.Hour
-                      );
-                      setPerd(UrlTaPerdOptions.Hour);
-                    }}
-                  >
-                    小時
-                  </ControlButton>
-                  <ControlButton
-                    active={perd === UrlTaPerdOptions.Day}
-                    onClick={() => {
-                      localStorage.setItem(
-                        "detail:perd:type",
-                        UrlTaPerdOptions.Day
-                      );
-                      setPerd(UrlTaPerdOptions.Day);
-                    }}
-                  >
-                    日線
-                  </ControlButton>
-                  <ControlButton
-                    active={perd === UrlTaPerdOptions.Week}
-                    onClick={() => {
-                      localStorage.setItem(
-                        "detail:perd:type",
-                        UrlTaPerdOptions.Week
-                      );
-                      setPerd(UrlTaPerdOptions.Week);
-                    }}
-                  >
-                    週線
-                  </ControlButton>
-                </motion.div>
-              )}
-            </Stack>
-          </GlassBar>
+            perd={perd}
+            setPerd={setPerd}
+            isCollapsed={isCollapsed}
+            setIsCollapsed={setIsCollapsed}
+            current={current}
+            goToSlide={goToSlide}
+            pageRef={pageRef}
+          />
         </DealsContext.Provider>
       </PageContainer>
     </ThemeProvider>

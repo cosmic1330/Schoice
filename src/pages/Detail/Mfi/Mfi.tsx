@@ -15,7 +15,7 @@ import {
   Stepper,
   Typography,
 } from "@mui/material";
-import { useContext, useMemo, useState, useRef, useEffect } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   CartesianGrid,
   ComposedChart,
@@ -28,23 +28,15 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import mfi from "../../../cls_tools/mfi";
 import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
 import { DealsContext } from "../../../context/DealsContext";
+import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
+import {
+  calculateIndicators,
+  EnhancedDealData,
+} from "../../../utils/indicatorUtils";
 
-interface MfiChartData
-  extends Partial<{
-    t: number | string;
-    o: number | null;
-    h: number | null;
-    l: number | null;
-    c: number | null;
-    v: number | null;
-  }> {
-  mfi: number | null;
-  ma20: number | null;
-  ma10?: number | null;
-  volMa20?: number | null;
+interface MfiChartData extends Partial<EnhancedDealData> {
   buySignal?: number | null;
   exitSignal?: number | null;
   buyReason?: string;
@@ -64,18 +56,26 @@ interface MfiStep {
   checks: StepCheck[];
 }
 
-export default function Mfi() {
+export default function Mfi({
+  visibleCount,
+  setVisibleCount,
+  rightOffset,
+  setRightOffset,
+}: {
+  visibleCount: number;
+  setVisibleCount: React.Dispatch<React.SetStateAction<number>>;
+  rightOffset: number;
+  setRightOffset: React.Dispatch<React.SetStateAction<number>>;
+}) {
   const deals = useContext(DealsContext);
+  const { settings } = useIndicatorSettings();
   const [activeStep, setActiveStep] = useState(0);
 
   // Zoom & Pan Control
-  const [visibleCount, setVisibleCount] = useState(180);
-  const [rightOffset, setRightOffset] = useState(0);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const lastX = useRef(0);
   const startOffset = useRef(0);
-
 
   useEffect(() => {
     const container = chartContainerRef.current;
@@ -92,7 +92,7 @@ export default function Mfi() {
         const next = prev + delta * step;
         const minBars = 30;
         const maxBars = deals.length > 0 ? deals.length : 1000;
-        
+
         if (next < minBars) return minBars;
         if (next > maxBars) return maxBars;
         return next;
@@ -109,21 +109,21 @@ export default function Mfi() {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
       e.preventDefault();
-      
+
       const deltaX = e.clientX - lastX.current;
-      const sensitivity = visibleCount / (container.clientWidth || 500); 
-      const barDelta = Math.round(deltaX * sensitivity * 1.5); 
-      
+      const sensitivity = visibleCount / (container.clientWidth || 500);
+      const barDelta = Math.round(deltaX * sensitivity * 1.5);
+
       if (barDelta === 0) return;
 
       setRightOffset((prev) => {
         let next = prev + barDelta;
         if (next < 0) next = 0;
-        const maxOffset = Math.max(0, deals.length - visibleCount); 
+        const maxOffset = Math.max(0, deals.length - visibleCount);
         if (next > maxOffset) next = maxOffset;
         return next;
       });
-      
+
       lastX.current = e.clientX;
     };
 
@@ -147,50 +147,12 @@ export default function Mfi() {
   const chartData = useMemo((): MfiChartData[] => {
     if (!deals || deals.length === 0) return [];
 
-    let mfiData = mfi.init(deals[0], 14);
+    const enhancedData = calculateIndicators(deals, settings);
 
-    const initialData = deals
-      .map((deal, i) => {
-        if (i > 0) {
-          mfiData = mfi.next(deal, mfiData, 14);
-        }
-
-        // Simple SMA 20 for Price and Volume
-        let ma20: number | null = null;
-        let ma10: number | null = null;
-        let volMa20: number | null = null;
-
-        if (i >= 19) {
-          let sumC = 0;
-          let sumV = 0;
-          for (let j = 0; j < 20; j++) {
-            sumC += deals[i - j].c || 0;
-            sumV += deals[i - j].v || 0;
-          }
-          ma20 = sumC / 20;
-          volMa20 = sumV / 20;
-        }
-
-        if (i >= 9) {
-          let sumC = 0;
-          for (let j = 0; j < 10; j++) {
-            sumC += deals[i - j].c || 0;
-          }
-          ma10 = sumC / 10;
-        }
-
-        return {
-          ...deal,
-          mfi: mfiData.mfi,
-          ma20,
-          ma10,
-          volMa20,
-        };
-      })
-      .slice(
-        -(visibleCount + rightOffset), 
-        rightOffset === 0 ? undefined : -rightOffset
-      );
+    const initialData = enhancedData.slice(
+      -(visibleCount + rightOffset),
+      rightOffset === 0 ? undefined : -rightOffset
+    );
 
     // Second pass for signals (Trend/Turn)
     const dataWithSignals = initialData.map(
@@ -221,7 +183,7 @@ export default function Mfi() {
     );
 
     return dataWithSignals;
-  }, [deals, visibleCount, rightOffset]);
+  }, [deals, settings, visibleCount, rightOffset]);
 
   const { steps, score, recommendation } = useMemo(() => {
     if (chartData.length === 0)
@@ -377,7 +339,14 @@ export default function Mfi() {
     <Container
       component="main"
       maxWidth={false}
-      sx={{ height: "100vh", display: "flex", flexDirection: "column", pt: 1, px: 2, pb: 1 }}
+      sx={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        pt: 1,
+        px: 2,
+        pb: 1,
+      }}
     >
       <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
         <Typography variant="h6" component="div" color="white">
@@ -444,10 +413,7 @@ export default function Mfi() {
         </CardContent>
       </Card>
 
-      <Box 
-        ref={chartContainerRef}
-        sx={{ flexGrow: 1, minHeight: 0 }}
-      >
+      <Box ref={chartContainerRef} sx={{ flexGrow: 1, minHeight: 0 }}>
         {/* Price Chart */}
         <ResponsiveContainer width="100%" height="60%">
           <ComposedChart data={chartData} syncId="mfiSync">

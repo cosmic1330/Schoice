@@ -15,13 +15,14 @@ import {
   Stepper,
   Typography,
 } from "@mui/material";
-import { useContext, useMemo, useState, useRef, useEffect } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   CartesianGrid,
   ComposedChart,
   Customized,
   Line,
   ReferenceDot,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -29,8 +30,11 @@ import {
   ZAxis,
 } from "recharts";
 import ema from "../../../cls_tools/ema";
+import ma from "../../../cls_tools/ma";
 import AvgCandlestickRectangle from "../../../components/RechartCustoms/AvgCandlestickRectangle";
 import { DealsContext } from "../../../context/DealsContext";
+import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
+import { calculateDMI } from "../../../utils/technicalIndicators";
 
 interface AvgMaChartData
   extends Partial<{
@@ -45,6 +49,9 @@ interface AvgMaChartData
   ema10: number | null;
   ma60: number | null;
   volMa20?: number | null;
+  diPlus: number | null;
+  diMinus: number | null;
+  adx: number | null;
 }
 
 type CheckStatus = "pass" | "fail" | "manual";
@@ -65,18 +72,28 @@ interface SignalPoint extends AvgMaChartData {
   subType: "trend" | "rebound"; // trend = with MA60, rebound = against MA60
 }
 
-export default function AvgMaKbar() {
+export default function AvgMaKbar({
+  visibleCount,
+  setVisibleCount,
+  rightOffset,
+  setRightOffset,
+}: {
+  visibleCount: number;
+  setVisibleCount: React.Dispatch<React.SetStateAction<number>>;
+  rightOffset: number;
+  setRightOffset: React.Dispatch<React.SetStateAction<number>>;
+}) {
+  const { settings } = useIndicatorSettings();
   const deals = useContext(DealsContext);
   const [activeStep, setActiveStep] = useState(0);
 
   // Zoom & Pan Control
-  const [visibleCount, setVisibleCount] = useState(160);
-  const [rightOffset, setRightOffset] = useState(0);
+  // const [visibleCount, setVisibleCount] = useState(160);
+  // const [rightOffset, setRightOffset] = useState(0);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const lastX = useRef(0);
   const startOffset = useRef(0);
-
 
   useEffect(() => {
     const container = chartContainerRef.current;
@@ -93,7 +110,7 @@ export default function AvgMaKbar() {
         const next = prev + delta * step;
         const minBars = 30;
         const maxBars = deals.length > 0 ? deals.length : 1000;
-        
+
         if (next < minBars) return minBars;
         if (next > maxBars) return maxBars;
         return next;
@@ -110,21 +127,21 @@ export default function AvgMaKbar() {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
       e.preventDefault();
-      
+
       const deltaX = e.clientX - lastX.current;
-      const sensitivity = visibleCount / (container.clientWidth || 500); 
-      const barDelta = Math.round(deltaX * sensitivity * 1.5); 
-      
+      const sensitivity = visibleCount / (container.clientWidth || 500);
+      const barDelta = Math.round(deltaX * sensitivity * 1.5);
+
       if (barDelta === 0) return;
 
       setRightOffset((prev) => {
         let next = prev + barDelta;
         if (next < 0) next = 0;
-        const maxOffset = Math.max(0, deals.length - visibleCount); 
+        const maxOffset = Math.max(0, deals.length - visibleCount);
         if (next > maxOffset) next = maxOffset;
         return next;
       });
-      
+
       lastX.current = e.clientX;
     };
 
@@ -148,8 +165,9 @@ export default function AvgMaKbar() {
   const chartData = useMemo((): AvgMaChartData[] => {
     if (!deals || deals.length === 0) return [];
 
-    let ema5_data = ema.init(deals[0], 5);
-    let ema10_data = ema.init(deals[0], 10);
+    let ema5_data = ema.init(deals[0], settings.emaShort);
+    let ema10_data = ema.init(deals[0], settings.emaLong);
+    let ma60_data = ma.init(deals[0], settings.ma60);
 
     const response: AvgMaChartData[] = [];
 
@@ -158,18 +176,9 @@ export default function AvgMaKbar() {
 
       // EMA calc
       if (i > 0) {
-        ema5_data = ema.next(deal, ema5_data, 5);
-        ema10_data = ema.next(deal, ema10_data, 10);
-      }
-
-      // MA60 calc
-      let ma60: number | null = null;
-      if (i >= 59) {
-        let sumC = 0;
-        for (let j = 0; j < 60; j++) {
-          sumC += deals[i - j].c || 0;
-        }
-        ma60 = sumC / 60;
+        ema5_data = ema.next(deal, ema5_data, settings.emaShort);
+        ema10_data = ema.next(deal, ema10_data, settings.emaLong);
+        ma60_data = ma.next(deal, ma60_data, settings.ma60);
       }
 
       // Vol MA20
@@ -186,12 +195,26 @@ export default function AvgMaKbar() {
         ...deal,
         ema5: ema5_data.ema || null,
         ema10: ema10_data.ema || null,
-        ma60,
+        ma60: ma60_data.ma || null,
         volMa20,
+        diPlus: null,
+        diMinus: null,
+        adx: null,
       });
     }
-    return response.slice(
-      -(visibleCount + rightOffset), 
+
+    // DMI calculation
+    const { diPlus, diMinus, adx } = calculateDMI(deals, 14);
+
+    const finalData = response.map((d, i) => ({
+      ...d,
+      diPlus: diPlus[i],
+      diMinus: diMinus[i],
+      adx: adx[i],
+    }));
+
+    return finalData.slice(
+      -(visibleCount + rightOffset),
       rightOffset === 0 ? undefined : -rightOffset
     );
   }, [deals, visibleCount, rightOffset]);
@@ -302,6 +325,11 @@ export default function AvgMaKbar() {
     // 4. Momentum (K strength) (20)
     if (price > ema5) totalScore += 20;
 
+    // 5. DMI (30) - Bonus
+    const isUptrend =
+      (current.diPlus || 0) > (current.diMinus || 0) && (current.adx || 0) > 20;
+    if (isUptrend) totalScore += 10;
+
     if (totalScore < 0) totalScore = 0;
     if (totalScore > 100) totalScore = 100;
 
@@ -321,13 +349,30 @@ export default function AvgMaKbar() {
             status: aboveLifeLine ? "pass" : "fail",
           },
           {
-            label: `EMA5 > EMA10 (短線趨勢): ${trendUp ? "Yes" : "No"}`,
+            label: `EMA${settings.emaShort} > EMA${
+              settings.emaLong
+            } (短線趨勢): ${trendUp ? "Yes" : "No"}`,
             status: trendUp ? "pass" : "fail",
           },
         ],
       },
       {
-        label: "II. 進場訊號",
+        label: "II. 趨勢強度 (DMI)",
+        description: "ADX 與 DI 方向",
+        checks: [
+          {
+            label: `ADX 強度 (>20): ${(current.adx || 0).toFixed(1)}`,
+            status: (current.adx || 0) > 20 ? "pass" : "fail",
+          },
+          {
+            label: "多頭趨勢 (DI+ > DI-)",
+            status:
+              (current.diPlus || 0) > (current.diMinus || 0) ? "pass" : "fail",
+          },
+        ],
+      },
+      {
+        label: "III. 進場訊號",
         description: "交叉與型態",
         checks: [
           {
@@ -358,7 +403,7 @@ export default function AvgMaKbar() {
         ],
       },
       {
-        label: "III. 動能確認",
+        label: "IV. 動能確認",
         description: "量價與均線",
         checks: [
           {
@@ -372,7 +417,7 @@ export default function AvgMaKbar() {
         ],
       },
       {
-        label: "IV. 綜合評估",
+        label: "V. 綜合評估",
         description: `得分: ${totalScore} - ${rec}`,
         checks: [
           {
@@ -419,7 +464,14 @@ export default function AvgMaKbar() {
     <Container
       component="main"
       maxWidth={false}
-      sx={{ height: "100vh", display: "flex", flexDirection: "column", pt: 1, px: 2, pb: 1 }}
+      sx={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        pt: 1,
+        px: 2,
+        pb: 1,
+      }}
     >
       <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
         <Typography variant="h6" component="div" color="white">
@@ -447,24 +499,17 @@ export default function AvgMaKbar() {
         </Box>
       </Stack>
 
-      <Card variant="outlined" sx={{ mb: 1, bgcolor: "background.default" }}>
-        <CardContent sx={{ py: 1, "&:last-child": { pb: 1 } }}>
+      <Card variant="outlined" sx={{ bgcolor: "background.default" }}>
+        <CardContent>
           <Stack
             direction={{ xs: "column", md: "row" }}
-            spacing={2}
+            spacing={1}
             alignItems="center"
           >
-            <Box sx={{ minWidth: 200, flexShrink: 0 }}>
-              <Typography variant="subtitle1" color="primary" fontWeight="bold">
-                {steps[activeStep]?.description}
-              </Typography>
-            </Box>
-            <Divider
-              orientation="vertical"
-              flexItem
-              sx={{ display: { xs: "none", md: "block" } }}
-            />
-            <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+            <Typography variant="subtitle2" color="primary" fontWeight="bold">
+              {steps[activeStep]?.description}
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
               {steps[activeStep]?.checks.map((check, idx) => (
                 <Chip
                   key={idx}
@@ -486,9 +531,9 @@ export default function AvgMaKbar() {
         </CardContent>
       </Card>
 
-      <Box 
+      <Box
         ref={chartContainerRef}
-        sx={{ flexGrow: 1, minHeight: 0 }}
+        sx={{ flexGrow: 1, minHeight: 0, height: "70%" }}
       >
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} syncId="avgSync">
@@ -547,7 +592,7 @@ export default function AvgMaKbar() {
               dot={false}
               activeDot={false}
               strokeWidth={2}
-              name="EMA 5"
+              name={`EMA ${settings.emaShort}`}
             />
             <Line
               dataKey="ema10"
@@ -555,15 +600,15 @@ export default function AvgMaKbar() {
               dot={false}
               activeDot={false}
               strokeWidth={2}
-              name="EMA 10"
+              name={`EMA ${settings.emaLong}`}
             />
             <Line
               dataKey="ma60"
               stroke="#9c27b0"
               dot={false}
               activeDot={false}
-              strokeWidth={3}
-              name="MA 60 (生命線)"
+              strokeWidth={2}
+              name={`MA ${settings.ma60}`}
               opacity={0.6}
             />
 
@@ -643,6 +688,58 @@ export default function AvgMaKbar() {
                 />
               );
             })}
+          </ComposedChart>
+        </ResponsiveContainer>
+      </Box>
+
+      {/* DMI Chart Section */}
+      <Box sx={{ height: "20%", minHeight: 0 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={chartData} syncId="avgSync">
+            <CartesianGrid strokeDasharray="3 3" opacity={0.1} stroke="#fff" />
+            <XAxis dataKey="t" hide />
+            <YAxis
+              domain={[0, 60]}
+              tick={{ fill: "rgba(255,255,255,0.7)", fontSize: 10 }}
+              stroke="rgba(255,255,255,0.3)"
+              label={{
+                value: "DMI",
+                angle: -90,
+                position: "insideLeft",
+                fill: "#999",
+                fontSize: 10,
+              }}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "rgba(20, 20, 30, 0.9)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                borderRadius: 4,
+              }}
+              itemStyle={{ fontSize: 11 }}
+            />
+            <ReferenceLine y={20} stroke="#666" strokeDasharray="3 3" />
+            <Line
+              dataKey="adx"
+              stroke="#ffeb3b"
+              strokeWidth={2}
+              dot={false}
+              name="ADX"
+            />
+            <Line
+              dataKey="diPlus"
+              stroke="#ff4d4f"
+              strokeWidth={1}
+              dot={false}
+              name="DI+"
+            />
+            <Line
+              dataKey="diMinus"
+              stroke="#52c41a"
+              strokeWidth={1}
+              dot={false}
+              name="DI-"
+            />
           </ComposedChart>
         </ResponsiveContainer>
       </Box>

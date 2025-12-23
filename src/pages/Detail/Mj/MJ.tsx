@@ -15,7 +15,7 @@ import {
   Stepper,
   Typography,
 } from "@mui/material";
-import { useContext, useMemo, useState, useRef, useEffect } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
   Bar,
@@ -30,10 +30,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import kd from "../../cls_tools/kd";
-import macd from "../../cls_tools/macd";
-import BaseCandlestickRectangle from "../../components/RechartCustoms/BaseCandlestickRectangle";
-import { DealsContext } from "../../context/DealsContext";
+import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
+import { DealsContext } from "../../../context/DealsContext";
+import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
+import { calculateIndicators } from "../../../utils/indicatorUtils";
 
 interface MjChartData
   extends Partial<{
@@ -66,18 +66,26 @@ interface MjStep {
   checks: StepCheck[];
 }
 
-export default function MJ() {
+export default function MJ({
+  visibleCount,
+  setVisibleCount,
+  rightOffset,
+  setRightOffset,
+}: {
+  visibleCount: number;
+  setVisibleCount: React.Dispatch<React.SetStateAction<number>>;
+  rightOffset: number;
+  setRightOffset: React.Dispatch<React.SetStateAction<number>>;
+}) {
   const deals = useContext(DealsContext);
+  const { settings } = useIndicatorSettings();
   const [activeStep, setActiveStep] = useState(0);
 
   // Zoom & Pan Control
-  const [visibleCount, setVisibleCount] = useState(160);
-  const [rightOffset, setRightOffset] = useState(0);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const lastX = useRef(0);
   const startOffset = useRef(0);
-
 
   useEffect(() => {
     const container = chartContainerRef.current;
@@ -94,7 +102,7 @@ export default function MJ() {
         const next = prev + delta * step;
         const minBars = 30;
         const maxBars = deals.length > 0 ? deals.length : 1000;
-        
+
         if (next < minBars) return minBars;
         if (next > maxBars) return maxBars;
         return next;
@@ -111,21 +119,21 @@ export default function MJ() {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
       e.preventDefault();
-      
+
       const deltaX = e.clientX - lastX.current;
-      const sensitivity = visibleCount / (container.clientWidth || 500); 
-      const barDelta = Math.round(deltaX * sensitivity * 1.5); 
-      
+      const sensitivity = visibleCount / (container.clientWidth || 500);
+      const barDelta = Math.round(deltaX * sensitivity * 1.5);
+
       if (barDelta === 0) return;
 
       setRightOffset((prev) => {
         let next = prev + barDelta;
         if (next < 0) next = 0;
-        const maxOffset = Math.max(0, deals.length - visibleCount); 
+        const maxOffset = Math.max(0, deals.length - visibleCount);
         if (next > maxOffset) next = maxOffset;
         return next;
       });
-      
+
       lastX.current = e.clientX;
     };
 
@@ -147,67 +155,33 @@ export default function MJ() {
   }, [deals.length, visibleCount, rightOffset]);
 
   const chartData = useMemo((): MjChartData[] => {
-    if (!deals || deals.length === 0) return [];
+    const data = calculateIndicators(deals, settings);
 
-    let kd_data = kd.init(deals[0], 9);
-    let macd_data = macd.init(deals[0]);
+    return data
+      .map((item) => {
+        const { j, osc } = item;
 
-    const response: MjChartData[] = [];
+        // Logic from original file:
+        // Long: J > 50 && Osc > 0
+        // Short: J < 50 && Osc < 0
+        const isLong = (j || 0) > 50 && (osc || 0) > 0;
+        const isShort = (j || 0) < 50 && (osc || 0) < 0;
 
-    // First item
-    response.push({
-      ...deals[0],
-      j: kd_data.j || null,
-      osc: macd_data.osc || null,
-      ma20: null,
-      longZone: null,
-      shortZone: null,
-      positiveOsc: macd_data.osc > 0 ? macd_data.osc : 0,
-      negativeOsc: macd_data.osc < 0 ? macd_data.osc : 0,
-    });
-
-    for (let i = 1; i < deals.length; i++) {
-      const deal = deals[i];
-
-      // Indicator calc
-      kd_data = kd.next(deal, kd_data, 9);
-      macd_data = macd.next(deal, macd_data);
-
-      // MA20
-      let ma20: number | null = null;
-      if (i >= 19) {
-        let sumC = 0;
-        for (let j = 0; j < 20; j++) {
-          sumC += deals[i - j].c || 0;
-        }
-        ma20 = sumC / 20;
-      }
-
-      const j = kd_data.j || 0;
-      const osc = macd_data.osc || 0;
-
-      // Logic from original file:
-      // Long: J > 50 && Osc > 0
-      // Short: J < 50 && Osc < 0
-      const isLong = j > 50 && osc > 0;
-      const isShort = j < 50 && osc < 0;
-
-      response.push({
-        ...deal,
-        j,
-        osc,
-        ma20,
-        longZone: isLong ? j : null,
-        shortZone: isShort ? j : null,
-        positiveOsc: osc > 0 ? osc : 0,
-        negativeOsc: osc < 0 ? osc : 0,
-      });
-    }
-    return response.slice(
-      -(visibleCount + rightOffset), 
-      rightOffset === 0 ? undefined : -rightOffset
-    );
-  }, [deals, visibleCount, rightOffset]);
+        return {
+          ...item,
+          j,
+          osc,
+          longZone: isLong ? j : null,
+          shortZone: isShort ? j : null,
+          positiveOsc: (osc || 0) > 0 ? osc : 0,
+          negativeOsc: (osc || 0) < 0 ? osc : 0,
+        };
+      })
+      .slice(
+        -(visibleCount + rightOffset),
+        rightOffset === 0 ? undefined : -rightOffset
+      );
+  }, [deals, visibleCount, rightOffset, settings]);
 
   // Calculate Entry Signals (State Transition)
   const signals = useMemo(() => {
@@ -372,7 +346,14 @@ export default function MJ() {
     <Container
       component="main"
       maxWidth={false}
-      sx={{ height: "100vh", display: "flex", flexDirection: "column", pt: 1, px: 2, pb: 1 }}
+      sx={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        pt: 1,
+        px: 2,
+        pb: 1,
+      }}
     >
       <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
         <Typography variant="h6" component="div" color="white">
@@ -439,10 +420,7 @@ export default function MJ() {
         </CardContent>
       </Card>
 
-      <Box 
-        ref={chartContainerRef}
-        sx={{ flexGrow: 1, minHeight: 0 }}
-      >
+      <Box ref={chartContainerRef} sx={{ flexGrow: 1, minHeight: 0 }}>
         {/* Main Price Chart (65%) */}
         <ResponsiveContainer width="100%" height="65%">
           <ComposedChart data={chartData} syncId="mjSync">
