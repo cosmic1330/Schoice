@@ -91,12 +91,14 @@ jobs:
         run: pnpm install
 
       - name: 🔐 準備 SSL 憑證
-        if: env.POSTGRES_CA_CRT_BASE64 != ''
+        shell: bash
         run: |
           mkdir -p src-tauri/resources
-          echo "${{ secrets.POSTGRES_CA_CRT_BASE64 }}" | base64 -d > src-tauri/resources/server-ca.crt
-        env:
-          POSTGRES_CA_CRT_BASE64: ${{ secrets.POSTGRES_CA_CRT_BASE64 }}
+          if [ -n "${{ secrets.POSTGRES_CA_CRT_BASE64 }}" ]; then
+            echo "${{ secrets.POSTGRES_CA_CRT_BASE64 }}" | base64 -d > src-tauri/resources/server-ca.crt
+          else
+            cp src-tauri/resources/dummy-ca.crt src-tauri/resources/server-ca.crt
+          fi
 
       - name: 🔨 構建 Tauri 應用程式
         uses: tauri-apps/tauri-action@v0
