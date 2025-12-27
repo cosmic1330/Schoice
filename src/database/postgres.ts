@@ -22,12 +22,12 @@ export default async function getDbInstance(): Promise<Database> {
         import.meta.env && (import.meta.env.VITE_POSTGRES_URL as string)
       )?.trim();
 
-      // 移除可能多餘的 '&' 或 '?'（例如 VITE_POSTGRES_URL 結尾的 &）
-      pgUrl = pgUrl.replace(/[&?]+$/g, "");
-
       if (!pgUrl) {
         throw new Error("VITE_POSTGRES_URL is not defined in .env");
       }
+
+      // 移除可能多餘的 '&' 或 '?'（例如 VITE_POSTGRES_URL 結尾的 &）
+      pgUrl = pgUrl.replace(/[&?]+$/g, "");
 
       // 重新啟用憑證偵測：DBeaver 能連線是因為配置了憑證，App 端也需要明確指向這些檔案以建立信任
       try {

@@ -124,6 +124,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_POSTGRES_URL: ${{ secrets.VITE_POSTGRES_URL }}
         with:
           tagName: schoice-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
           releaseName: "Schoice v__VERSION__"
