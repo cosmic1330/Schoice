@@ -94,7 +94,7 @@ jobs:
         if: ${{ secrets.POSTGRES_CA_CRT_BASE64 != '' }}
         run: |
           mkdir -p src-tauri/resources
-          echo "${{ secrets.POSTGRES_CA_CRT_BASE64 }}" | base64 -d > src-tauri/resources/server-ca.crt
+          echo "${{ secrets.POSTGRES_CA_CRT_BASE64 }}" > src-tauri/resources/server-ca.crt
         env:
           POSTGRES_CA_CRT_BASE64: ${{ secrets.POSTGRES_CA_CRT_BASE64 }}
 
