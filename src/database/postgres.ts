@@ -29,31 +29,49 @@ export default async function getDbInstance(): Promise<Database> {
         throw new Error("VITE_POSTGRES_URL is not defined in .env");
       }
 
-      // 強制檢查是否有 sslmode，如果沒有則補上
-      if (!pgUrl.includes("sslmode=")) {
-        const connector = pgUrl.includes("?") ? "&" : "?";
-        pgUrl += `${connector}sslmode=require`;
-      }
-
-      // 嘗試偵測是否有憑證檔案
+      // 重新啟用憑證偵測：DBeaver 能連線是因為配置了憑證，App 端也需要明確指向這些檔案以建立信任
       try {
         const { resolveResource } = await import("@tauri-apps/api/path");
         const { exists } = await import("@tauri-apps/plugin-fs");
 
-        const certPath = await resolveResource("resources/server-ca.crt");
+        const certPath = await resolveResource("resources/root.crt");
+        const clientCertPath = await resolveResource("resources/client.crt");
+        const clientKeyPath = await resolveResource("resources/client.key");
+
+        console.log("Postgres SSL Debug: Resolved certPath ->", certPath);
 
         if (await exists(certPath)) {
           const connector = pgUrl.includes("?") ? "&" : "?";
+          // 嘗試不使用 encodeURIComponent，因為 sqlx 的 URL 解析器可能不支援解碼路徑
           pgUrl += `${connector}sslrootcert=${certPath}`;
+          console.log("Postgres SSL: Root CA applied from", certPath);
+        } else {
+          console.warn("Postgres SSL Warning: root.crt NOT found at", certPath);
+        }
+
+        if (await exists(clientCertPath)) {
+          const connector = pgUrl.includes("?") ? "&" : "?";
+          pgUrl += `${connector}sslcert=${clientCertPath}`;
+          console.log("Postgres SSL: Client Cert applied from", clientCertPath);
+        }
+        if (await exists(clientKeyPath)) {
+          const connector = pgUrl.includes("?") ? "&" : "?";
+          pgUrl += `${connector}sslkey=${clientKeyPath}`;
+          console.log("Postgres SSL: Client Key applied from", clientKeyPath);
         }
       } catch (e) {
-        console.warn("Postgres SSL Certificate detection skipped:", e);
+        console.error("Postgres SSL Diagnostic Error:", e);
       }
 
-      // 強制檢查是否有 sslmode，如果沒有則補上
+      // 如果 URL 中已經包含 sslmode，則尊重使用者的設定，不再自動補全
       if (!pgUrl.includes("sslmode=")) {
         const connector = pgUrl.includes("?") ? "&" : "?";
-        pgUrl += `${connector}sslmode=require`;
+        // 如果有 root.crt，預設嘗試 verify-ca，否則用 require
+        const mode = pgUrl.includes("sslrootcert=") ? "verify-ca" : "require";
+        pgUrl += `${connector}sslmode=${mode}`;
+        console.log(
+          `Postgres SSL: No sslmode in .env, automatically set to ${mode}`
+        );
       }
 
       // 調試日誌：檢查 URL 各部分，確認資料庫名稱是否正確被切分

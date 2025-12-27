@@ -1,4 +1,5 @@
 import {
+  Alert,
   CircularProgress,
   FormControl,
   FormControlLabel,
@@ -6,18 +7,35 @@ import {
   Paper,
   Radio,
   RadioGroup,
+  Snackbar,
   Stack,
   Typography,
 } from "@mui/material";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { DatabaseContext } from "../../../context/DatabaseContext";
 
 export default function DatabaseSettings() {
   const { dbType, switchDatabase, isSwitching } = useContext(DatabaseContext);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const newType = event.target.value as "sqlite" | "postgres";
-    switchDatabase(newType);
+    try {
+      await switchDatabase(newType);
+    } catch (e: any) {
+      // 顯示詳細錯誤訊息，如果是物件則取 message，否則轉為字串
+      const errorMessage =
+        e instanceof Error
+          ? e.message
+          : typeof e === "string"
+          ? e
+          : JSON.stringify(e);
+      setError(`${newType} 連線失敗: ${errorMessage}`);
+    }
+  };
+
+  const handleClose = () => {
+    setError(null);
   };
 
   return (
@@ -61,6 +79,16 @@ export default function DatabaseSettings() {
             />
           </RadioGroup>
         </FormControl>
+        <Snackbar
+          open={!!error}
+          autoHideDuration={6000}
+          onClose={handleClose}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        >
+          <Alert onClose={handleClose} severity="error" sx={{ width: "100%" }}>
+            {error}
+          </Alert>
+        </Snackbar>
       </Paper>
     </Grid>
   );

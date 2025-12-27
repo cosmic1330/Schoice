@@ -32,7 +32,11 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": ["resources/server-ca.crt"]
+    "resources": [
+      "resources/root.crt",
+      "resources/client.crt",
+      "resources/client.key"
+    ]
   },
   "plugins": {
     "sql": {

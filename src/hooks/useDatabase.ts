@@ -143,6 +143,7 @@ export default function useDatabase() {
           setDb(null);
           // SQLite 也失敗就真的沒救了，重試邏輯可以保留在 effect 或是 UI 手動重試
         }
+        throw e; // 重拋錯誤，讓 switchDatabase 的呼叫端可以捕獲並顯示跳窗
       } finally {
         setIsInitializing(false);
         setIsSwitching(false);
@@ -166,7 +167,9 @@ export default function useDatabase() {
       (localStorage.getItem("schoice:db_type") as "sqlite" | "postgres") ||
       "sqlite";
     if (!db && !isInitializing) {
-      initializeDb(savedType);
+      initializeDb(savedType).catch(() => {
+        // 初始載入失敗時靜默處理，因為 initializeDb 內部已有 fallback 邏輯
+      });
     }
   }, []); // 只在 mount 時執行一次自動初始化
 
