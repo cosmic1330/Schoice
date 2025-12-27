@@ -24,6 +24,15 @@
     "process:allow-restart",
     "clipboard-manager:allow-write-text",
     "core:window:allow-unminimize",
+    "fs:allow-resource-read-recursive",
+    {
+      "identifier": "fs:allow-exists",
+      "scope": ["$RESOURCE/**"]
+    },
+    {
+      "identifier": "fs:allow-read",
+      "scope": ["$RESOURCE/**"]
+    },
     {
       "identifier": "http:default",
       "allow": [

@@ -90,6 +90,14 @@ jobs:
       - name: 📌 安裝依賴
         run: pnpm install
 
+      - name: 🔐 準備 SSL 憑證
+        if: env.POSTGRES_CA_CRT_BASE64 != ''
+        run: |
+          mkdir -p src-tauri/resources
+          echo "${{ secrets.POSTGRES_CA_CRT_BASE64 }}" | base64 -d > src-tauri/resources/server-ca.crt
+        env:
+          POSTGRES_CA_CRT_BASE64: ${{ secrets.POSTGRES_CA_CRT_BASE64 }}
+
       - name: 🔨 構建 Tauri 應用程式
         uses: tauri-apps/tauri-action@v0
         env:
