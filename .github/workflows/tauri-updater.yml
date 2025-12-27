@@ -98,19 +98,22 @@ jobs:
           if [ -n "${{ secrets.POSTGRES_CA_CRT_BASE64 }}" ]; then
             echo "${{ secrets.POSTGRES_CA_CRT_BASE64 }}" | base64 -d > src-tauri/resources/root.crt
           else
-            cp src-tauri/resources/dummy-ca.crt src-tauri/resources/root.crt
+            echo "Warning: POSTGRES_CA_CRT_BASE64 secret is missing. Creating empty root.crt."
+            touch src-tauri/resources/root.crt
           fi
           # Client Certificate
           if [ -n "${{ secrets.POSTGRES_CLIENT_CRT_BASE64 }}" ]; then
             echo "${{ secrets.POSTGRES_CLIENT_CRT_BASE64 }}" | base64 -d > src-tauri/resources/client.crt
           else
-            cp src-tauri/resources/client-dummy.crt src-tauri/resources/client.crt
+            echo "Warning: POSTGRES_CLIENT_CRT_BASE64 secret is missing. Creating empty client.crt."
+            touch src-tauri/resources/client.crt
           fi
           # Client Key
           if [ -n "${{ secrets.POSTGRES_CLIENT_KEY_BASE64 }}" ]; then
             echo "${{ secrets.POSTGRES_CLIENT_KEY_BASE64 }}" | base64 -d > src-tauri/resources/client.key
           else
-            cp src-tauri/resources/client-dummy.key src-tauri/resources/client.key
+            echo "Warning: POSTGRES_CLIENT_KEY_BASE64 secret is missing. Creating empty client.key."
+            touch src-tauri/resources/client.key
           fi
 
       - name: 🔨 構建 Tauri 應用程式
