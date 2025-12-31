@@ -1,7 +1,7 @@
-import React from "react";
-import { Box, IconButton, Stack, Button } from "@mui/material";
 import { ShowChart } from "@mui/icons-material";
-import { MenuPopup, MenuContent } from "./StyledComponents";
+import { Box, Button, IconButton, Stack } from "@mui/material";
+import React from "react";
+import { MenuContent, MenuPopup } from "./StyledComponents";
 
 interface ChartMenuProps {
   current: number;

@@ -1,41 +1,41 @@
+import { dateFormat } from "@ch20026103/anysis";
+import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
+import CancelIcon from "@mui/icons-material/Cancel";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import {
   Box,
-  Container,
-  Divider,
-  Stack,
-  Typography,
-  Stepper,
-  Step,
-  StepButton,
   Card,
   CardContent,
   Chip,
   CircularProgress,
+  Container,
+  Divider,
+  Stack,
+  Step,
+  StepButton,
+  Stepper,
+  Typography,
 } from "@mui/material";
-import { useContext, useMemo, useState, useRef, useEffect } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
   Bar,
+  CartesianGrid,
   ComposedChart,
   Customized,
   Line,
   ResponsiveContainer,
+  Scatter,
   Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Scatter,
 } from "recharts";
-import ichimoku from "./ichimoku";
-import { DealsContext } from "../../../context/DealsContext";
 import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
-import { dateFormat } from "@ch20026103/anysis";
-import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
+import { DealsContext } from "../../../context/DealsContext";
 import { UrlTaPerdOptions } from "../../../types";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
 import formatDateTime from "../../../utils/formatDateTime";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import ichimoku from "./ichimoku";
 
 // Define the structure for the chart data, including Ichimoku values
 interface IchimokuChartData
@@ -791,20 +791,13 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
         <CardContent sx={{ py: 1, "&:last-child": { pb: 1 } }}>
           <Stack
             direction={{ xs: "column", md: "row" }}
-            spacing={2}
+            spacing={1}
             alignItems="center"
           >
-            <Box sx={{ minWidth: 200, flexShrink: 0 }}>
-              <Typography variant="subtitle1" color="primary" fontWeight="bold">
-                {steps[activeStep]?.description}
-              </Typography>
-            </Box>
-            <Divider
-              orientation="vertical"
-              flexItem
-              sx={{ display: { xs: "none", md: "block" } }}
-            />
-            <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+            <Typography variant="subtitle2" color="primary" fontWeight="bold">
+              {steps[activeStep]?.description}
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
               {steps[activeStep]?.checks.map((check, idx) => (
                 <Chip
                   key={idx}

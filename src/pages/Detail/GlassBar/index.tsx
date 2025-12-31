@@ -1,10 +1,10 @@
-import React from "react";
 import { Stack } from "@mui/material";
+import React from "react";
 import { UrlTaPerdOptions } from "../../../types";
-import { GlassBarContainer } from "./StyledComponents";
 import ChartMenu from "./ChartMenu";
-import PeriodMenu from "./PeriodMenu";
 import Navigation from "./Navigation";
+import PeriodMenu from "./PeriodMenu";
+import { GlassBarContainer } from "./StyledComponents";
 
 interface GlassBarProps {
   perd: UrlTaPerdOptions;

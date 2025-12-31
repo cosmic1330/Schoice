@@ -1,4 +1,4 @@
-import { styled, Button, IconButton, Box } from "@mui/material";
+import { Box, Button, IconButton, styled } from "@mui/material";
 import { motion } from "framer-motion";
 
 export const GlassBarContainer = styled(motion.div)(({ theme }) => ({

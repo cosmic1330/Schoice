@@ -4,7 +4,7 @@ interface UseGapVisualizationProps {
   gaps: any[];
   chartData: any[];
   isVisible: boolean;
-  highlightedGapDate?: number; // 要高亮的缺口日期
+  highlightedGapDate?: number | string; // 要高亮的缺口日期
 }
 
 /**
@@ -89,8 +89,8 @@ export function useGapVisualization({
 
           // 如果缺口尚未回補，繼續顯示線條
           // if (!gap.filled || dataPoint.t === gap.date || !isFilledAtThisPoint) {
-            newDataPoint[`gap_upper_${gap.date}`] = gap.upperLine.value;
-            newDataPoint[`gap_lower_${gap.date}`] = gap.lowerLine.value;
+          newDataPoint[`gap_upper_${gap.date}`] = gap.upperLine.value;
+          newDataPoint[`gap_lower_${gap.date}`] = gap.lowerLine.value;
           // }
         }
       });

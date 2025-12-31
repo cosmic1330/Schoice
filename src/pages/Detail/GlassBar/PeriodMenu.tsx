@@ -1,7 +1,7 @@
-import React from "react";
 import { Box } from "@mui/material";
+import React from "react";
 import { UrlTaPerdOptions } from "../../../types";
-import { ControlButton, MenuPopup, MenuContent } from "./StyledComponents";
+import { ControlButton, MenuContent, MenuPopup } from "./StyledComponents";
 
 interface PeriodMenuProps {
   perd: UrlTaPerdOptions;

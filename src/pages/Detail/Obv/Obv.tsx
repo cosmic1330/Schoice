@@ -9,11 +9,11 @@ import {
   CircularProgress,
   Container,
   Divider,
+  Tooltip as MuiTooltip,
   Stack,
   Step,
   StepButton,
   Stepper,
-  Tooltip as MuiTooltip,
   Typography,
 } from "@mui/material";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -22,10 +22,10 @@ import {
   ComposedChart,
   Customized,
   Line,
+  Tooltip as RechartsTooltip,
   ReferenceDot,
   ReferenceLine,
   ResponsiveContainer,
-  Tooltip as RechartsTooltip,
   XAxis,
   YAxis,
 } from "recharts";
@@ -608,20 +608,13 @@ export default function Obv({
         <CardContent sx={{ py: 1, "&:last-child": { pb: 1 } }}>
           <Stack
             direction={{ xs: "column", md: "row" }}
-            spacing={2}
+            spacing={1}
             alignItems="center"
           >
-            <Box sx={{ minWidth: 200, flexShrink: 0 }}>
-              <Typography variant="subtitle1" color="primary" fontWeight="bold">
-                {steps[activeStep]?.description}
-              </Typography>
-            </Box>
-            <Divider
-              orientation="vertical"
-              flexItem
-              sx={{ display: { xs: "none", md: "block" } }}
-            />
-            <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+            <Typography variant="subtitle2" color="primary" fontWeight="bold">
+              {steps[activeStep]?.description}
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
               {steps[activeStep]?.checks.map((check, idx) => (
                 <Chip
                   key={idx}

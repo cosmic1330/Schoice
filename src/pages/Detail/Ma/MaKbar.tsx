@@ -69,22 +69,27 @@ export default function MaKbar({
 }) {
   const { settings } = useIndicatorSettings();
   const deals = useContext(DealsContext);
-  const [activeStep, setActiveStep] = useState(0);
 
   // Zoom & Pan Control
-  // const [visibleCount, setVisibleCount] = useState(160);
-  // const [rightOffset, setRightOffset] = useState(0);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const lastX = useRef(0);
   const startOffset = useRef(0);
 
-  // Gap Controls
-  const [showGaps, setShowGaps] = useState(true);
+  // --- States ---
+  const [activeStep, setActiveStep] = useState(0);
+  const [showGaps, setShowGaps] = useState(false);
   const [showOnlyUnfilled, setShowOnlyUnfilled] = useState(false);
-  const [hoveredGapDate, setHoveredGapDate] = useState<number | undefined>(
-    undefined
-  );
+  const [hoveredGapDate, setHoveredGapDate] = useState<
+    number | string | undefined
+  >(undefined);
+  const [visibleMAs, setVisibleMAs] = useState({
+    ma5: true,
+    ma10: true,
+    ma20: true,
+    ma60: true,
+    ma240: true,
+  });
 
   const { power } = useMarketAnalysis({
     ta: deals,
@@ -371,6 +376,48 @@ export default function MaKbar({
 
   const handleStep = (step: number) => () => {
     setActiveStep(step);
+    // 根據步驟自動調整顯示
+    if (step === 0) {
+      // 趨勢分析：全開 MA，關閉缺口
+      setVisibleMAs({
+        ma5: true,
+        ma10: true,
+        ma20: true,
+        ma60: true,
+        ma240: true,
+      });
+      setShowGaps(false);
+    } else if (step === 1) {
+      // 缺口研判：關閉 MA，開啟缺口
+      setVisibleMAs({
+        ma5: false,
+        ma10: false,
+        ma20: false,
+        ma60: false,
+        ma240: false,
+      });
+      setShowGaps(true);
+    } else if (step === 2) {
+      // 力道動能：僅開短期 MA
+      setVisibleMAs({
+        ma5: true,
+        ma10: true,
+        ma20: true,
+        ma60: false,
+        ma240: false,
+      });
+      setShowGaps(false);
+    } else if (step === 3) {
+      // 綜合評估：全開
+      setVisibleMAs({
+        ma5: true,
+        ma10: true,
+        ma20: true,
+        ma60: true,
+        ma240: true,
+      });
+      setShowGaps(true);
+    }
   };
 
   const getStatusIcon = (status: CheckStatus) => {
@@ -503,40 +550,6 @@ export default function MaKbar({
 
         <Divider orientation="vertical" flexItem />
 
-        {/* Gap Controls in Header */}
-        <FormControlLabel
-          control={
-            <Switch
-              size="small"
-              checked={showGaps}
-              onChange={(e) => setShowGaps(e.target.checked)}
-            />
-          }
-          label={
-            <Typography variant="caption" color="white">
-              顯示缺口
-            </Typography>
-          }
-          sx={{ mr: 1 }}
-        />
-        <FormControlLabel
-          control={
-            <Switch
-              size="small"
-              checked={showOnlyUnfilled}
-              onChange={(e) => setShowOnlyUnfilled(e.target.checked)}
-              disabled={!showGaps}
-              color="secondary"
-            />
-          }
-          label={
-            <Typography variant="caption" color="white">
-              僅未補
-            </Typography>
-          }
-          sx={{ mr: 1 }}
-        />
-
         <Box sx={{ flexGrow: 1 }}>
           <Stepper nonLinear activeStep={activeStep}>
             {steps.map((step, index) => (
@@ -554,40 +567,143 @@ export default function MaKbar({
         <CardContent sx={{ py: 1, "&:last-child": { pb: 1 } }}>
           <Stack
             direction={{ xs: "column", md: "row" }}
-            spacing={2}
+            spacing={1}
             alignItems="center"
           >
-            <Box sx={{ minWidth: 200, flexShrink: 0 }}>
-              <Typography variant="subtitle1" color="primary" fontWeight="bold">
-                {steps[activeStep]?.description}
-              </Typography>
-            </Box>
+            <Typography variant="subtitle2" color="primary" fontWeight="bold">
+              {steps[activeStep]?.description}
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              {steps[activeStep]?.checks.map((check, idx) => (
+                <Chip
+                  key={idx}
+                  icon={getStatusIcon(check.status)}
+                  label={check.label}
+                  variant="outlined"
+                  color={
+                    check.status === "pass"
+                      ? "success"
+                      : check.status === "fail"
+                      ? "error"
+                      : "default"
+                  }
+                  size="small"
+                />
+              ))}
+            </Stack>
+
+            {/* Contextual Visibility Controls */}
             <Divider
               orientation="vertical"
               flexItem
-              sx={{ display: { xs: "none", md: "block" } }}
+              sx={{ display: { xs: "none", md: "block" }, mx: 1 }}
             />
-            <Box sx={{ flexGrow: 1 }}>
-              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                {steps[activeStep]?.checks.map((check, idx) => (
-                  <Chip
-                    key={idx}
-                    icon={getStatusIcon(check.status)}
-                    label={check.label}
-                    variant="outlined"
-                    color={
-                      check.status === "pass"
-                        ? "success"
-                        : check.status === "fail"
-                        ? "error"
-                        : "default"
+            <Stack direction="row" spacing={1} alignItems="center">
+              {(activeStep === 0 || activeStep === 2 || activeStep === 3) && (
+                <>
+                  {[
+                    {
+                      key: "ma5" as const,
+                      label: `MA${settings.ma5}`,
+                      color: "#2196f3",
+                    },
+                    {
+                      key: "ma10" as const,
+                      label: `MA${settings.ma10}`,
+                      color: "#ffeb3b",
+                    },
+                    {
+                      key: "ma20" as const,
+                      label: `MA${settings.ma20}`,
+                      color: "#ff9800",
+                    },
+                    {
+                      key: "ma60" as const,
+                      label: `MA${settings.ma60}`,
+                      color: "#f44336",
+                    },
+                    {
+                      key: "ma240" as const,
+                      label: `MA${settings.ma240}`,
+                      color: "#9c27b0",
+                    },
+                  ]
+                    .filter((m) =>
+                      activeStep === 2
+                        ? ["ma5", "ma10", "ma20"].includes(m.key)
+                        : true
+                    )
+                    .map((m) => (
+                      <Chip
+                        key={m.key}
+                        label={m.label}
+                        size="small"
+                        onClick={() =>
+                          setVisibleMAs((prev) => ({
+                            ...prev,
+                            [m.key]: !prev[m.key],
+                          }))
+                        }
+                        sx={{
+                          height: 20,
+                          fontSize: "0.65rem",
+                          bgcolor: visibleMAs[m.key] ? m.color : "transparent",
+                          color: visibleMAs[m.key] ? "#000" : "#888",
+                          borderColor: visibleMAs[m.key] ? m.color : "#444",
+                          "&:hover": {
+                            bgcolor: visibleMAs[m.key]
+                              ? m.color
+                              : "rgba(255,255,255,0.1)",
+                          },
+                        }}
+                      />
+                    ))}
+                </>
+              )}
+
+              {(activeStep === 1 || activeStep === 3) && (
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        size="small"
+                        checked={showGaps}
+                        onChange={(e) => setShowGaps(e.target.checked)}
+                      />
                     }
-                    size="small"
-                    sx={{ my: 0.5 }}
+                    label={
+                      <Typography
+                        variant="caption"
+                        sx={{ fontSize: "0.65rem", color: "#888" }}
+                      >
+                        缺口
+                      </Typography>
+                    }
+                    sx={{ m: 0 }}
                   />
-                ))}
-              </Stack>
-            </Box>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        size="small"
+                        checked={showOnlyUnfilled}
+                        onChange={(e) => setShowOnlyUnfilled(e.target.checked)}
+                        disabled={!showGaps}
+                        color="secondary"
+                      />
+                    }
+                    label={
+                      <Typography
+                        variant="caption"
+                        sx={{ fontSize: "0.65rem", color: "#888" }}
+                      >
+                        僅未補
+                      </Typography>
+                    }
+                    sx={{ m: 0 }}
+                  />
+                </Stack>
+              )}
+            </Stack>
           </Stack>
         </CardContent>
       </Card>
@@ -677,47 +793,56 @@ export default function MaKbar({
               }}
             />
 
-            <Line
-              dataKey="ma5"
-              stroke="#589bf3"
-              dot={false}
-              activeDot={false}
-              strokeWidth={1}
-              name={`MA${settings.ma5}`}
-            />
-            <Line
-              dataKey="ma10"
-              stroke="#b277f2"
-              dot={false}
-              activeDot={false}
-              strokeWidth={1}
-              name={`MA${settings.ma10}`}
-            />
-            <Line
-              dataKey="ma20"
-              stroke="#ff7300"
-              dot={false}
-              activeDot={false}
-              strokeWidth={1.5}
-              name={`MA${settings.ma20}`}
-            />
-            <Line
-              dataKey="ma60"
-              stroke="#63c762"
-              dot={false}
-              activeDot={false}
-              strokeWidth={1}
-              name={`MA${settings.ma60}`}
-            />
-            <Line
-              dataKey="ma240"
-              stroke="#9e9e9e"
-              dot={false}
-              activeDot={false}
-              strokeWidth={1}
-              strokeDasharray="5 5"
-              name={`MA${settings.ma240}`}
-            />
+            {visibleMAs.ma5 && (
+              <Line
+                dataKey="ma5"
+                stroke="#2196f3"
+                dot={false}
+                activeDot={false}
+                name={`MA${settings.ma5}`}
+                strokeWidth={1.5}
+              />
+            )}
+            {visibleMAs.ma10 && (
+              <Line
+                dataKey="ma10"
+                stroke="#ffeb3b"
+                dot={false}
+                activeDot={false}
+                name={`MA${settings.ma10}`}
+                strokeWidth={1.5}
+              />
+            )}
+            {visibleMAs.ma20 && (
+              <Line
+                dataKey="ma20"
+                stroke="#ff9800"
+                dot={false}
+                activeDot={false}
+                name={`MA${settings.ma20}`}
+                strokeWidth={2}
+              />
+            )}
+            {visibleMAs.ma60 && (
+              <Line
+                dataKey="ma60"
+                stroke="#f44336"
+                dot={false}
+                activeDot={false}
+                name={`MA${settings.ma60}`}
+                strokeWidth={1.5}
+              />
+            )}
+            {visibleMAs.ma240 && (
+              <Line
+                dataKey="ma240"
+                stroke="#9c27b0"
+                dot={false}
+                activeDot={false}
+                name={`MA${settings.ma240}`}
+                strokeWidth={1.5}
+              />
+            )}
 
             {/* Signal Markers */}
             {signals.map((signal) => {

@@ -196,14 +196,14 @@ export default function Mfi({
 
     const price = current.c;
     const mfiVal = current.mfi;
-    const ma = current.ma20;
+    const bollMa = current.bollMa;
     const vol = current.v;
     const volMa = current.volMa20;
 
     if (
       !isNum(price) ||
       !isNum(mfiVal) ||
-      !isNum(ma) ||
+      !isNum(bollMa) ||
       !isNum(vol) ||
       !isNum(volMa)
     ) {
@@ -213,8 +213,8 @@ export default function Mfi({
     // I. Regime
     const volRatio = vol / volMa;
     const isVolStable = volRatio > 0.6; // Not dead volume
-    const maRising = ma > (prev.ma20 || 0);
-    const trendStatus = maRising ? "Uptrend" : "Downtrend/Flat";
+    const bollMaRising = bollMa > (prev.bollMa || 0);
+    const trendStatus = bollMaRising ? "Uptrend" : "Downtrend/Flat";
 
     // II. Entry
     const isOversold = mfiVal < 20;
@@ -229,10 +229,10 @@ export default function Mfi({
     // 1. Volume (20)
     if (isVolStable) totalScore += 20;
     // 2. Trend (20)
-    if (maRising || price > ma) totalScore += 20;
+    if (bollMaRising || price > bollMa) totalScore += 20;
     // 3. MFI Position (40)
     if (isOversold && mfiRising) totalScore += 40; // Perfect buy setup
-    else if (mfiVal > 40 && mfiVal < 60 && mfiRising && price > ma)
+    else if (mfiVal > 40 && mfiVal < 60 && mfiRising && price > bollMa)
       totalScore += 30; // Momentum continuation
     else if (isOverbought) totalScore -= 20; // Warning
     // 4. Price Action (20)
@@ -256,8 +256,8 @@ export default function Mfi({
             status: isVolStable ? "pass" : "fail",
           },
           {
-            label: `趨勢方向 (MA20): ${trendStatus}`,
-            status: maRising ? "pass" : "manual",
+            label: `趨勢方向 (中軌): ${trendStatus}`,
+            status: bollMaRising ? "pass" : "manual",
           },
           { label: "波動度正常 (ATR)", status: "manual" },
         ],
@@ -378,20 +378,13 @@ export default function Mfi({
         <CardContent sx={{ py: 1, "&:last-child": { pb: 1 } }}>
           <Stack
             direction={{ xs: "column", md: "row" }}
-            spacing={2}
+            spacing={1}
             alignItems="center"
           >
-            <Box sx={{ minWidth: 200, flexShrink: 0 }}>
-              <Typography variant="subtitle1" color="primary" fontWeight="bold">
-                {steps[activeStep]?.description}
-              </Typography>
-            </Box>
-            <Divider
-              orientation="vertical"
-              flexItem
-              sx={{ display: { xs: "none", md: "block" } }}
-            />
-            <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+            <Typography variant="subtitle2" color="primary" fontWeight="bold">
+              {steps[activeStep]?.description}
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
               {steps[activeStep]?.checks.map((check, idx) => (
                 <Chip
                   key={idx}
@@ -465,12 +458,28 @@ export default function Mfi({
             <Customized component={BaseCandlestickRectangle} />
 
             <Line
-              dataKey="ma20"
-              stroke="#ff9800"
+              dataKey="bollMa"
+              stroke="#2196f3"
+              strokeWidth={1.5}
               dot={false}
               activeDot={false}
-              name="20 MA"
-              strokeWidth={1.5}
+              name={`${settings.boll} MA (Mid)`}
+            />
+            <Line
+              dataKey="bollUb"
+              stroke="#ff9800"
+              strokeDasharray="3 3"
+              dot={false}
+              activeDot={false}
+              name="Upper Band"
+            />
+            <Line
+              dataKey="bollLb"
+              stroke="#ff9800"
+              strokeDasharray="3 3"
+              dot={false}
+              activeDot={false}
+              name="Lower Band"
             />
 
             {chartData.map((d) => {
