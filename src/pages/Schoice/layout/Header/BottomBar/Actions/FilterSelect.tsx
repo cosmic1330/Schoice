@@ -27,7 +27,6 @@ export default function FilterSelect() {
   return (
     <Button
       size="small"
-      variant="soft"
       onClick={handleClick}
       startIcon={<BookmarkBorderIcon />}
       sx={{

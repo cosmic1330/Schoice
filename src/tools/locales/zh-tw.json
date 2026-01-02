@@ -88,10 +88,10 @@
         "hightLoss": "可承受虧損(%)",
         "buyPricePosition": "買入價格位置",
         "sellPricePosition": "賣出價格位置",
-        "hightPrice":"最高價",
-        "openPrice":"開盤價",
-        "closePrice":"收盤價",
-        "lowPrice":"最低價"
+        "hightPrice": "最高價",
+        "openPrice": "開盤價",
+        "closePrice": "收盤價",
+        "lowPrice": "最低價"
       },
       "Header": {
         "marketSentiment": "市場情緒",
@@ -108,6 +108,25 @@
         "cancel": "取消",
         "msgPleaseLogin": "請先登入",
         "msgFilterCleared": "已清除基本面篩選"
+      },
+      "Fundamental": {
+        "title": "挑選基本面",
+        "conditionList": "條件列表",
+        "configPrefix": "配置",
+        "conditionCount": "條條件記錄",
+        "category": "類別",
+        "operator": "操作符",
+        "value": "值",
+        "setNumber": "設定數字",
+        "addCondition": "新增條件",
+        "matchResult": "匹配結果摘要",
+        "totalMatches": "總計 {{count}} 筆符合",
+        "confirm": "確定",
+        "processing": "處理中...",
+        "msgSuccess": "添加基本面篩選成功",
+        "msgError": "操作失敗，請重試",
+        "editCondition": "編輯條件",
+        "deleteCondition": "刪除條件"
       }
     }
   }

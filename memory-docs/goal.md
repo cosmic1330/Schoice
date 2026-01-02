@@ -9,6 +9,7 @@
 - 使用共用的theme設定
 - 使用MUI的responsiveness設定
 - 確保組件在不同尺寸的螢幕上都能正常顯示
+- MUI的Grid2已經被棄用，請使用Grid (原Grid2)
 
 ### 1. 以科技風格來設計組建
 - 使用MUI的components

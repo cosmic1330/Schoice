@@ -6,7 +6,9 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { stockFundamentalQueryBuilder } from "../../../classes/StockFundamentalQueryBuilder";
 import { useUser } from "../../../context/UserContext";
@@ -20,24 +22,24 @@ export default function ConditionsListResult({
 }: {
   prompts: FundamentalPrompts;
 }) {
+  const { t } = useTranslation();
   const query = useDatabaseQuery();
   const [results, setResults] = useState<StockTableType[]>([]);
-  const [isLoading, setIsLoading] = useState(false); // For button action
-  const [isFetching, setIsFetching] = useState(false); // For background query
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const { setFilterStocks } = useSchoiceStore();
   const { setFundamentalCondition } = useCloudStore();
   const { user } = useUser();
 
   useEffect(() => {
     setIsFetching(true);
-    setResults([]); // Clear previous results while fetching
+    setResults([]);
 
-    // Slight delay to prevent flickering for instant queries and ensure UI update
     const timer = setTimeout(() => {
       stockFundamentalQueryBuilder
         .getStocksByConditions({ conditions: prompts })
         .then((stockIds) => {
-          if (stockIds.length === 0) {
+          if (!stockIds || stockIds.length === 0) {
             setResults([]);
             setIsFetching(false);
           } else {
@@ -46,10 +48,14 @@ export default function ConditionsListResult({
                 .map((id) => `'${id}'`)
                 .join(",")})`
             ).then((data: StockTableType[] | null) => {
-              if (data && data.length > 0) setResults(data);
+              setResults(data || []);
               setIsFetching(false);
             });
           }
+        })
+        .catch((err) => {
+          console.error("Fundamental query error:", err);
+          setIsFetching(false);
         });
     }, 0);
 
@@ -57,14 +63,9 @@ export default function ConditionsListResult({
   }, [prompts, query]);
 
   const handleClick = useCallback(async () => {
-    // 檢查是否正在載入中
-    if (isLoading) {
-      return;
-    }
-
-    // 檢查用戶登入狀態
+    if (isLoading) return;
     if (!user) {
-      toast.error("请先登录");
+      toast.error(t("Pages.Schoice.Header.msgPleaseLogin"));
       return;
     }
 
@@ -72,9 +73,9 @@ export default function ConditionsListResult({
       setIsLoading(true);
       setFilterStocks(results);
       await setFundamentalCondition(prompts, user.id);
-      toast.success("添加基本面篩選成功");
+      toast.success(t("Pages.Schoice.Fundamental.msgSuccess"));
     } catch (error) {
-      toast.error("操作失敗，請重試");
+      toast.error(t("Pages.Schoice.Fundamental.msgError"));
     } finally {
       setIsLoading(false);
     }
@@ -85,29 +86,42 @@ export default function ConditionsListResult({
     setFundamentalCondition,
     prompts,
     user,
+    t,
   ]);
 
   return (
-    <Stack direction="row" justifyContent="space-between" alignItems="center">
+    <Stack
+      direction="row"
+      justifyContent="space-between"
+      alignItems="center"
+      sx={{
+        bgcolor: (theme) => alpha(theme.palette.background.paper, 0.4),
+        p: 2,
+        borderRadius: 2,
+      }}
+    >
       <Box display="flex" alignItems="center" gap={2}>
-        <Box>
-          <Typography
-            variant="h6"
-            gutterBottom
-            fontWeight="bold"
-            sx={{ mb: 0 }}
-          >
-            匹配结果摘要
-          </Typography>
-        </Box>
+        <Typography
+          variant="subtitle1"
+          fontWeight={800}
+          sx={{ color: "text.primary" }}
+        >
+          {t("Pages.Schoice.Fundamental.matchResult")}
+        </Typography>
         {isFetching ? (
-          <CircularProgress size={24} />
+          <CircularProgress size={20} thickness={6} />
         ) : (
           <Chip
-            label={`总计: ${results.length} 筆符合`}
+            label={t("Pages.Schoice.Fundamental.totalMatches", {
+              count: results.length,
+            })}
             color="primary"
+            variant="outlined"
+            size="small"
             sx={{
               fontWeight: 700,
+              borderRadius: "8px",
+              borderWidth: "2px",
             }}
           />
         )}
@@ -117,8 +131,17 @@ export default function ConditionsListResult({
         color="success"
         onClick={handleClick}
         disabled={isLoading || isFetching || results.length === 0}
+        sx={{
+          borderRadius: "10px",
+          px: 4,
+          fontWeight: 800,
+          boxShadow: (theme) =>
+            `0 4px 14px 0 ${alpha(theme.palette.success.main, 0.3)}`,
+        }}
       >
-        {isLoading ? "處理中..." : "確定"}
+        {isLoading
+          ? t("Pages.Schoice.Fundamental.processing")
+          : t("Pages.Schoice.Fundamental.confirm")}
       </Button>
     </Stack>
   );

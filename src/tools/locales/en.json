@@ -109,6 +109,25 @@
         "cancel": "Cancel",
         "msgPleaseLogin": "Please login first",
         "msgFilterCleared": "Fundamental filter cleared"
+      },
+      "Fundamental": {
+        "title": "Stock Fundamental Selection",
+        "conditionList": "Condition List",
+        "configPrefix": "Config",
+        "conditionCount": "condition record(s)",
+        "category": "Category",
+        "operator": "Operator",
+        "value": "Value",
+        "setNumber": "Custom Value",
+        "addCondition": "Add Condition",
+        "matchResult": "Match Result Summary",
+        "totalMatches": "Total: {{count}} match(es)",
+        "confirm": "Confirm",
+        "processing": "Processing...",
+        "msgSuccess": "Fundamental filter added successfully",
+        "msgError": "Operation failed, please try again",
+        "editCondition": "Edit Condition",
+        "deleteCondition": "Delete Condition"
       }
     }
   }
