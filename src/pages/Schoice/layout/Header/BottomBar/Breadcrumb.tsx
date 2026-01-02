@@ -1,4 +1,5 @@
-import { Breadcrumbs, Link, Typography } from "@mui/material";
+import NavigateNextIcon from "@mui/icons-material/NavigateNext";
+import { Breadcrumbs, Link, Typography, alpha } from "@mui/material";
 import { useLocation, useNavigate } from "react-router";
 
 export default function Breadcrumb() {
@@ -11,11 +12,30 @@ export default function Breadcrumb() {
   const handleLink = (path: string) => {
     navigate(path);
   };
+
   return (
-    <Breadcrumbs>
+    <Breadcrumbs
+      separator={
+        <NavigateNextIcon
+          fontSize="small"
+          sx={{ color: "text.disabled", opacity: 0.5 }}
+        />
+      }
+      sx={{
+        "& .MuiBreadcrumbs-ol": { alignItems: "center" },
+      }}
+    >
       <Link
         underline="hover"
-        color="inherit"
+        sx={{
+          cursor: "pointer",
+          color: "primary.main",
+          fontWeight: 700,
+          fontSize: "0.875rem",
+          display: "flex",
+          alignItems: "center",
+          "&:hover": { color: "primary.dark" },
+        }}
         onClick={() => handleLink("/schoice")}
       >
         Schoice
@@ -24,16 +44,29 @@ export default function Breadcrumb() {
         index + 1 === pathnames.length ? (
           <Typography
             key={index}
-            sx={{ color: "text.primary" }}
-            fontWeight="bold"
+            sx={{
+              color: "text.primary",
+              fontWeight: 800,
+              fontSize: "0.875rem",
+              bgcolor: (theme) => alpha(theme.palette.text.primary, 0.05),
+              px: 1,
+              py: 0.2,
+              borderRadius: 1,
+            }}
           >
             {path}
           </Typography>
         ) : (
           <Link
             underline="hover"
-            color="inherit"
-            onClick={() => handleLink(pathnames.splice(-index).join("/"))}
+            sx={{
+              cursor: "pointer",
+              color: "text.secondary",
+              fontWeight: 500,
+              fontSize: "0.875rem",
+              "&:hover": { color: "text.primary" },
+            }}
+            onClick={() => handleLink(pathnames.slice(0, index + 1).join("/"))}
             key={index}
           >
             {path}

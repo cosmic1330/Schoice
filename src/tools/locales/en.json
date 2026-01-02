@@ -93,6 +93,22 @@
         "closePrice": "Closing Price",
         "lowPrice": "Lowest Price",
         "options": "Options"
+      },
+      "Header": {
+        "marketSentiment": "Market Sentiment",
+        "taidex": "TAIDEX",
+        "bullish": "Bullish",
+        "bearish": "Bearish",
+        "lastUpdate": "Last Update",
+        "backtestDay": "Backtest Day",
+        "dataCount": "Data Count",
+        "stockUnit": "stocks",
+        "filterStocks": "Filtered",
+        "updateData": "Update Data",
+        "updating": "Updating",
+        "cancel": "Cancel",
+        "msgPleaseLogin": "Please login first",
+        "msgFilterCleared": "Fundamental filter cleared"
       }
     }
   }

@@ -92,6 +92,22 @@
         "openPrice":"開盤價",
         "closePrice":"收盤價",
         "lowPrice":"最低價"
+      },
+      "Header": {
+        "marketSentiment": "市場情緒",
+        "taidex": "台指期",
+        "bullish": "多頭",
+        "bearish": "空頭",
+        "lastUpdate": "最後更新",
+        "backtestDay": "回測 (日)",
+        "dataCount": "資料統計",
+        "stockUnit": "檔",
+        "filterStocks": "篩選股",
+        "updateData": "更新資料",
+        "updating": "更新中",
+        "cancel": "取消",
+        "msgPleaseLogin": "請先登入",
+        "msgFilterCleared": "已清除基本面篩選"
       }
     }
   }

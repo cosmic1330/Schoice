@@ -1,12 +1,14 @@
 import BarChartIcon from "@mui/icons-material/BarChart";
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography, alpha } from "@mui/material";
 import { error } from "@tauri-apps/plugin-log";
 import { useContext, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import SqliteDataManager from "../../../../../../classes/SqliteDataManager";
 import { DatabaseContext } from "../../../../../../context/DatabaseContext";
 import useSchoiceStore from "../../../../../../store/Schoice.store";
 
 export default function DataCount() {
+  const { t } = useTranslation();
   const { data_count, changeDataCount } = useSchoiceStore();
   const { db, dbType } = useContext(DatabaseContext);
 
@@ -28,21 +30,39 @@ export default function DataCount() {
   return (
     <Stack
       direction="row"
-      py={0.8}
-      px={1.2}
-      spacing={1}
+      spacing={1.5}
       alignItems="center"
       sx={{
-        borderRadius: 1,
+        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05),
+        px: 2,
+        py: 0.8,
+        borderRadius: 2,
+        border: "1px solid",
+        borderColor: (theme) => alpha(theme.palette.primary.main, 0.1),
       }}
     >
-      <BarChartIcon color="primary" />
+      <BarChartIcon sx={{ color: "primary.main", fontSize: 20 }} />
       <Box>
-        <Typography variant="body2" color="primary">
-          資料統計 {sourceLabel}
+        <Typography
+          variant="caption"
+          sx={{
+            color: "text.secondary",
+            fontWeight: 600,
+            display: "block",
+            lineHeight: 1,
+          }}
+        >
+          {t("Pages.Schoice.Header.dataCount")} {sourceLabel}
         </Typography>
-        <Typography variant="body2" fontWeight={700} color="primary">
-          {data_count} 檔
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: 800,
+            color: "primary.main",
+            lineHeight: 1.2,
+          }}
+        >
+          {data_count} {t("Pages.Schoice.Header.stockUnit")}
         </Typography>
       </Box>
     </Stack>

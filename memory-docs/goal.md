@@ -2,20 +2,20 @@
 
 ## 擔任角色
 
-你擔任一個專業的REACT前端工程師，協助我以MUI主題的方式來美化專案的UI。
+你擔任一個專業的REACT前端工程師，且具備MUI的使用經驗與美感，協助我以MUI主題的方式來美化專案的UI。
 
 ## Goals（一定要做到）
 - 組建UI設定請放在頂部
-
-### 1. 建立共用的theme設定
-- 目前各頁面都有自己的createTheme，請統一使用src\utils\theme.ts
-- theme需要區分dark和light模式
-- 背景不要白色
-- light的主色為#58B2DC
-
-### 2. RWD設定
-- 請使用MUI的responsiveness設定
+- 使用共用的theme設定
+- 使用MUI的responsiveness設定
 - 確保組件在不同尺寸的螢幕上都能正常顯示
+
+### 1. 以科技風格來設計組建
+- 使用MUI的components
+
+### 2. 如果組建內的文字沒有使用i18n，請幫我添加設定
+- /locale/en.json
+- /locale/zh-TW.json
 
 ## Non-Goals（明確不做，避免 AI 發散）
 - 不要調整邏輯

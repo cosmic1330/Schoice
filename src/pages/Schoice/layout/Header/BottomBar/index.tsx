@@ -10,7 +10,9 @@ export default function BottomBar() {
       direction="row"
       alignItems="center"
       justifyContent="space-between"
-      px={1.5}
+      px={2.5}
+      py={1}
+      sx={{ minHeight: 56 }}
     >
       <Breadcrumb />
       <Actions />
