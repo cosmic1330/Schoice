@@ -26,17 +26,23 @@
     },
     "Schoice": {
       "Trash": {
+        "title": "回收站",
+        "subtitle": "管理最近刪除的策略，您可以選擇恢復或永久移除。",
         "name": "策略名稱",
         "type": "策略類型",
         "time": "刪除時間",
         "action": "操作",
-        "empty": "垃圾桶是空的",
-        "remove": "刪除",
-        "recover": "恢復",
-        "promptDetails": "策略詳情",
-        "hourly": "小時線",
-        "daily": "日線",
-        "weekly": "周線"
+        "empty": "回收站空空如也",
+        "emptySubtitle": "目前沒有任何已刪除的策略記錄。",
+        "remove": "永久刪除",
+        "recover": "恢復策略",
+        "promptDetails": "策略詳細條件",
+        "hourly": "每小時",
+        "daily": "每日",
+        "weekly": "每週",
+        "confirmDelete": "確定要永久刪除此策略嗎？此操作無法復原。",
+        "typeBull": "多方",
+        "typeBear": "空方"
       },
       "Backtest": {
         "create": "創建",

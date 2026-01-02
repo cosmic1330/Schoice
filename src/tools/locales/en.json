@@ -26,17 +26,23 @@
     },
     "Schoice": {
       "Trash": {
-        "name": "Name",
+        "title": "Strategy Trash",
+        "subtitle": "Manage your recently deleted strategies. Recover or permanently remove them.",
+        "name": "Strategy Name",
         "type": "Type",
-        "time": "Time",
-        "action": "Action",
-        "empty": "The trash is empty",
-        "remove": "Remove",
+        "time": "Time Deleted",
+        "action": "Actions",
+        "empty": "Trash is Empty",
+        "emptySubtitle": "No deleted strategies found at the moment.",
+        "remove": "Permanent Delete",
         "recover": "Recover",
-        "promptDetails": "Prompt Details",
+        "promptDetails": "Strategy Conditions",
         "hourly": "Hourly",
         "daily": "Daily",
-        "weekly": "Weekly"
+        "weekly": "Weekly",
+        "confirmDelete": "Are you sure you want to permanently delete this strategy? This action cannot be undone.",
+        "typeBull": "Bull",
+        "typeBear": "Bear"
       },
       "Backtest": {
         "title": "Trading Analysis Dashboard",
