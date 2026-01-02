@@ -1,37 +1,62 @@
 import { Context } from "@ch20026103/backtest-lib";
-import { Box, Card, CardContent, Stack, Typography } from "@mui/material";
+import { Box, Paper, Stack, Typography } from "@mui/material";
+import { alpha, styled } from "@mui/material/styles";
 import { useTranslation } from "react-i18next";
+
+const GlassPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(2.5),
+  backgroundColor: alpha(theme.palette.background.paper, 0.4),
+  backdropFilter: "blur(10px)",
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  borderRadius: "16px",
+  height: "100%",
+  boxShadow: "none",
+}));
 
 export default function WinLoss({ ctx }: { ctx: Context }) {
   const { t } = useTranslation();
 
   return (
-    <Card elevation={10} sx={{ borderRadius: 2, height: "100%" }}>
-      <CardContent>
-        <Typography variant="h5" gutterBottom>
-          {t("Pages.Schoice.Backtest.winLossTitle")}
-        </Typography>
-        <Stack direction="row" spacing={2} justifyContent="space-between">
-          <Box>
-            <Typography variant="subtitle1" color="textSecondary">
-              {t("Pages.Schoice.Backtest.win")}
-            </Typography>
-            <Typography variant="h5">{ctx?.record.win}</Typography>
-          </Box>
-          <Box>
-            <Typography variant="subtitle1" color="textSecondary">
-              {t("Pages.Schoice.Backtest.loss")}
-            </Typography>
-            <Typography variant="h5">{ctx?.record.lose}</Typography>
-          </Box>
-          <Box>
-            <Typography variant="subtitle1" color="textSecondary">
-              {t("Pages.Schoice.Backtest.transactionCount")}
-            </Typography>
-            <Typography variant="h5">{ctx?.record.history.length}</Typography>
-          </Box>
-        </Stack>
-      </CardContent>
-    </Card>
+    <GlassPaper elevation={0}>
+      <Typography
+        variant="caption"
+        fontWeight={800}
+        color="text.secondary"
+        sx={{
+          textTransform: "uppercase",
+          mb: 2,
+          display: "block",
+          letterSpacing: "0.1em",
+        }}
+      >
+        {t("Pages.Schoice.Backtest.winLossTitle")}
+      </Typography>
+      <Stack direction="row" spacing={2} justifyContent="space-between">
+        <Box>
+          <Typography variant="body2" color="text.secondary" fontWeight={500}>
+            {t("Pages.Schoice.Backtest.win")}
+          </Typography>
+          <Typography variant="h5" fontWeight={900} color="success.main">
+            {ctx?.record.win}
+          </Typography>
+        </Box>
+        <Box>
+          <Typography variant="body2" color="text.secondary" fontWeight={500}>
+            {t("Pages.Schoice.Backtest.loss")}
+          </Typography>
+          <Typography variant="h5" fontWeight={900} color="error.main">
+            {ctx?.record.lose}
+          </Typography>
+        </Box>
+        <Box>
+          <Typography variant="body2" color="text.secondary" fontWeight={500}>
+            {t("Pages.Schoice.Backtest.transactionCount")}
+          </Typography>
+          <Typography variant="h5" fontWeight={900}>
+            {ctx?.record.history.length}
+          </Typography>
+        </Box>
+      </Stack>
+    </GlassPaper>
   );
 }
