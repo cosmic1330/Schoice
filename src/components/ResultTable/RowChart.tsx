@@ -16,6 +16,9 @@ import WeeklyKdLineChart from "./Charts/WeeklyKdLineChart";
 import WeeklyObvLineChart from "./Charts/WeeklyObvLineChart";
 import WeeklyOscLineChart from "./Charts/WeeklyOscLineChart";
 import WeeklyRsiLineChart from "./Charts/WeeklyRsiLineChart";
+import HourlyDmiLineChart from "./Charts/HourlyDmiLineChart";
+import DailyDmiLineChart from "./Charts/DailyDmiLineChart";
+import WeeklyDmiLineChart from "./Charts/WeeklyDmiLineChart";
 
 const RowChart = React.memo(({ row, t }: { row: any; t: string }) => {
   const { chartType } = useSchoiceStore();
@@ -38,6 +41,9 @@ const RowChart = React.memo(({ row, t }: { row: any; t: string }) => {
       {chartType === ChartType.HOURLY_BOLL && (
         <HourlyBollLineChart stock_id={row.stock_id} t={t} />
       )}
+      {chartType === ChartType.HOURLY_DMI && (
+        <HourlyDmiLineChart stock_id={row.stock_id} t={t} />
+      )}
 
       {/* Daily */}
       {chartType === ChartType.DAILY_KD && (
@@ -55,6 +61,10 @@ const RowChart = React.memo(({ row, t }: { row: any; t: string }) => {
       {chartType === ChartType.DAILY_BOLL && (
         <DailyBollLineChart stock_id={row.stock_id} t={t} />
       )}
+      {chartType === ChartType.DAILY_DMI && (
+        <DailyDmiLineChart stock_id={row.stock_id} t={t} />
+      )}
+
       {/* Weekly */}
       {chartType === ChartType.WEEKLY_KD && (
         <WeeklyKdLineChart stock_id={row.stock_id} t={t} />
@@ -70,6 +80,9 @@ const RowChart = React.memo(({ row, t }: { row: any; t: string }) => {
       )}
       {chartType === ChartType.WEEKLY_OSC && (
         <WeeklyOscLineChart stock_id={row.stock_id} t={t} />
+      )}
+      {chartType === ChartType.WEEKLY_DMI && (
+        <WeeklyDmiLineChart stock_id={row.stock_id} t={t} />
       )}
     </Box>
   );

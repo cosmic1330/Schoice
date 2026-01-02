@@ -44,7 +44,7 @@ export const ObvIndicatorColor: IndicatorColorType[] = [
     color: "#589bf3",
   },
   {
-    key: "obv_ma20",
+    key: "obv_ma10",
     color: "#ff7300",
   },
 ];
@@ -87,5 +87,20 @@ export const OscIndicatorColor: IndicatorColorType[] = [
   {
     key: "osc",
     color: "#589bf3",
+  },
+];
+
+export const DmiIndicatorColor: IndicatorColorType[] = [
+  {
+    key: "di_plus",
+    color: "#589bf3",
+  },
+  {
+    key: "di_minus",
+    color: "#63c762",
+  },
+  {
+    key: "adx",
+    color: "#ff7300",
   },
 ];

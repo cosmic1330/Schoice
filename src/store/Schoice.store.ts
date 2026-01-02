@@ -7,16 +7,19 @@ export enum ChartType {
   HOURLY_RSI = "小時RSI",
   HOURLY_OSC = "小時OSC",
   HOURLY_BOLL = "小時BOLL",
+  HOURLY_DMI = "小時DMI",
   DAILY_OBV = "日OBV",
   DAILY_KD = "日KD",
   DAILY_RSI = "日RSI",
   DAILY_OSC = "日OSC",
   DAILY_BOLL = "日BOLL",
+  DAILY_DMI = "日DMI",
   WEEKLY_KD = "週KD",
   WEEKLY_OBV = "週OBV",
   WEEKLY_RSI = "週RSI",
   WEEKLY_BOLL = "週BOLL",
   WEEKLY_OSC = "週OSC",
+  WEEKLY_DMI = "週DMI",
 }
 
 interface SchoiceState {
