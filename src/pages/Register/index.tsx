@@ -1,4 +1,4 @@
-import { alpha, Box, styled } from "@mui/material";
+import { alpha, Box, Stack, styled } from "@mui/material";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
 import ThemeToggle from "../../components/ThemeToggle";
 import Version from "../../components/Version";
@@ -67,8 +67,10 @@ const Register = () => {
   return (
     <Container>
       <Box sx={{ position: "absolute", top: 16, right: 16 }}>
-        <ThemeToggle />
-        <LanguageSwitcher />
+        <Stack direction="row" spacing={1}>
+          <ThemeToggle />
+          <LanguageSwitcher />
+        </Stack>
       </Box>
       <Version />
       <Content />

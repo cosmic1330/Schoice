@@ -19,7 +19,7 @@ import Detail from "./pages/Detail";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import useSchoiceStore from "./store/Schoice.store";
-import { getTheme } from "./utils/theme";
+import { getTheme } from "./theme";
 
 const AppRoutes = () => {
   return (

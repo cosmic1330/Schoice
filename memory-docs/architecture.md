@@ -16,7 +16,13 @@
     -   `pages/`: Feature-specific page components. Sub-directories (e.g., `Schoice`) can contain their own route components.
     -   `store/`: Zustand stores & @tauri-apps/plugin-store.
     -   `tools/`: like Error handle, http, i18n, supabase client.
+        -   `locales/`: i18n locales en & zh-TW.
+        -   `i18n.ts`: i18n configuration.
+        -   `supabase.ts`: supabase client.
+        -   `http.ts`: http client.
+        -   `error.ts`: error handle.
     -   `utils/`: Any helper functions
+    -   `theme.ts`: mui theme configuration.
     -   `types.ts`: Shared TypeScript definitions and interfaces for all components in project.
 
 -  `cloud_schema.sql`: Postgres schema for cloud database.

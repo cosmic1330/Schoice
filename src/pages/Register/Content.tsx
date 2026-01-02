@@ -54,7 +54,7 @@ const StyledCard = styled(Box)(({ theme }) => ({
 const TechLabel = styled(Typography)(({ theme }) => ({
   fontSize: "0.65rem",
   fontFamily: "monospace",
-  color: theme.palette.primary.contrastText,
+  color: theme.palette.text.primary,
   opacity: 0.6,
   textTransform: "uppercase",
   letterSpacing: "0.1em",
