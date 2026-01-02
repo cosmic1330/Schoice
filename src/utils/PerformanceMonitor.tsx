@@ -15,7 +15,6 @@ export const useRenderCount = (componentName: string) => {
 
   useEffect(() => {
     renderCounts.set(componentName, renderCount.current);
-    console.log(`🔄 ${componentName} rendered: ${renderCount.current} times`);
   });
 
   return renderCount.current;

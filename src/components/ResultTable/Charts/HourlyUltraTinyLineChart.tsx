@@ -21,7 +21,6 @@ const HourlyUltraTinyLineChart = ({
     ).join(
       ","
     )} FROM hourly_deal LEFT JOIN hourly_skills ON hourly_deal.ts = hourly_skills.ts AND hourly_deal.stock_id = hourly_skills.stock_id WHERE hourly_deal.stock_id = '${stock_id}' AND hourly_deal.ts < '${t} 14:00:00+08' ORDER BY hourly_deal.ts DESC LIMIT ${hourly_count}`;
-    console.log(sqlQuery);
     if (!db) return;
 
     db?.select(sqlQuery).then((res: any) => {

@@ -229,7 +229,7 @@ export default function useHighConcurrencyDeals() {
       await new Promise((resolve) => setTimeout(resolve, delay));
 
       // case 1-4: 寫入股票代號資料
-      try {
+      try { 
         sqliteDataManager.saveStockTable(stock);
       } catch (error) {}
 

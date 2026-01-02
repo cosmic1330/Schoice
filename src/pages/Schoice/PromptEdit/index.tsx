@@ -2,11 +2,13 @@ import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import EditIcon from "@mui/icons-material/Edit";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import {
+  Alert,
   Box,
   Button,
   Container,
   Grid,
   Paper,
+  Snackbar,
   Stack,
   Typography,
 } from "@mui/material";
@@ -58,6 +60,11 @@ export default function PromptEdit() {
   const [hourlyPrompts, setHourlyPrompts] = useState<Prompts>([]);
   const [name, setName] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">(
+    "success"
+  );
   const navigate = useNavigate();
   const {
     hour: hourlyData,
@@ -82,6 +89,11 @@ export default function PromptEdit() {
       );
       setSelect({ prompt_id: id, type: select.type });
       navigate("/schoice");
+    } catch (error) {
+      console.error(error);
+      setSnackbarMessage(t("Common.error"));
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     } finally {
       setIsEditing(false);
     }
@@ -103,6 +115,16 @@ export default function PromptEdit() {
 
   const handleCancel = () => {
     navigate("/schoice");
+  };
+
+  const handleCloseSnackbar = (
+    event?: React.SyntheticEvent | Event,
+    reason?: string
+  ) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setSnackbarOpen(false);
   };
 
   useEffect(() => {
@@ -264,6 +286,19 @@ export default function PromptEdit() {
           </Grid>
         </Grid>
       </Container>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbarSeverity}
+          sx={{ width: "100%" }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

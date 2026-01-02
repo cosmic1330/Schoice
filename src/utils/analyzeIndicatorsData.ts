@@ -57,7 +57,6 @@ export function analyzeNasdaqIndicatorsData(
     if (timeType === IndicatorsDateTimeType.Date) {
       return dateFormat(item * 1000, Mode.TimeStampToNumber); // 只保留日期部分
     } else {
-      console.log("item", item);
       return formatDateTime(item * 1000); // 保留完整的日期時間
     }
   });

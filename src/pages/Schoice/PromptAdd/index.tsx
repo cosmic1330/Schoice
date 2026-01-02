@@ -2,11 +2,13 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import {
+  Alert,
   Box,
   Button,
   Container,
   Grid,
   Paper,
+  Snackbar,
   Stack,
   Typography,
 } from "@mui/material";
@@ -61,6 +63,11 @@ export default function PromptAdd() {
 
   const [name, setName] = useState(nanoid());
   const [isCreating, setIsCreating] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">(
+    "success"
+  );
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const promptType = searchParams.get("promptType");
@@ -89,6 +96,11 @@ export default function PromptAdd() {
           type: promptType === "bull" ? PromptType.BULL : PromptType.BEAR,
         });
       navigate("/schoice");
+    } catch (error) {
+      console.error(error);
+      setSnackbarMessage(t("Common.error"));
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     } finally {
       setIsCreating(false);
     }
@@ -99,6 +111,16 @@ export default function PromptAdd() {
       ...prev,
       [type]: prev[type].filter((_, i) => i !== index),
     }));
+  };
+
+  const handleCloseSnackbar = (
+    event?: React.SyntheticEvent | Event,
+    reason?: string
+  ) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setSnackbarOpen(false);
   };
 
   const promptCategories: { type: keyof PromptValue; title: string }[] = [
@@ -253,6 +275,19 @@ export default function PromptAdd() {
           </Grid>
         </Grid>
       </Container>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbarSeverity}
+          sx={{ width: "100%" }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

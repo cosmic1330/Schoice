@@ -74,10 +74,6 @@ export function detectGaps(
 
       // 額外檢查：確保這真的是一個跳空（不是數據錯誤）
       if (gapSizePercent >= minGapPercent && gapSize > 0.01) {
-        // 至少 0.01 的價差
-        console.log(
-          `檢測到向上跳空: ${current.t}, 前日高:${previous.h}, 當日低:${current.l}, 缺口:${gapSize}`
-        );
         gaps.push({
           date: current.t,
           type: GapType.UP,
@@ -99,10 +95,6 @@ export function detectGaps(
 
       // 額外檢查：確保這真的是一個跳空（不是數據錯誤）
       if (gapSizePercent >= minGapPercent && gapSize > 0.01) {
-        // 至少 0.01 的價差
-        console.log(
-          `檢測到向下跳空: ${current.t}, 前日低:${previous.l}, 當日高:${current.h}, 缺口:${gapSize}`
-        );
         gaps.push({
           date: current.t,
           type: GapType.DOWN,
@@ -119,7 +111,6 @@ export function detectGaps(
     }
   }
 
-  console.log(`總共檢測到 ${gaps.length} 個缺口`);
   return gaps;
 }
 
