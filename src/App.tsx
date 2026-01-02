@@ -12,11 +12,14 @@ import PromptList from "./pages/Schoice/PromptList";
 import Setting from "./pages/Schoice/Setting";
 import Trash from "./pages/Schoice/Trash";
 
-import { Box, CssBaseline } from "@mui/material";
+import { Box, CssBaseline, ThemeProvider, useMediaQuery } from "@mui/material";
+import { useMemo } from "react";
 import "./App.css";
 import Detail from "./pages/Detail";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import useSchoiceStore from "./store/Schoice.store";
+import { getTheme } from "./utils/theme";
 
 const AppRoutes = () => {
   return (
@@ -43,24 +46,35 @@ const AppRoutes = () => {
 };
 
 function App() {
+  const { theme } = useSchoiceStore();
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+
+  const themeConfig = useMemo(() => {
+    const mode =
+      (theme as "light" | "dark") || (prefersDarkMode ? "dark" : "light");
+    return getTheme(mode);
+  }, [theme, prefersDarkMode]);
+
   return (
     <UserProvider>
-      <CssBaseline />
-      <Box sx={{ width: "100%" }}>
-        <AppRoutes />
-        <ToastContainer
-          position="top-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick={false}
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="dark"
-        />
-      </Box>
+      <ThemeProvider theme={themeConfig}>
+        <CssBaseline />
+        <Box sx={{ width: "100%" }}>
+          <AppRoutes />
+          <ToastContainer
+            position="top-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick={false}
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme={themeConfig.palette.mode}
+          />
+        </Box>
+      </ThemeProvider>
     </UserProvider>
   );
 }

@@ -1,19 +1,10 @@
-import {
-  Box,
-  CircularProgress,
-  createTheme,
-  styled,
-  ThemeProvider,
-  useMediaQuery,
-} from "@mui/material";
-import CssBaseline from "@mui/material/CssBaseline";
-import { useEffect, useMemo, useState } from "react";
+import { Box, CircularProgress, styled } from "@mui/material";
+import { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router";
 import { DatabaseContext } from "../../context/DatabaseContext";
 import { useUser } from "../../context/UserContext";
 import useDatabase from "../../hooks/useDatabase";
 import useDatabaseDates from "../../hooks/useDatabaseDates";
-import useSchoiceStore from "../../store/Schoice.store";
 import { supabase } from "../../tools/supabase";
 import Header from "./layout/Header";
 import SideBar from "./layout/Sidebar";
@@ -30,6 +21,15 @@ const Main = styled(Box)`
     "sidebar header "
     "sidebar  page  ";
 
+  transition: background 0.5s ease;
+  background: ${({ theme }) =>
+    theme.palette.mode === "light"
+      ? `linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%)`
+      : `radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+         radial-gradient(at 50% 0%, hsla(225,39%,25%,1) 0, transparent 50%), 
+         radial-gradient(at 100% 0%, hsla(339,49%,25%,1) 0, transparent 50%),
+         #0F172A`};
+
   // mobile
   @media screen and (max-width: 600px) {
     grid-template-columns: 1fr;
@@ -37,7 +37,6 @@ const Main = styled(Box)`
     grid-template-areas:
       "sidebar"
       "header"
-      "page"
       "page";
   }
 `;
@@ -48,7 +47,6 @@ function Schoice() {
   const [isAppReady, setIsAppReady] = useState(false);
   const navigate = useNavigate();
   const { dates, fetchDates, isLoading } = useDatabaseDates(db);
-  const { theme } = useSchoiceStore();
 
   // 檢查是否所有依賴都已準備好
   const userReady = !loading && session !== null;
@@ -58,20 +56,6 @@ function Schoice() {
   const handleReady = () => {
     setIsAppReady(true);
   };
-
-  // 監聽系統的深色模式設定
-  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
-
-  // 動態設定主題
-  const themeConfig = useMemo(
-    () =>
-      createTheme({
-        palette: {
-          mode: (theme as any) || (prefersDarkMode ? "dark" : "light"),
-        },
-      }),
-    [prefersDarkMode, theme]
-  );
 
   useEffect(() => {
     // 檢測是否登入
@@ -128,15 +112,11 @@ function Schoice() {
         isSwitching,
       }}
     >
-      <ThemeProvider theme={themeConfig}>
-        <CssBaseline />
-        <Main>
-          <SideBar />
-          <Header />
-          <Outlet />
-        </Main>
-        {/* <DatabasePerformanceDebugger /> */}
-      </ThemeProvider>
+      <Main>
+        <SideBar />
+        <Header />
+        <Outlet />
+      </Main>
     </DatabaseContext.Provider>
   );
 }
