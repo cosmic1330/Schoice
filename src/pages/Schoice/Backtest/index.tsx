@@ -8,10 +8,10 @@ import { BuyPrice, Context, SellPrice } from "@ch20026103/backtest-lib";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
+import Inventory2Icon from "@mui/icons-material/Inventory2";
 import PlayCircleFilledWhiteIcon from "@mui/icons-material/PlayCircleFilledWhite";
 import SettingsIcon from "@mui/icons-material/Settings";
 import StopCircleIcon from "@mui/icons-material/StopCircle";
-import Inventory2Icon from "@mui/icons-material/Inventory2";
 import {
   Box,
   Button,
@@ -206,216 +206,226 @@ export default function Backtest() {
   }, []);
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Box mb={4}>
-        <Stack direction="row" alignItems="center" spacing={2} mb={1}>
-          <AssessmentIcon color="primary" sx={{ fontSize: 36 }} />
+    <Box
+      sx={{
+        height: "100%",
+        overflowY: "auto",
+        "&::-webkit-scrollbar": { display: "none" },
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+      }}
+    >
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Box mb={4}>
+          <Stack direction="row" alignItems="center" spacing={2} mb={1}>
+            <AssessmentIcon color="primary" sx={{ fontSize: 36 }} />
+            <Typography
+              variant="h4"
+              fontWeight={900}
+              sx={{ letterSpacing: "-0.02em" }}
+            >
+              {t("Pages.Schoice.Backtest.title")}
+            </Typography>
+          </Stack>
           <Typography
-            variant="h4"
-            fontWeight={900}
-            sx={{ letterSpacing: "-0.02em" }}
+            variant="body1"
+            color="text.secondary"
+            sx={{ opacity: 0.8 }}
           >
-            {t("Pages.Schoice.Backtest.title")}
+            {t("Pages.Schoice.Backtest.subtitle")}
           </Typography>
-        </Stack>
-        <Typography
-          variant="body1"
-          color="text.secondary"
-          sx={{ opacity: 0.8 }}
-        >
-          {t("Pages.Schoice.Backtest.subtitle")}
-        </Typography>
-      </Box>
+        </Box>
 
-      <GlassCard elevation={0} sx={{ mb: 4 }}>
-        <Grid container spacing={4}>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <ConfigHeader>
-              <AddCircleOutlineIcon fontSize="small" />
-              {t("Pages.Schoice.Backtest.bullStrategy")}
-            </ConfigHeader>
-            <Select
-              fullWidth
-              value={selectedBull}
-              onChange={handleBullChange}
-              size="small"
-              multiple
-              displayEmpty
-              renderValue={(selected) => {
-                if ((selected as string[]).length === 0) {
-                  return (
-                    <Typography color="text.disabled" variant="body2">
-                      {t("Pages.Schoice.Backtest.favorite")}
-                    </Typography>
-                  );
-                }
-                return (selected as string[])
-                  .map((key) => bulls[key]?.name)
-                  .join(", ");
+        <GlassCard elevation={0} sx={{ mb: 4 }}>
+          <Grid container spacing={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <ConfigHeader>
+                <AddCircleOutlineIcon fontSize="small" />
+                {t("Pages.Schoice.Backtest.bullStrategy")}
+              </ConfigHeader>
+              <Select
+                fullWidth
+                value={selectedBull}
+                onChange={handleBullChange}
+                size="small"
+                multiple
+                displayEmpty
+                renderValue={(selected) => {
+                  if ((selected as string[]).length === 0) {
+                    return (
+                      <Typography color="text.disabled" variant="body2">
+                        {t("Pages.Schoice.Backtest.favorite")}
+                      </Typography>
+                    );
+                  }
+                  return (selected as string[])
+                    .map((key) => bulls[key]?.name)
+                    .join(", ");
+                }}
+                sx={{ borderRadius: "8px" }}
+              >
+                {Object.keys(bulls).map((key) => (
+                  <MenuItem key={key} value={key}>
+                    {bulls[key].name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 4 }}>
+              <ConfigHeader>
+                <StopCircleIcon fontSize="small" />
+                {t("Pages.Schoice.Backtest.bearStrategy")}
+              </ConfigHeader>
+              <Select
+                value={selectedBear}
+                onChange={handleBearChange}
+                size="small"
+                fullWidth
+                multiple
+                displayEmpty
+                renderValue={(selected) => {
+                  if ((selected as string[]).length === 0) {
+                    return (
+                      <Typography color="text.disabled" variant="body2">
+                        {t("Pages.Schoice.Backtest.favorite")}
+                      </Typography>
+                    );
+                  }
+                  return (selected as string[])
+                    .map((key) => bears[key]?.name)
+                    .join(", ");
+                }}
+                sx={{ borderRadius: "8px" }}
+              >
+                {Object.keys(bears).map((key) => (
+                  <MenuItem key={key} value={key}>
+                    {bears[key].name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </Grid>
+
+            <Grid
+              size={{
+                xs: 12,
+                md: 4,
               }}
-              sx={{ borderRadius: "8px" }}
             >
-              {Object.keys(bulls).map((key) => (
-                <MenuItem key={key} value={key}>
-                  {bulls[key].name}
+              <ConfigHeader>
+                <Inventory2Icon fontSize="small" sx={{ fontSize: 16 }} />
+                {t("Pages.Schoice.Backtest.source")}
+              </ConfigHeader>
+              <Select
+                value={selectedStocks}
+                onChange={handleStocksChange}
+                size="small"
+                fullWidth
+                sx={{ borderRadius: "8px" }}
+              >
+                <MenuItem value={SelectedStocks.WatchStock}>
+                  {t("Pages.Schoice.Backtest.favorite")}
                 </MenuItem>
-              ))}
-            </Select>
-          </Grid>
+                {filterStocks && (
+                  <MenuItem value={SelectedStocks.FilterStocks}>
+                    {t("Pages.Schoice.Backtest.filter")}
+                  </MenuItem>
+                )}
+              </Select>
+            </Grid>
 
-          <Grid size={{ xs: 12, md: 4 }}>
-            <ConfigHeader>
-              <StopCircleIcon fontSize="small" />
-              {t("Pages.Schoice.Backtest.bearStrategy")}
-            </ConfigHeader>
-            <Select
-              value={selectedBear}
-              onChange={handleBearChange}
-              size="small"
-              fullWidth
-              multiple
-              displayEmpty
-              renderValue={(selected) => {
-                if ((selected as string[]).length === 0) {
-                  return (
-                    <Typography color="text.disabled" variant="body2">
-                      {t("Pages.Schoice.Backtest.favorite")}
-                    </Typography>
-                  );
-                }
-                return (selected as string[])
-                  .map((key) => bears[key]?.name)
-                  .join(", ");
-              }}
-              sx={{ borderRadius: "8px" }}
-            >
-              {Object.keys(bears).map((key) => (
-                <MenuItem key={key} value={key}>
-                  {bears[key].name}
-                </MenuItem>
-              ))}
-            </Select>
-          </Grid>
+            <Grid size={12}>
+              <Divider sx={{ opacity: 0.1, my: 1 }} />
+              <ConfigHeader sx={{ mt: 2 }}>
+                <SettingsIcon fontSize="small" />
+                {t("Pages.Schoice.Backtest.options")}
+              </ConfigHeader>
+              <Options {...{ isRandom, setIsRandom, options, setOptions }} />
+            </Grid>
 
-          <Grid
-            size={{
-              xs: 12,
-              md: 4,
-            }}
-          >
-            <ConfigHeader>
-              <Inventory2Icon fontSize="small" sx={{ fontSize: 16 }} />
-              {t("Pages.Schoice.Backtest.source")}
-            </ConfigHeader>
-            <Select
-              value={selectedStocks}
-              onChange={handleStocksChange}
-              size="small"
-              fullWidth
-              sx={{ borderRadius: "8px" }}
-            >
-              <MenuItem value={SelectedStocks.WatchStock}>
-                {t("Pages.Schoice.Backtest.favorite")}
-              </MenuItem>
-              {filterStocks && (
-                <MenuItem value={SelectedStocks.FilterStocks}>
-                  {t("Pages.Schoice.Backtest.filter")}
-                </MenuItem>
-              )}
-            </Select>
+            <Grid size={12}>
+              <Stack direction="row" spacing={2} justifyContent="center" mt={2}>
+                {!ctx && status === Status.Idle && (
+                  <Button
+                    variant="contained"
+                    onClick={createContext}
+                    sx={{
+                      borderRadius: "10px",
+                      px: 4,
+                      py: 1,
+                      fontWeight: 700,
+                      textTransform: "none",
+                      boxShadow: "none",
+                      "&:hover": { boxShadow: "none" },
+                    }}
+                  >
+                    {t("Pages.Schoice.Backtest.create")}
+                  </Button>
+                )}
+                {ctx && status === Status.Idle && (
+                  <Button
+                    variant="contained"
+                    color="success"
+                    startIcon={<PlayCircleFilledWhiteIcon />}
+                    onClick={run}
+                    sx={{
+                      borderRadius: "10px",
+                      px: 4,
+                      py: 1,
+                      fontWeight: 700,
+                      textTransform: "none",
+                      boxShadow: "none",
+                      "&:hover": { boxShadow: "none" },
+                    }}
+                  >
+                    {t("Pages.Schoice.Backtest.run")}
+                  </Button>
+                )}
+                {ctx && status === Status.Running && (
+                  <Button
+                    variant="outlined"
+                    onClick={stop}
+                    sx={{
+                      borderRadius: "10px",
+                      px: 4,
+                      py: 1,
+                      fontWeight: 700,
+                      textTransform: "none",
+                    }}
+                  >
+                    {t("Pages.Schoice.Backtest.stop")}
+                  </Button>
+                )}
+                {ctx && (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={remove}
+                    startIcon={<DeleteSweepIcon />}
+                    sx={{
+                      borderRadius: "10px",
+                      px: 4,
+                      py: 1,
+                      fontWeight: 700,
+                      textTransform: "none",
+                    }}
+                  >
+                    {t("Pages.Schoice.Backtest.remove")}
+                  </Button>
+                )}
+              </Stack>
+            </Grid>
           </Grid>
+        </GlassCard>
 
-          <Grid size={12}>
-            <Divider sx={{ opacity: 0.1, my: 1 }} />
-            <ConfigHeader sx={{ mt: 2 }}>
-              <SettingsIcon fontSize="small" />
-              {t("Pages.Schoice.Backtest.options")}
-            </ConfigHeader>
-            <Options {...{ isRandom, setIsRandom, options, setOptions }} />
-          </Grid>
-
-          <Grid size={12}>
-            <Stack direction="row" spacing={2} justifyContent="center" mt={2}>
-              {!ctx && status === Status.Idle && (
-                <Button
-                  variant="contained"
-                  onClick={createContext}
-                  sx={{
-                    borderRadius: "10px",
-                    px: 4,
-                    py: 1,
-                    fontWeight: 700,
-                    textTransform: "none",
-                    boxShadow: "none",
-                    "&:hover": { boxShadow: "none" },
-                  }}
-                >
-                  {t("Pages.Schoice.Backtest.create")}
-                </Button>
-              )}
-              {ctx && status === Status.Idle && (
-                <Button
-                  variant="contained"
-                  color="success"
-                  startIcon={<PlayCircleFilledWhiteIcon />}
-                  onClick={run}
-                  sx={{
-                    borderRadius: "10px",
-                    px: 4,
-                    py: 1,
-                    fontWeight: 700,
-                    textTransform: "none",
-                    boxShadow: "none",
-                    "&:hover": { boxShadow: "none" },
-                  }}
-                >
-                  {t("Pages.Schoice.Backtest.run")}
-                </Button>
-              )}
-              {ctx && status === Status.Running && (
-                <Button
-                  variant="outlined"
-                  onClick={stop}
-                  sx={{
-                    borderRadius: "10px",
-                    px: 4,
-                    py: 1,
-                    fontWeight: 700,
-                    textTransform: "none",
-                  }}
-                >
-                  {t("Pages.Schoice.Backtest.stop")}
-                </Button>
-              )}
-              {ctx && (
-                <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={remove}
-                  startIcon={<DeleteSweepIcon />}
-                  sx={{
-                    borderRadius: "10px",
-                    px: 4,
-                    py: 1,
-                    fontWeight: 700,
-                    textTransform: "none",
-                  }}
-                >
-                  {t("Pages.Schoice.Backtest.remove")}
-                </Button>
-              )}
-            </Stack>
-          </Grid>
-        </Grid>
-      </GlassCard>
-
-      {ctx && (
-        <Stack spacing={4}>
-          <Progress />
-          <Divider sx={{ opacity: 0.1 }} />
-          <BacktestResult ctx={ctx} />
-        </Stack>
-      )}
-    </Container>
+        {ctx && (
+          <Stack spacing={4}>
+            <Progress />
+            <Divider sx={{ opacity: 0.1 }} />
+            <BacktestResult ctx={ctx} />
+          </Stack>
+        )}
+      </Container>
+    </Box>
   );
 }

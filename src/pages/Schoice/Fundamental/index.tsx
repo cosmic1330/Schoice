@@ -127,179 +127,192 @@ export default function Fundamental() {
   };
 
   return (
-    <Grid container spacing={3} p={3}>
-      <Grid size={{ xs: 12, md: 7 }}>
-        <ConditionsList
-          {...{
-            prompts,
-            handleDeleteCondition,
-            handleEditCondition,
-          }}
-        />
-      </Grid>
-      <Grid size={{ xs: 12, md: 5 }}>
-        <GlassCard elevation={0}>
-          <Typography
-            variant="h5"
-            gutterBottom
-            align="center"
-            fontWeight={800}
-            sx={{
-              mb: 4,
-              background: (theme) =>
-                `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
+    <Box
+      sx={{
+        height: "100%",
+        overflowY: "auto",
+        "&::-webkit-scrollbar": { display: "none" },
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+      }}
+    >
+      <Grid container spacing={3} p={3}>
+        <Grid size={{ xs: 12, md: 7 }}>
+          <ConditionsList
+            {...{
+              prompts,
+              handleDeleteCondition,
+              handleEditCondition,
             }}
-          >
-            {t("Pages.Schoice.Fundamental.title")}
-          </Typography>
-          <Stack spacing={3}>
-            <Box
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 5 }}>
+          <GlassCard elevation={0}>
+            <Typography
+              variant="h5"
+              gutterBottom
+              align="center"
+              fontWeight={800}
               sx={{
-                display: "grid",
-                gridTemplateColumns: "1fr",
-                gap: "20px",
+                mb: 4,
+                background: (theme) =>
+                  `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
               }}
             >
-              <Box>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: "text.secondary",
-                    fontWeight: 700,
-                    mb: 1,
-                    display: "block",
-                  }}
-                >
-                  {t("Pages.Schoice.Fundamental.category")}
-                </Typography>
-                <Select
-                  value={selects.indicator}
-                  onChange={handleIndicatorChange}
-                  name="indicator"
-                  fullWidth
-                  size="small"
-                >
-                  {indicators.map((indicator) => (
-                    <MenuItem key={indicator} value={indicator}>
-                      {indicator}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </Box>
-
-              <Box>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: "text.secondary",
-                    fontWeight: 700,
-                    mb: 1,
-                    display: "block",
-                  }}
-                >
-                  {t("Pages.Schoice.Fundamental.operator")}
-                </Typography>
-                <Select
-                  value={selects.operator}
-                  onChange={handleChange}
-                  name="operator"
-                  fullWidth
-                  size="small"
-                >
-                  {operators.map((op) => (
-                    <MenuItem key={op} value={op}>
-                      {op}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </Box>
-
-              <Box>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: "text.secondary",
-                    fontWeight: 700,
-                    mb: 1,
-                    display: "block",
-                  }}
-                >
-                  {t("Pages.Schoice.Fundamental.value")}
-                </Typography>
-                {open ? (
-                  <TextField
-                    name="value"
-                    type="number"
-                    fullWidth
-                    size="small"
-                    onChange={handleValueChange}
-                    value={selects.value}
-                    autoFocus
-                  />
-                ) : (
+              {t("Pages.Schoice.Fundamental.title")}
+            </Typography>
+            <Stack spacing={3}>
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr",
+                  gap: "20px",
+                }}
+              >
+                <Box>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "text.secondary",
+                      fontWeight: 700,
+                      mb: 1,
+                      display: "block",
+                    }}
+                  >
+                    {t("Pages.Schoice.Fundamental.category")}
+                  </Typography>
                   <Select
-                    value={selects.value}
-                    onChange={handleChange}
-                    name="value"
+                    value={selects.indicator}
+                    onChange={handleIndicatorChange}
+                    name="indicator"
                     fullWidth
                     size="small"
                   >
-                    {valuesByIndicator[selects.indicator].map((value) => (
-                      <MenuItem key={value} value={value}>
-                        {value}
+                    {indicators.map((indicator) => (
+                      <MenuItem key={indicator} value={indicator}>
+                        {indicator}
                       </MenuItem>
                     ))}
                   </Select>
-                )}
-              </Box>
-            </Box>
+                </Box>
 
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={open}
-                    onChange={() => setOpen((value) => !value)}
-                    size="small"
-                  />
-                }
-                label={
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    {t("Pages.Schoice.Fundamental.setNumber")}
+                <Box>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "text.secondary",
+                      fontWeight: 700,
+                      mb: 1,
+                      display: "block",
+                    }}
+                  >
+                    {t("Pages.Schoice.Fundamental.operator")}
                   </Typography>
-                }
-              />
+                  <Select
+                    value={selects.operator}
+                    onChange={handleChange}
+                    name="operator"
+                    fullWidth
+                    size="small"
+                  >
+                    {operators.map((op) => (
+                      <MenuItem key={op} value={op}>
+                        {op}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </Box>
 
-              <Tooltip title={t("Pages.Schoice.Fundamental.addCondition")}>
-                <Button
-                  startIcon={<AddCircleIcon />}
-                  onClick={handleAddCondition}
-                  variant="contained"
-                  sx={{
-                    borderRadius: "10px",
-                    px: 3,
-                    boxShadow: (theme) =>
-                      `0 4px 14px 0 ${alpha(theme.palette.primary.main, 0.3)}`,
-                  }}
-                >
-                  {t("Pages.Schoice.Fundamental.addCondition")}
-                </Button>
-              </Tooltip>
-            </Box>
-          </Stack>
-        </GlassCard>
+                <Box>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "text.secondary",
+                      fontWeight: 700,
+                      mb: 1,
+                      display: "block",
+                    }}
+                  >
+                    {t("Pages.Schoice.Fundamental.value")}
+                  </Typography>
+                  {open ? (
+                    <TextField
+                      name="value"
+                      type="number"
+                      fullWidth
+                      size="small"
+                      onChange={handleValueChange}
+                      value={selects.value}
+                      autoFocus
+                    />
+                  ) : (
+                    <Select
+                      value={selects.value}
+                      onChange={handleChange}
+                      name="value"
+                      fullWidth
+                      size="small"
+                    >
+                      {valuesByIndicator[selects.indicator].map((value) => (
+                        <MenuItem key={value} value={value}>
+                          {value}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                </Box>
+              </Box>
+
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={open}
+                      onChange={() => setOpen((value) => !value)}
+                      size="small"
+                    />
+                  }
+                  label={
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {t("Pages.Schoice.Fundamental.setNumber")}
+                    </Typography>
+                  }
+                />
+
+                <Tooltip title={t("Pages.Schoice.Fundamental.addCondition")}>
+                  <Button
+                    startIcon={<AddCircleIcon />}
+                    onClick={handleAddCondition}
+                    variant="contained"
+                    sx={{
+                      borderRadius: "10px",
+                      px: 3,
+                      boxShadow: (theme) =>
+                        `0 4px 14px 0 ${alpha(
+                          theme.palette.primary.main,
+                          0.3
+                        )}`,
+                    }}
+                  >
+                    {t("Pages.Schoice.Fundamental.addCondition")}
+                  </Button>
+                </Tooltip>
+              </Box>
+            </Stack>
+          </GlassCard>
+        </Grid>
+        <Grid size={12}>
+          <Box sx={{ mt: 2 }}>
+            <FundamentalResult />
+          </Box>
+        </Grid>
       </Grid>
-      <Grid size={12}>
-        <Box sx={{ mt: 2 }}>
-          <FundamentalResult />
-        </Box>
-      </Grid>
-    </Grid>
+    </Box>
   );
 }

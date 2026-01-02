@@ -36,3 +36,37 @@
 
 - TypeScript 類型錯誤已消除。
 - 確保按下 Enter 鍵或點擊按鈕均能觸發表單提交。
+
+---
+
+## 讓 PromptAdd 頁面內容可捲動但不顯示卷軸 (2026-01-02)
+
+### 擬議變更
+
+- 在 `src/pages/Schoice/PromptAdd/index.tsx` 中使用 `Box` 包裹 `Container`。
+- 設定 `Box` 的高度為 `100%` 並開啟 `overflowY: "auto"`。
+- 添加隱藏卷軸的 CSS 樣式 (針對 Webkit, Firefox, IE/Edge)。
+
+### 驗證計畫 ✅
+
+- 頁面內容超出視窗時可捲動。
+- 捲動時看不到卷軸。
+
+---
+
+## 讓其他頁面內容可捲動但不顯示卷軸 (2026-01-02)
+
+### 擬議變更
+
+- 為以下頁面添加 `Box` 包裹 `Container`，並設定 `height: 100%`, `overflowY: "auto"` 以及隱藏卷軸樣式：
+  - `src/pages/Schoice/PromptEdit/index.tsx`
+  - `src/pages/Schoice/Setting/index.tsx`
+  - `src/pages/Schoice/Favorite/index.tsx`
+  - `src/pages/Schoice/Fundamental/index.tsx`
+  - `src/pages/Schoice/Backtest/index.tsx`
+  - `src/pages/Schoice/Trash/index.tsx`
+
+### 驗證計畫 ✅
+
+- 確保所有修改的頁面在內容超出時可捲動。
+- 確保所有頁面捲動時不顯示卷軸。

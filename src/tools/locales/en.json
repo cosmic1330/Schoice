@@ -166,7 +166,8 @@
         "daily": "Daily",
         "weekly": "Weekly",
         "timeFrame": "Time Frame",
-        "customValue": "Custom Value"
+        "customValue": "Custom Value",
+        "newCondition": "Create New Condition"
       },
       "PromptList": {
         "tabs": {

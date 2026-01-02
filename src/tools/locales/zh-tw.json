@@ -165,7 +165,8 @@
         "daily": "日線",
         "weekly": "週線",
         "timeFrame": "時間週期",
-        "customValue": "自定義數值"
+        "customValue": "自定義數值",
+        "newCondition": "建立新條件"
       },
       "PromptList": {
         "tabs": {

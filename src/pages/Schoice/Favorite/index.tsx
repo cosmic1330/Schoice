@@ -76,45 +76,55 @@ export default function Favorite() {
   }, [watchStocks, query]);
 
   return (
-    <Container maxWidth="xl">
-      <Grid container spacing={4}>
-        <Grid size={12}>
-          <GlassCard elevation={0}>
-            <Box mb={4}>
-              <Typography
-                variant="h4"
-                fontWeight={800}
-                sx={{
-                  background: (theme) =>
-                    `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  mb: 1,
-                }}
-              >
-                {t("Pages.Schoice.Favorite.title")}
-              </Typography>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                fontWeight={500}
-              >
-                {t("Pages.Schoice.Favorite.alarmCompare")}
-              </Typography>
-            </Box>
+    <Box
+      sx={{
+        height: "100%",
+        overflowY: "auto",
+        "&::-webkit-scrollbar": { display: "none" },
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+      }}
+    >
+      <Container maxWidth="xl">
+        <Grid container spacing={4}>
+          <Grid size={12}>
+            <GlassCard elevation={0}>
+              <Box mb={4}>
+                <Typography
+                  variant="h4"
+                  fontWeight={800}
+                  sx={{
+                    background: (theme) =>
+                      `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    mb: 1,
+                  }}
+                >
+                  {t("Pages.Schoice.Favorite.title")}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  fontWeight={500}
+                >
+                  {t("Pages.Schoice.Favorite.alarmCompare")}
+                </Typography>
+              </Box>
 
-            <Box sx={{ mb: 4 }}>
-              <Alarm stocks={stocks} />
-            </Box>
+              <Box sx={{ mb: 4 }}>
+                <Alarm stocks={stocks} />
+              </Box>
 
-            <Box sx={{ mb: 4 }}>
-              <InsertFavorite />
-            </Box>
+              <Box sx={{ mb: 4 }}>
+                <InsertFavorite />
+              </Box>
 
-            <ResultTable result={stocks} type={ActionButtonType.Decrease} />
-          </GlassCard>
+              <ResultTable result={stocks} type={ActionButtonType.Decrease} />
+            </GlassCard>
+          </Grid>
         </Grid>
-      </Grid>
-    </Container>
+      </Container>
+    </Box>
   );
 }
