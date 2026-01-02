@@ -167,6 +167,46 @@
         "weekly": "Weekly",
         "timeFrame": "Time Frame",
         "customValue": "Custom Value"
+      },
+      "PromptList": {
+        "tabs": {
+          "bullish": "BULLISH",
+          "bearish": "BEARISH"
+        },
+        "list": {
+          "addNew": "Add New Strategy"
+        },
+        "content": {
+          "unSelect": "[ Please Select a Strategy ]",
+          "dataUnavailable": "[ Data Unavailable ]",
+          "updateHint": "Please click the Update button to download the latest data",
+          "strategyConfiguration": "STRATEGY CONFIGURATION",
+          "noStrategySelected": "No Strategy Selected",
+          "editStrategy": "Edit Strategy",
+          "exportJson": "Export JSON",
+          "removeAlarm": "Remove Alarm",
+          "addAlarm": "Add Alarm",
+          "deleteStrategy": "Delete Strategy"
+        },
+        "logic": {
+          "title": "STRATEGY LOGIC",
+          "hourly": "Hourly Conditions",
+          "daily": "Daily Conditions",
+          "weekly": "Weekly Conditions",
+          "noHourly": "No hourly rules defined",
+          "noDaily": "No daily rules defined",
+          "noWeekly": "No weekly rules defined"
+        },
+        "messages": {
+          "copySuccess": "Copy Success!",
+          "copyError": "Copy Failed",
+          "selectStrategyFirst": "Please select a strategy",
+          "addAlarmSuccess": "Alarm added successfully",
+          "addAlarmError": "Failed to add alarm",
+          "removeAlarmSuccess": "Alarm removed successfully",
+          "removeAlarmError": "Failed to remove alarm",
+          "noAlarmFound": "No alarm found"
+        }
       }
     }
   },

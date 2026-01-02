@@ -166,6 +166,46 @@
         "weekly": "週線",
         "timeFrame": "時間週期",
         "customValue": "自定義數值"
+      },
+      "PromptList": {
+        "tabs": {
+          "bullish": "多方",
+          "bearish": "空方"
+        },
+        "list": {
+          "addNew": "新增策略"
+        },
+        "content": {
+          "unSelect": "[ 請選擇一個策略 ]",
+          "dataUnavailable": "[ 暫無數據 ]",
+          "updateHint": "請先點選右上角 Update 按鈕，下載最新交易資料",
+          "strategyConfiguration": "策略配置",
+          "noStrategySelected": "未選擇策略",
+          "editStrategy": "編輯策略",
+          "exportJson": "匯出 JSON",
+          "removeAlarm": "移除告警",
+          "addAlarm": "加入告警",
+          "deleteStrategy": "刪除策略"
+        },
+        "logic": {
+          "title": "策略邏輯",
+          "hourly": "小時線條件",
+          "daily": "日線條件",
+          "weekly": "週線條件",
+          "noHourly": "無小時線規則",
+          "noDaily": "無日線規則",
+          "noWeekly": "無週線規則"
+        },
+        "messages": {
+          "copySuccess": "複製成功！",
+          "copyError": "複製失敗",
+          "selectStrategyFirst": "請先選擇策略",
+          "addAlarmSuccess": "加入告警成功",
+          "addAlarmError": "加入告警失敗",
+          "removeAlarmSuccess": "移除告警成功",
+          "removeAlarmError": "移除告警失敗",
+          "noAlarmFound": "找不到對應告警"
+        }
       }
     }
   },

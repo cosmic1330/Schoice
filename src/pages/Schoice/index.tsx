@@ -12,7 +12,8 @@ import WaitingPage from "./WaitingPage";
 
 const Main = styled(Box)`
   width: 100%;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   position: relative;
   display: grid;
   grid-template-columns: auto 1fr;

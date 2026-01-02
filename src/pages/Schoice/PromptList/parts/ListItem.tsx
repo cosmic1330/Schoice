@@ -1,39 +1,100 @@
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
-import TourRoundedIcon from "@mui/icons-material/TourRounded";
-import { Box, Stack as MuiStack, Typography, styled } from "@mui/material";
-import { useState } from "react";
+import {
+  Box,
+  IconButton,
+  Stack as MuiStack,
+  Typography,
+  styled,
+} from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { useUser } from "../../../../context/UserContext";
 import useCloudStore from "../../../../store/Cloud.store";
 import useSchoiceStore from "../../../../store/Schoice.store";
 import { PromptType } from "../../../../types";
-const Stack = styled(MuiStack)<{ select: string }>`
-  border: ${(props) =>
-    props.select === "true"
-      ? `1px solid ${props.theme.palette.primary.main}`
-      : `1px solid ${props.theme.palette.divider}`};
-  padding: 0.5rem;
-  border-radius: 10px;
-  box-shadow: ${(props) =>
-    props.select === "true"
-      ? `0 0 2px 1px ${props.theme.palette.primary.main}`
-      : `none`};
-`;
 
-const IconArea = styled(Box)`
-  background-color: ${(props) => props.theme.palette.primary.main};
-  // 長寬比例
-  aspect-ratio: 1;
-  width: 42px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #fff;
-  border-radius: 10px;
-  :hover {
-    background-color: ${(props) => props.theme.palette.error.main};
-    cursor: pointer;
-  }
-`;
+const ItemCard = styled(MuiStack)<{ active: boolean }>(({ theme, active }) => ({
+  flexDirection: "row",
+  alignItems: "center",
+  padding: theme.spacing(1.5, 2),
+  cursor: "pointer",
+  position: "relative",
+  overflow: "hidden",
+  // Chamfered corners for sci-fi HUD look
+  clipPath:
+    "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)",
+  backgroundColor: active
+    ? alpha(theme.palette.primary.main, 0.1)
+    : alpha(theme.palette.background.paper, 0.05),
+  borderLeft: active
+    ? `4px solid ${theme.palette.primary.main}`
+    : `4px solid ${alpha(theme.palette.divider, 0.1)}`,
+  transition: "all 0.1s ease-out", // Sharp, mechanical transition
+
+  // Scanline/Grid texture overlay
+  backgroundImage: active
+    ? `linear-gradient(90deg, ${alpha(
+        theme.palette.primary.main,
+        0.05
+      )} 1px, transparent 1px),
+       linear-gradient(${alpha(
+         theme.palette.primary.main,
+         0.05
+       )} 1px, transparent 1px)`
+    : "none",
+  backgroundSize: "20px 20px",
+
+  "&:hover": {
+    backgroundColor: alpha(theme.palette.primary.main, 0.05),
+    borderLeft: `4px solid ${theme.palette.primary.main}`,
+    transform: "translateX(4px)",
+    "& .action-btn": {
+      opacity: 1,
+      transform: "translateX(0)",
+    },
+  },
+
+  // Corner markers for active state
+  "&::after": active
+    ? {
+        content: '""',
+        position: "absolute",
+        bottom: 0,
+        right: 0,
+        width: 10,
+        height: 10,
+        borderBottom: `2px solid ${theme.palette.primary.main}`,
+        borderRight: `2px solid ${theme.palette.primary.main}`,
+      }
+    : {},
+}));
+
+const IndexNumber = styled(Typography)<{ active: boolean }>(
+  ({ theme, active }) => ({
+    fontFamily: "monospace",
+    fontSize: "1.5rem",
+    fontWeight: 900,
+    color: active
+      ? alpha(theme.palette.primary.main, 0.2)
+      : alpha(theme.palette.text.disabled, 0.1),
+    lineHeight: 1,
+    marginRight: theme.spacing(2),
+    userSelect: "none",
+    letterSpacing: "-0.05em",
+  })
+);
+
+const Chip = styled(Box)(({ theme }) => ({
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "2px 6px",
+  borderRadius: "4px",
+  border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+  backgroundColor: alpha(theme.palette.background.default, 0.5),
+  fontFamily: "monospace",
+  fontSize: "0.65rem",
+  color: theme.palette.text.secondary,
+  letterSpacing: "0.05em",
+}));
 
 export default function ListItem({
   index,
@@ -46,10 +107,12 @@ export default function ListItem({
   name: string;
   promptType: PromptType;
 }) {
-  const [hover, setHover] = useState(false);
   const { remove } = useCloudStore();
   const { setSelect, select } = useSchoiceStore();
   const { user } = useUser();
+
+  const isActive = select?.prompt_id === id;
+
   const handleDelete = (event: React.SyntheticEvent) => {
     event.stopPropagation();
     if (user) {
@@ -60,44 +123,46 @@ export default function ListItem({
   const handleSelect = () => {
     setSelect({ prompt_id: id, type: promptType });
   };
+
   return (
-    <Stack
-      direction="row"
-      spacing={2}
-      alignItems="center"
-      onClick={handleSelect}
-      select={(select?.prompt_id === id).toString() || "false"}
-      mb={0.5}
-    >
-      <IconArea
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-        onClick={handleDelete}
-      >
-        {hover ? (
-          <DeleteRoundedIcon fontSize="medium" />
-        ) : (
-          <TourRoundedIcon fontSize="medium" />
-        )}
-      </IconArea>
-      <Box overflow="hidden" flex={1}>
+    <ItemCard active={isActive} onClick={handleSelect} spacing={2}>
+      <IndexNumber active={isActive}>
+        {index < 10 ? `0${index}` : index}
+      </IndexNumber>
+
+      <Box sx={{ flex: 1, minWidth: 0, zIndex: 1 }}>
         <Typography
           variant="body2"
-          fontWeight="bold"
+          fontWeight={800}
           noWrap
-          textOverflow="ellipsis"
+          sx={{
+            color: isActive ? "primary.main" : "text.primary",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            mb: 0.5,
+          }}
         >
-          Prompt {index}: {name}
+          {name}
         </Typography>
-        <Typography
-          variant="caption"
-          color="textSecondary"
-          noWrap
-          textOverflow="ellipsis"
-        >
-          {id}
-        </Typography>
+        <Chip>ID: {id.substring(0, 8)}</Chip>
       </Box>
-    </Stack>
+
+      <IconButton
+        size="small"
+        onClick={handleDelete}
+        className="action-btn"
+        sx={{
+          opacity: 0,
+          transform: "translateX(10px)",
+          transition: "all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+          color: "text.secondary",
+          "&:hover": {
+            color: "error.main",
+          },
+        }}
+      >
+        <DeleteRoundedIcon fontSize="small" />
+      </IconButton>
+    </ItemCard>
   );
 }

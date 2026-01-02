@@ -3,7 +3,8 @@ import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import NotificationAddIcon from "@mui/icons-material/NotificationAdd";
 import NotificationsOffIcon from "@mui/icons-material/NotificationsOff";
-import { IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import { Box, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import { alpha, styled } from "@mui/material/styles";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { error } from "@tauri-apps/plugin-log";
 import {
@@ -11,6 +12,7 @@ import {
   requestPermission,
   sendNotification,
 } from "@tauri-apps/plugin-notification";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import { useUser } from "../../../../../context/UserContext";
@@ -19,31 +21,49 @@ import useSchoiceStore from "../../../../../store/Schoice.store";
 import { PromptType, PromptValue, SelectType } from "../../../../../types";
 import Summary from "./Summary";
 
+const ActionGroup = styled(Box)(({ theme }) => ({
+  backgroundColor: alpha(theme.palette.background.paper, 0.4),
+  backdropFilter: "blur(20px)",
+  borderRadius: "20px",
+  padding: theme.spacing(1, 1.5),
+  border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+  display: "flex",
+  gap: theme.spacing(0.5),
+  boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.1)}`,
+}));
+
+const TitleLabel = styled(Typography)(({ theme }) => ({
+  fontWeight: 900,
+  fontSize: "2.5rem",
+  letterSpacing: "-0.03em",
+  background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+  WebkitBackgroundClip: "text",
+  WebkitTextFillColor: "transparent",
+  textShadow: `0 0 30px ${alpha(theme.palette.primary.main, 0.1)}`,
+}));
+
 export default function RuleContent({ select }: { select: SelectType | null }) {
   const { remove, addAlarm, alarms, removeAlarm, bulls, bears } =
     useCloudStore();
   const { clearSeleted } = useSchoiceStore();
   const { user } = useUser();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleCopy = async () => {
     try {
       const data = select?.type === PromptType.BULL ? bulls : bears;
       if (!data || !select) {
-        toast.error("無法複製，請選擇一個策略條件");
+        toast.error(t("Pages.Schoice.PromptList.messages.copyError"));
         return;
       }
       const prompt = data[select.prompt_id];
       if (!prompt) {
-        toast.error("無法複製，找不到對應的策略條件");
+        toast.error(t("Pages.Schoice.PromptList.messages.copyError"));
         return;
       }
       await writeText(
-        JSON.stringify(
-          { ...prompt, type: select.type },
-          null,
-          2
-        )
+        JSON.stringify({ ...prompt, type: select.type }, null, 2)
       );
       let permissionGranted = await isPermissionGranted();
       console.log("Permission granted:", permissionGranted);
@@ -52,7 +72,10 @@ export default function RuleContent({ select }: { select: SelectType | null }) {
         permissionGranted = permission === "granted";
       }
       if (permissionGranted) {
-        sendNotification({ title: "ClipBoard", body: "Copy Success!" });
+        sendNotification({
+          title: "ClipBoard",
+          body: t("Pages.Schoice.PromptList.messages.copySuccess"),
+        });
       }
     } catch (err) {
       error(`複製失敗:${err}`);
@@ -88,7 +111,7 @@ export default function RuleContent({ select }: { select: SelectType | null }) {
         index = bears[select.prompt_id]?.index || 0;
       }
       if (!conditions || !index || !name) {
-        toast.error("無法找到對應的條件或索引");
+        toast.error(t("Pages.Schoice.PromptList.messages.addAlarmError"));
         return;
       }
 
@@ -101,10 +124,10 @@ export default function RuleContent({ select }: { select: SelectType | null }) {
         select.prompt_id,
         user.id
       );
-      toast.success("加入告警偵測成功");
+      toast.success(t("Pages.Schoice.PromptList.messages.addAlarmSuccess"));
     } catch (error) {
       console.error(error);
-      toast.error("加入告警偵測失敗");
+      toast.error(t("Pages.Schoice.PromptList.messages.addAlarmError"));
     }
   };
 
@@ -113,63 +136,92 @@ export default function RuleContent({ select }: { select: SelectType | null }) {
       return;
     }
     if (!select || !alarms[select.prompt_id]) {
-      toast.error("沒有找到對應的告警偵測");
+      toast.error(t("Pages.Schoice.PromptList.messages.noAlarmFound"));
       return;
     }
     try {
       await removeAlarm(select.prompt_id, user.id);
-      toast.success("移除告警偵測成功");
+      toast.success(t("Pages.Schoice.PromptList.messages.removeAlarmSuccess"));
     } catch (error) {
       console.error(error);
-      toast.error("移除告警偵測失敗");
+      toast.error(t("Pages.Schoice.PromptList.messages.removeAlarmError"));
     }
   };
 
   return (
-    <Stack spacing={2} alignItems="flex-start" width={"100%"}>
-      <Typography variant="h4">
-        {select && select.type === PromptType.BULL
-          ? bulls[select.prompt_id]?.name
-          : select && select.type === PromptType.BEAR
-          ? bears[select.prompt_id]?.name
-          : "無選擇的策略條件"}
-      </Typography>
-      <Stack direction="row" spacing={2}>
-        <Tooltip title="修改策略條件">
-          <IconButton
-            onClick={() => navigate("/schoice/edit/" + select?.prompt_id)}
+    <Stack spacing={3} alignItems="flex-start" width={"100%"} sx={{ py: 3 }}>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        width="100%"
+      >
+        <Box>
+          <Typography
+            variant="overline"
+            color="text.secondary"
+            fontWeight={800}
+            sx={{
+              letterSpacing: "0.2em",
+              fontFamily: "monospace",
+              opacity: 0.6,
+            }}
           >
-            <EditRoundedIcon />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="匯出策略條件(JSON格式)">
-          <IconButton onClick={handleCopy}>
-            <ContentPasteGoRoundedIcon />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="刪除策略條件">
-          <IconButton onClick={handleDelete}>
-            <DeleteRoundedIcon fontSize="medium" />
-          </IconButton>
-        </Tooltip>
-        {select &&
-          select.type === PromptType.BEAR &&
-          !alarms[select.prompt_id] && (
-            <Tooltip title="加入告警偵測">
-              <IconButton onClick={handleAddNotification}>
-                <NotificationAddIcon fontSize="medium" />
+            {t("Pages.Schoice.PromptList.content.strategyConfiguration")}
+          </Typography>
+          <TitleLabel variant="h3">
+            {select && select.type === PromptType.BULL
+              ? bulls[select.prompt_id]?.name
+              : select && select.type === PromptType.BEAR
+              ? bears[select.prompt_id]?.name
+              : t("Pages.Schoice.PromptList.content.noStrategySelected")}
+          </TitleLabel>
+        </Box>
+
+        <ActionGroup>
+          <Tooltip title={t("Pages.Schoice.PromptList.content.editStrategy")}>
+            <IconButton
+              onClick={() => navigate("/schoice/edit/" + select?.prompt_id)}
+              color="primary"
+            >
+              <EditRoundedIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t("Pages.Schoice.PromptList.content.exportJson")}>
+            <IconButton onClick={handleCopy}>
+              <ContentPasteGoRoundedIcon />
+            </IconButton>
+          </Tooltip>
+          {select && select.type === PromptType.BEAR && (
+            <Tooltip
+              title={
+                alarms[select.prompt_id]
+                  ? t("Pages.Schoice.PromptList.content.removeAlarm")
+                  : t("Pages.Schoice.PromptList.content.addAlarm")
+              }
+            >
+              <IconButton
+                onClick={
+                  alarms[select.prompt_id]
+                    ? handleRemoveNotification
+                    : handleAddNotification
+                }
+                color={alarms[select.prompt_id] ? "warning" : "default"}
+              >
+                {alarms[select.prompt_id] ? (
+                  <NotificationsOffIcon />
+                ) : (
+                  <NotificationAddIcon />
+                )}
               </IconButton>
             </Tooltip>
           )}
-        {select &&
-          select.type === PromptType.BEAR &&
-          alarms[select.prompt_id] && (
-            <Tooltip title="移除告警偵測">
-              <IconButton onClick={handleRemoveNotification}>
-                <NotificationsOffIcon fontSize="medium" />
-              </IconButton>
-            </Tooltip>
-          )}
+          <Tooltip title={t("Pages.Schoice.PromptList.content.deleteStrategy")}>
+            <IconButton onClick={handleDelete} color="error">
+              <DeleteRoundedIcon />
+            </IconButton>
+          </Tooltip>
+        </ActionGroup>
       </Stack>
 
       <Summary select={select} />
