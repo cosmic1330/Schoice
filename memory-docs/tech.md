@@ -1,17 +1,4 @@
----
-trigger: always_on
----
-
-# Project Rules
-
-## 1. Project Context
-- **Project Name:** Schoice
-- **Description:** This project is a desktop application for stock selection. Users can define their own technical-indicator rules to search for stocks that match the criteria in the database.
-The system supports both a local SQLite database and a cloud PostgreSQL database. It will query the cloud database first, and only fall back to the local database if the cloud connection is unavailable.
-- **Goal:** Automatically generate SQL queries based on user-defined rules, execute them against the database, and display the results in the UI.
-
-## 1. Technology Stack
-
+#  2. Tech Stack
 -   **Frontend Framework**: React 19 + TypeScript
 -   **Build Tool**: Vite 7
 -   **Desktop Host**: Tauri v2
@@ -29,23 +16,15 @@ The system supports both a local SQLite database and a cloud PostgreSQL database
     -   **Remote/Auth**: Supabase Client
 -   **Utilities**: Lodash, Nanoid, `date-fns` (or custom date utils in `src/utils`)
 -   **I18n**: i18next + react-i18next
+-   **HTTP**: @tauri-apps/plugin-http
+-   **Logging**: @tauri-apps/plugin-log
+-   **Chart**: recharts
+-   **Store**: @tauri-apps/plugin-store
 
-## 2. File & Directory Structure
 
--   `src-tauri/`: Rust backend and Tauri configuration.
--   `src/`: Frontend source.
-    -   `assets/`: Static assets.
-    -   `classes/`: Business logic classes and Data Access Objects (e.g., `SqliteDataManager.ts`). Avoid putting UI logic here.
-    -   `components/`: Reusable, generic UI components.
-    -   `context/`: React Context providers (User, Database).
-    -   `hooks/`: Custom React hooks (logic encapsulation).
-    -   `pages/`: Feature-specific page components. Sub-directories (e.g., `Schoice`) can contain their own route components.
-    -   `store/`: Zustand stores.
-    -   `tools/` & `utils/`: Helper functions.
-    -   `types.ts`: Shared TypeScript definitions.
+
 
 ## 3. Coding Style & Conventions
-
 -   **Naming**:
     -   **Components**: PascalCase (e.g., `PromptList.tsx`).
     -   **Functions/Variables**: camelCase.
@@ -60,6 +39,7 @@ The system supports both a local SQLite database and a cloud PostgreSQL database
     -   **Components**: Functional Components.
     -   Prefer named exports for consistency or default exports for pages/lazy-loaded components.
     -   Keep components small and focused. Extract logic to custom hooks.
+    -   Extract duplicated methods into utils
 
 ## 4. Architectural Patterns
 
@@ -88,5 +68,3 @@ The system supports both a local SQLite database and a cloud PostgreSQL database
 
 -   Use `@tauri-apps/plugin-log` for logging instead of `console.log` for crucial backend events.
 -   Handle the asynchronous nature of Tauri APIs (e.g., `invoke`, `db.execute`).
-
-
