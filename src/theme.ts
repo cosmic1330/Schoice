@@ -10,7 +10,7 @@ const lightThemeOptions: ThemeOptions = {
     },
     background: {
       default: "#F8FAFC", // Slate 50
-      paper: "rgba(255, 255, 255, 0.8)",
+      paper: "rgba(255, 255, 255)",
     },
     divider: "rgba(0, 0, 0, 0.08)",
   },
@@ -85,7 +85,7 @@ const darkThemeOptions: ThemeOptions = {
     },
     background: {
       default: "#0F172A", // Slate 900
-      paper: "rgba(30, 41, 59, 0.7)", // Slate 800 with transparency
+      paper: "rgba(30, 41, 59)", // Slate 800 with transparency
     },
     divider: "rgba(255, 255, 255, 0.08)",
   },

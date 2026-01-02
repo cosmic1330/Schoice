@@ -44,7 +44,7 @@ export default function SideBar() {
       <GridItem>
         <Stack spacing={2} alignItems="center">
           <img
-            src="schoice_icon.png"
+            src="/schoice_icon.png"
             alt="logo"
             style={{ width: 50, height: 50 }}
           />

@@ -70,3 +70,67 @@
 
 - 確保所有修改的頁面在內容超出時可捲動。
 - 確保所有頁面捲動時不顯示卷軸。
+
+---
+
+## 在 PromptChart.tsx 中添加股票選擇器 (2026-01-02)
+
+### 擬議變更
+
+- 在 `src/components/Prompt/PromptChart.tsx` 中：
+  - 引入 `Autocomplete`, `useExampleData` 等必要依賴。
+  - 實現從 `store.json` 讀取股票選單的邏輯。
+  - 增加股票選擇與更新按鈕的 UI。
+  - 點擊更新時，更新全域 `exampleChartId` 並重新抓取範例資料。
+
+### 驗證計畫 ✅
+
+- 確保 PromptChart 上方出現股票選擇器。
+- 確保選擇新股票並點擊更新後，圖表會根據新資料重繪。
+
+---
+
+## 股票選擇器 UI 優化：切換模式 (2026-01-02)
+
+### 擬議變更
+
+- 在 `src/components/Prompt/PromptChart.tsx` 中：
+  - 增加 `isEditing` 狀態，預設為 `false`。
+  - **預覽模式 (`!isEditing`)**：僅顯示目前股票 ID 與「切換」按鈕。
+  - **編輯模式 (`isEditing`)**：顯示股票選擇器、「更新」與「取消」按鈕。
+  - 點擊「切換」進入編輯模式；點擊「更新」或「取消」返回預覽模式。
+
+### 驗證計畫 ✅
+
+- 確保預設只顯示簡潔的資訊。
+- 確保可透過點擊「切換」展開選擇器。
+- 確保更新後或取消後能正確收合選擇器。
+
+---
+
+## 讓 PromptChart 資料來源顯示股票名稱 (2026-01-02)
+
+### 擬議變更
+
+- 在 `src/components/Prompt/PromptChart.tsx` 中：
+  - 修改 `Typography` 顯示邏輯。
+  - 除了 `exampleChartId` 外，同時顯示 `selectedOption.stock_name`。
+
+### 驗證計畫 ✅
+
+- 確保顯示格式為「圖表資料來源：[ID] [名稱]」（例如：圖表資料來源：1102 台泥）。
+
+---
+
+## 支援 PromptChart 週線條件 (2026-01-02)
+
+### 擬議變更
+
+- 在 `src/components/Prompt/PromptChart.tsx` 中：
+  - 啟用 `weekMapping`。
+  - 實作 `weeklyDates` 邏輯，篩選符合週線條件的日期。
+  - 更新圖表匹配邏輯，納入 `weeklyDates` 判斷。
+
+### 驗證計畫 ✅
+
+- 確保設定週線條件後，圖表能正確在對應日期標示紅線。
