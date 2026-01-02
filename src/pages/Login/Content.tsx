@@ -145,7 +145,7 @@ const Content = () => {
           </Box>
 
           <Typography variant="h5" fontWeight="bold" letterSpacing={1}>
-            LOGIN
+            {t("Pages.Login.title")}
           </Typography>
 
           <Box width="100%">

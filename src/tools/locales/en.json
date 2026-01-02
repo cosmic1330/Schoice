@@ -1,6 +1,7 @@
 {
   "Pages": {
     "Login": {
+      "title": "Create your strategy",
       "rememberMe": "Remember me",
       "register": "Register",
       "signIn": "Sign In",

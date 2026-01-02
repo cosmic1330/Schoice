@@ -1,6 +1,7 @@
 {
   "Pages": {
     "Login": {
+      "title": "建立屬於你的策略",
       "rememberMe": "記住我",
       "register": "註冊",
       "signIn": "登入",
