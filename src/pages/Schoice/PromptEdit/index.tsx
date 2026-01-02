@@ -1,8 +1,22 @@
-import { Box, Button, Container, Grid, Stack, Typography } from "@mui/material";
+import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
+import EditIcon from "@mui/icons-material/Edit";
+import ListAltIcon from "@mui/icons-material/ListAlt";
+import {
+  Box,
+  Button,
+  Container,
+  Grid,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
+import { alpha, styled } from "@mui/material/styles";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 import ExpressionGenerator from "../../../components/Prompt/ExpressionGenerator";
 import PromptChart from "../../../components/Prompt/PromptChart";
+import { PromptList } from "../../../components/Prompt/PromptList";
 import PromptName from "../../../components/Prompt/PromptName";
 import { useUser } from "../../../context/UserContext";
 import useExampleData from "../../../hooks/useExampleData";
@@ -10,11 +24,35 @@ import useCloudStore from "../../../store/Cloud.store";
 import useSchoiceStore from "../../../store/Schoice.store";
 import { Prompts } from "../../../types";
 
+const GlassCard = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  backgroundColor: alpha(theme.palette.background.paper, 0.4),
+  backdropFilter: "blur(12px)",
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  borderRadius: "16px",
+  boxShadow: "none",
+  position: "relative",
+  overflow: "hidden",
+}));
+
+const ConfigHeader = styled(Typography)(({ theme }) => ({
+  color: theme.palette.primary.main,
+  fontWeight: 800,
+  fontSize: "0.875rem",
+  textTransform: "uppercase",
+  letterSpacing: "0.1em",
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(1),
+  marginBottom: theme.spacing(2),
+}));
+
 export default function PromptEdit() {
   const { id } = useParams();
   const { select, setSelect } = useSchoiceStore();
   const { edit, bears, bulls } = useCloudStore();
   const { user } = useUser();
+  const { t } = useTranslation();
   const [dailyPrompts, setDailyPrompts] = useState<Prompts>([]);
   const [weekPrompts, setWeekPrompts] = useState<Prompts>([]);
   const [hourlyPrompts, setHourlyPrompts] = useState<Prompts>([]);
@@ -66,6 +104,7 @@ export default function PromptEdit() {
   const handleCancel = () => {
     navigate("/schoice");
   };
+
   useEffect(() => {
     if (select) {
       if (select.type === "bull") {
@@ -87,153 +126,134 @@ export default function PromptEdit() {
   }
 
   return (
-    <Grid container>
-      <Grid size={6}>
-        <Container>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Box mb={4}>
+        <Stack direction="row" alignItems="center" spacing={2} mb={1}>
+          <EditIcon color="primary" sx={{ fontSize: 36 }} />
           <Typography
-            variant="h5"
-            gutterBottom
-            mt={2}
-            textTransform="uppercase"
+            variant="h4"
+            fontWeight={900}
+            sx={{ letterSpacing: "-0.02em" }}
           >
-            {select?.type} Name
+            {t("Pages.Schoice.Prompt.editTitle")}
           </Typography>
-          <Typography variant="body2" gutterBottom>
-            {id}
-          </Typography>
-          <PromptName {...{ name, setName }} />
+        </Stack>
+        <Typography
+          variant="body1"
+          color="text.secondary"
+          sx={{ opacity: 0.8 }}
+        >
+          {id}
+        </Typography>
+      </Box>
 
-          <ExpressionGenerator
-            {...{
-              setHourlyPrompts,
-              setDailyPrompts,
-              setWeekPrompts,
-            }}
-          />
-        </Container>
-      </Grid>
-      <Grid size={6}>
-        <Container>
-          <Typography variant="h5" gutterBottom my={2}>
-            已加入的小時線條件
-          </Typography>
-          <Box border="1px solid #000" borderRadius={1} p={2} mb={2}>
-            {hourlyPrompts.length === 0 && (
-              <Typography variant="body2" gutterBottom>
-                空
-              </Typography>
-            )}
-            {hourlyPrompts.map((prompt, index) => (
-              <Typography key={index} variant="body2" gutterBottom>
-                {index + 1}.{" "}
-                {prompt.day1 +
-                  prompt.indicator1 +
-                  prompt.operator +
-                  prompt.day2 +
-                  prompt.indicator2}{" "}
-                <Button
-                  size="small"
-                  color="error"
-                  onClick={() => handleRemove("hourly", index)}
-                >
-                  Remove
-                </Button>
-              </Typography>
-            ))}
-          </Box>
-          <Typography variant="h5" gutterBottom my={2}>
-            已加入的日線條件
-          </Typography>
-          <Box border="1px solid #000" borderRadius={1} p={2} mb={2}>
-            {dailyPrompts.length === 0 && (
-              <Typography variant="body2" gutterBottom>
-                空
-              </Typography>
-            )}
-            {dailyPrompts.map((prompt, index) => (
-              <Typography key={index} variant="body2" gutterBottom>
-                {index + 1}.{" "}
-                {prompt.day1 +
-                  prompt.indicator1 +
-                  prompt.operator +
-                  prompt.day2 +
-                  prompt.indicator2}{" "}
-                <Button
-                  size="small"
-                  color="error"
-                  onClick={() => handleRemove("daily", index)}
-                >
-                  Remove
-                </Button>
-              </Typography>
-            ))}
-          </Box>
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <GlassCard elevation={0}>
+            <ConfigHeader>
+              <AutoFixHighIcon fontSize="small" />
+              {t("Pages.Schoice.Prompt.strategyName")}
+            </ConfigHeader>
+            <Box mb={3}>
+              <PromptName {...{ name, setName }} />
+            </Box>
 
-          <Typography variant="h5" gutterBottom my={2}>
-            已加入的週線條件
-          </Typography>
-          <Box border="1px solid #000" borderRadius={1} p={2} mb={2}>
-            {weekPrompts.length === 0 && (
-              <Typography variant="body2" gutterBottom>
-                空
-              </Typography>
-            )}
-            {weekPrompts.map((prompt, index) => (
-              <Typography key={index} variant="body2" gutterBottom>
-                {index + 1}.{" "}
-                {prompt.day1 +
-                  prompt.indicator1 +
-                  prompt.operator +
-                  prompt.day2 +
-                  prompt.indicator2}{" "}
-                <Button
-                  size="small"
-                  color="error"
-                  onClick={() => handleRemove("weekly", index)}
-                >
-                  Remove
-                </Button>
-              </Typography>
-            ))}
-          </Box>
+            <ConfigHeader>
+              <AutoFixHighIcon fontSize="small" />
+              修改條件配置
+            </ConfigHeader>
+            <ExpressionGenerator
+              {...{
+                setHourlyPrompts,
+                setDailyPrompts,
+                setWeekPrompts,
+              }}
+            />
+          </GlassCard>
+        </Grid>
 
-          <Stack direction="row" spacing={2}>
-            <Button
-              onClick={handleCancel}
-              fullWidth
-              variant="contained"
-              color="error"
-            >
-              取消
-            </Button>
-            <Button
-              onClick={handleEdit}
-              fullWidth
-              variant="contained"
-              disabled={
-                (hourlyPrompts.length === 0 &&
-                  dailyPrompts.length === 0 &&
-                  weekPrompts.length === 0) ||
-                name === "" ||
-                isEditing
-              }
-              color="success"
-            >
-              {isEditing ? "修改中…" : "修改"}
-            </Button>
-          </Stack>
-        </Container>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <GlassCard
+            elevation={0}
+            sx={{ height: "100%", display: "flex", flexDirection: "column" }}
+          >
+            <ConfigHeader>
+              <ListAltIcon fontSize="small" />
+              當前設定清單
+            </ConfigHeader>
+            <Box sx={{ flex: 1, overflowY: "auto", mb: 2 }}>
+              <PromptList
+                title={t("Pages.Schoice.Prompt.hourlyConditions")}
+                prompts={hourlyPrompts}
+                onRemove={(index) => handleRemove("hourly", index)}
+              />
+              <PromptList
+                title={t("Pages.Schoice.Prompt.dailyConditions")}
+                prompts={dailyPrompts}
+                onRemove={(index) => handleRemove("daily", index)}
+              />
+              <PromptList
+                title={t("Pages.Schoice.Prompt.weeklyConditions")}
+                prompts={weekPrompts}
+                onRemove={(index) => handleRemove("weekly", index)}
+              />
+            </Box>
+
+            <Stack direction="row" spacing={2}>
+              <Button
+                onClick={handleCancel}
+                fullWidth
+                variant="outlined"
+                color="error"
+                sx={{ borderRadius: "12px", py: 1.5, fontWeight: 700 }}
+              >
+                {t("Pages.Schoice.Prompt.cancel")}
+              </Button>
+              <Button
+                onClick={handleEdit}
+                fullWidth
+                variant="contained"
+                disabled={
+                  (hourlyPrompts.length === 0 &&
+                    dailyPrompts.length === 0 &&
+                    weekPrompts.length === 0) ||
+                  name === "" ||
+                  isEditing
+                }
+                color="success"
+                sx={{
+                  borderRadius: "12px",
+                  py: 1.5,
+                  fontWeight: 700,
+                  boxShadow: (theme) =>
+                    `0 8px 16px ${alpha(theme.palette.success.main, 0.2)}`,
+                }}
+              >
+                {isEditing
+                  ? t("Pages.Schoice.Prompt.editing")
+                  : t("Pages.Schoice.Prompt.edit")}
+              </Button>
+            </Stack>
+          </GlassCard>
+        </Grid>
+
+        <Grid size={12}>
+          <GlassCard elevation={0}>
+            <ConfigHeader>
+              <AutoFixHighIcon fontSize="small" />
+              策略預覽 (示例數據)
+            </ConfigHeader>
+            <PromptChart
+              hourlyPrompts={hourlyPrompts}
+              dailyPrompts={dailyPrompts}
+              weeklyPrompts={weekPrompts}
+              hourlyData={hourlyData}
+              dailyData={dailyData}
+              weeklyData={weeklyData}
+            />
+          </GlassCard>
+        </Grid>
       </Grid>
-      <Grid size={6}>
-        <PromptChart
-          hourlyPrompts={hourlyPrompts}
-          dailyPrompts={dailyPrompts}
-          weeklyPrompts={weekPrompts}
-          hourlyData={hourlyData}
-          dailyData={dailyData}
-          weeklyData={weeklyData}
-        />
-      </Grid>
-    </Grid>
+    </Container>
   );
 }

@@ -8,20 +8,52 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
+  Typography,
 } from "@mui/material";
+import { alpha, styled } from "@mui/material/styles";
 import { Dispatch, SetStateAction, useMemo, useState } from "react";
-import {
-  stockDailyQueryBuilder,
-} from "../../classes/StockDailyQueryBuilder";
-import {
-  stockHourlyQueryBuilder,
-} from "../../classes/StockHourlyQueryBuilder";
-import {
-  stockWeeklyQueryBuilder,
-} from "../../classes/StockWeeklyQueryBuilder";
+import { useTranslation } from "react-i18next";
+import { stockDailyQueryBuilder } from "../../classes/StockDailyQueryBuilder";
+import { stockHourlyQueryBuilder } from "../../classes/StockHourlyQueryBuilder";
+import { stockWeeklyQueryBuilder } from "../../classes/StockWeeklyQueryBuilder";
 import { Prompts, StorePrompt } from "../../types";
 
 type TimeFrame = "hour" | "day" | "week";
+
+const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
+  backgroundColor: alpha(theme.palette.background.paper, 0.2),
+  borderRadius: "12px",
+  padding: "4px",
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  "& .MuiToggleButton-root": {
+    border: "none",
+    borderRadius: "8px",
+    margin: "0 2px",
+    padding: "6px 16px",
+    fontWeight: 700,
+    color: theme.palette.text.secondary,
+    "&.Mui-selected": {
+      backgroundColor: theme.palette.primary.main,
+      color: theme.palette.primary.contrastText,
+      "&:hover": {
+        backgroundColor: theme.palette.primary.dark,
+      },
+    },
+  },
+}));
+
+const StyledSelect = styled(Select)(({ theme }) => ({
+  borderRadius: "10px",
+  "& .MuiOutlinedInput-notchedOutline": {
+    borderColor: alpha(theme.palette.divider, 0.1),
+  },
+  "&:hover .MuiOutlinedInput-notchedOutline": {
+    borderColor: alpha(theme.palette.primary.main, 1),
+  },
+  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+    borderColor: theme.palette.primary.main,
+  },
+}));
 
 function ExpressionGenerator({
   setHourlyPrompts,
@@ -32,6 +64,7 @@ function ExpressionGenerator({
   setDailyPrompts: Dispatch<SetStateAction<Prompts>>;
   setWeekPrompts: Dispatch<SetStateAction<Prompts>>;
 }) {
+  const { t } = useTranslation();
   const [timeFrame, setTimeFrame] = useState<TimeFrame>("day");
 
   // Helper to get current builder options
@@ -87,11 +120,11 @@ function ExpressionGenerator({
     }
   };
 
-  const handleChange = (event: SelectChangeEvent<string>) => {
+  const handleChange = (event: SelectChangeEvent<any>) => {
     const { value, name } = event.target;
     setSelects((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: value as string,
     }));
   };
 
@@ -107,10 +140,7 @@ function ExpressionGenerator({
 
   const indicators = useMemo(() => {
     // Handling "Other" category logic if present
-    if (
-      selects.day1 === "其他" ||
-      selects.day2 === "其他"
-    ) {
+    if (selects.day1 === "其他" || selects.day2 === "其他") {
       return currentOptions.otherIndicators || [];
     }
     return currentOptions.indicators;
@@ -120,79 +150,87 @@ function ExpressionGenerator({
 
   return (
     <Box>
-      <Stack spacing={2} direction="row" alignItems="center" mb={2}>
-        <ToggleButtonGroup
+      <Stack spacing={1} mb={3}>
+        <Typography variant="caption" fontWeight={700} color="text.secondary">
+          {t("Pages.Schoice.Prompt.timeFrame")}
+        </Typography>
+        <StyledToggleButtonGroup
           value={timeFrame}
           exclusive
           onChange={handleTimeFrameChange}
-          aria-label="時間週期"
+          aria-label="time frame"
+          size="small"
         >
-          <ToggleButton value="hour" aria-label="小時線">
-            小時線
+          <ToggleButton value="hour" aria-label="hourly">
+            {t("Pages.Schoice.Prompt.hourly")}
           </ToggleButton>
-          <ToggleButton value="day" aria-label="日線">
-            日線
+          <ToggleButton value="day" aria-label="daily">
+            {t("Pages.Schoice.Prompt.daily")}
           </ToggleButton>
-          <ToggleButton value="week" aria-label="週線">
-            週線
+          <ToggleButton value="week" aria-label="weekly">
+            {t("Pages.Schoice.Prompt.weekly")}
           </ToggleButton>
-        </ToggleButtonGroup>
+        </StyledToggleButtonGroup>
       </Stack>
 
       <Stack spacing={2} direction="row" my={2}>
-        <Select
+        <StyledSelect
           value={selects.day1}
           onChange={handleChange}
           name="day1"
           fullWidth
+          size="small"
         >
           {timeOptions.map((day) => (
             <MenuItem key={day} value={day}>
               {day}
             </MenuItem>
           ))}
-        </Select>
+        </StyledSelect>
 
-        <Select
+        <StyledSelect
           value={selects.indicator1}
           onChange={handleChange}
           name="indicator1"
           fullWidth
+          size="small"
         >
           {indicators.map((indicator) => (
             <MenuItem key={indicator} value={indicator}>
               {indicator}
             </MenuItem>
           ))}
-        </Select>
+        </StyledSelect>
       </Stack>
       <Stack mb={2}>
-        <Select
+        <StyledSelect
           value={selects.operator}
           onChange={handleChange}
           name="operator"
           fullWidth
+          size="small"
         >
           {operators.map((op) => (
             <MenuItem key={op} value={op}>
               {op}
             </MenuItem>
           ))}
-        </Select>
+        </StyledSelect>
       </Stack>
-      <Stack spacing={2} direction="row" mb={2}>
-        <Select
+      <Stack spacing={2} direction="row" mb={3}>
+        <StyledSelect
           value={selects.day2}
           onChange={handleChange}
           name="day2"
           fullWidth
+          size="small"
         >
           {timeOptions.map((day) => (
             <MenuItem key={day} value={day}>
               {day}
             </MenuItem>
           ))}
-        </Select>
+        </StyledSelect>
 
         {selects.day2 === "自定義數值" ? (
           <TextField
@@ -201,26 +239,31 @@ function ExpressionGenerator({
             defaultValue={0}
             onChange={handleCustomChange}
             value={selects.indicator2}
+            fullWidth
+            size="small"
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
           />
         ) : (
-          <Select
+          <StyledSelect
             value={selects.indicator2}
             onChange={handleChange}
             name="indicator2"
             fullWidth
+            size="small"
           >
             {indicators.map((indicator) => (
               <MenuItem key={indicator} value={indicator}>
                 {indicator}
               </MenuItem>
             ))}
-          </Select>
+          </StyledSelect>
         )}
       </Stack>
 
       <Button
         variant="contained"
         fullWidth
+        size="large"
         onClick={() => {
           if (timeFrame === "hour") {
             setHourlyPrompts((prev) => [...prev, selects]);
@@ -230,8 +273,17 @@ function ExpressionGenerator({
             setWeekPrompts((prev) => [...prev, selects]);
           }
         }}
+        sx={{
+          borderRadius: "12px",
+          py: 1.2,
+          fontWeight: 700,
+          background: (theme) =>
+            `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+          boxShadow: (theme) =>
+            `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+        }}
       >
-        加入規則
+        {t("Pages.Schoice.Prompt.addRule")}
       </Button>
     </Box>
   );

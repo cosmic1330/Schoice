@@ -1,6 +1,19 @@
-import { Button, Container, Grid, Typography } from "@mui/material";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
+import ListAltIcon from "@mui/icons-material/ListAlt";
+import {
+  Box,
+  Button,
+  Container,
+  Grid,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
+import { alpha, styled } from "@mui/material/styles";
 import { nanoid } from "nanoid";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router";
 import ExpressionGenerator from "../../../components/Prompt/ExpressionGenerator";
 import PromptChart from "../../../components/Prompt/PromptChart";
@@ -10,15 +23,37 @@ import { useUser } from "../../../context/UserContext";
 import useExampleData from "../../../hooks/useExampleData";
 import useCloudStore from "../../../store/Cloud.store";
 import useSchoiceStore from "../../../store/Schoice.store";
-import { Prompts, PromptType } from "../../../types";
+import { PromptType, PromptValue } from "../../../types";
 
-type PromptCategory = "hourly" | "daily" | "weekly";
+const GlassCard = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  backgroundColor: alpha(theme.palette.background.paper, 0.4),
+  backdropFilter: "blur(12px)",
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  borderRadius: "16px",
+  boxShadow: "none",
+  position: "relative",
+  overflow: "hidden",
+}));
+
+const ConfigHeader = styled(Typography)(({ theme }) => ({
+  color: theme.palette.primary.main,
+  fontWeight: 800,
+  fontSize: "0.875rem",
+  textTransform: "uppercase",
+  letterSpacing: "0.1em",
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(1),
+  marginBottom: theme.spacing(2),
+}));
 
 export default function PromptAdd() {
   const { setSelect } = useSchoiceStore();
   const { increase } = useCloudStore();
   const { user } = useUser();
-  const [prompts, setPrompts] = useState<Record<PromptCategory, Prompts>>({
+  const { t } = useTranslation();
+  const [prompts, setPrompts] = useState<PromptValue>({
     hourly: [],
     daily: [],
     weekly: [],
@@ -59,84 +94,155 @@ export default function PromptAdd() {
     }
   };
 
-  const handleRemove = (type: PromptCategory, index: number) => {
+  const handleRemove = (type: keyof PromptValue, index: number) => {
     setPrompts((prev) => ({
       ...prev,
       [type]: prev[type].filter((_, i) => i !== index),
     }));
   };
 
-  const promptCategories: { type: PromptCategory; title: string }[] = [
-    { type: "hourly", title: "已加入的小時線條件" },
-    { type: "daily", title: "已加入的日線條件" },
-    { type: "weekly", title: "已加入的週線條件" },
+  const promptCategories: { type: keyof PromptValue; title: string }[] = [
+    { type: "hourly", title: t("Pages.Schoice.Prompt.hourlyConditions") },
+    { type: "daily", title: t("Pages.Schoice.Prompt.dailyConditions") },
+    { type: "weekly", title: t("Pages.Schoice.Prompt.weeklyConditions") },
   ];
 
   return (
-    <Grid container>
-      <Grid size={6}>
-        <Container>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Box mb={4}>
+        <Stack direction="row" alignItems="center" spacing={2} mb={1}>
+          <AddCircleOutlineIcon color="primary" sx={{ fontSize: 36 }} />
           <Typography
-            variant="h5"
-            gutterBottom
-            mt={2}
-            textTransform="uppercase"
+            variant="h4"
+            fontWeight={900}
+            sx={{ letterSpacing: "-0.02em" }}
           >
-            {promptType} Name
+            {t("Pages.Schoice.Prompt.addTitle")}
           </Typography>
-          <PromptName {...{ name, setName }} />
+        </Stack>
+        <Typography
+          variant="body1"
+          color="text.secondary"
+          sx={{ opacity: 0.8 }}
+        >
+          {promptType === "bull"
+            ? t("Pages.Schoice.Backtest.typeBull")
+            : t("Pages.Schoice.Backtest.typeBear")}
+        </Typography>
+      </Box>
 
-          <ExpressionGenerator
-            {...{
-              promptType,
-              setHourlyPrompts: (newPrompts: any) =>
-                setPrompts((p) => ({ ...p, hourly: newPrompts(p.hourly) })),
-              setDailyPrompts: (newPrompts: any) =>
-                setPrompts((p) => ({ ...p, daily: newPrompts(p.daily) })),
-              setWeekPrompts: (newPrompts: any) =>
-                setPrompts((p) => ({ ...p, weekly: newPrompts(p.weekly) })),
-            }}
-          />
-        </Container>
-      </Grid>
-      <Grid size={6}>
-        <Container>
-          {promptCategories.map(({ type, title }) => (
-            <PromptList
-              key={type}
-              title={title}
-              prompts={prompts[type]}
-              onRemove={(index) => handleRemove(type, index)}
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <GlassCard elevation={0}>
+            <ConfigHeader>
+              <AutoFixHighIcon fontSize="small" />
+              {t("Pages.Schoice.Prompt.strategyName")}
+            </ConfigHeader>
+            <Box mb={3}>
+              <PromptName {...{ name, setName }} />
+            </Box>
+
+            <ConfigHeader>
+              <AutoFixHighIcon fontSize="small" />
+              建立新條件
+            </ConfigHeader>
+            <ExpressionGenerator
+              {...{
+                promptType,
+                setHourlyPrompts: (updater: any) =>
+                  setPrompts((p) => ({
+                    ...p,
+                    hourly:
+                      typeof updater === "function"
+                        ? updater(p.hourly)
+                        : updater,
+                  })),
+                setDailyPrompts: (updater: any) =>
+                  setPrompts((p) => ({
+                    ...p,
+                    daily:
+                      typeof updater === "function"
+                        ? updater(p.daily)
+                        : updater,
+                  })),
+                setWeekPrompts: (updater: any) =>
+                  setPrompts((p) => ({
+                    ...p,
+                    weekly:
+                      typeof updater === "function"
+                        ? updater(p.weekly)
+                        : updater,
+                  })),
+              }}
             />
-          ))}
+          </GlassCard>
+        </Grid>
 
-          <Button
-            onClick={handleCreate}
-            fullWidth
-            variant="contained"
-            disabled={
-              (prompts.hourly.length === 0 &&
-                prompts.daily.length === 0 &&
-                prompts.weekly.length === 0) ||
-              name === "" ||
-              isCreating
-            }
-            color="success"
+        <Grid size={{ xs: 12, md: 6 }}>
+          <GlassCard
+            elevation={0}
+            sx={{ height: "100%", display: "flex", flexDirection: "column" }}
           >
-            {isCreating ? "建立中…" : "建立"}
-          </Button>
-        </Container>
+            <ConfigHeader>
+              <ListAltIcon fontSize="small" />
+              交易策略清單
+            </ConfigHeader>
+            <Box sx={{ flex: 1, overflowY: "auto", mb: 2 }}>
+              {promptCategories.map(({ type, title }) => (
+                <PromptList
+                  key={type}
+                  title={title}
+                  prompts={prompts[type]}
+                  onRemove={(index) => handleRemove(type, index)}
+                />
+              ))}
+            </Box>
+
+            <Button
+              onClick={handleCreate}
+              fullWidth
+              variant="contained"
+              size="large"
+              disabled={
+                (prompts.hourly.length === 0 &&
+                  prompts.daily.length === 0 &&
+                  prompts.weekly.length === 0) ||
+                name === "" ||
+                isCreating
+              }
+              color="success"
+              sx={{
+                borderRadius: "12px",
+                py: 1.5,
+                fontWeight: 700,
+                boxShadow: (theme) =>
+                  `0 8px 16px ${alpha(theme.palette.success.main, 0.2)}`,
+              }}
+            >
+              {isCreating
+                ? t("Pages.Schoice.Prompt.creating")
+                : t("Pages.Schoice.Prompt.create")}
+            </Button>
+          </GlassCard>
+        </Grid>
+
+        <Grid size={12}>
+          <GlassCard elevation={0}>
+            <ConfigHeader>
+              <AutoFixHighIcon fontSize="small" />
+              策略預覽 (示例數據)
+            </ConfigHeader>
+            <PromptChart
+              hourlyPrompts={prompts.hourly}
+              dailyPrompts={prompts.daily}
+              weeklyPrompts={prompts.weekly}
+              hourlyData={hourlyData}
+              dailyData={dailyData}
+              weeklyData={weeklyData}
+            />
+          </GlassCard>
+        </Grid>
       </Grid>
-      <Grid size={6}>
-        <PromptChart
-          hourlyPrompts={prompts.hourly}
-          dailyPrompts={prompts.daily}
-          weeklyPrompts={prompts.weekly}
-          hourlyData={hourlyData}
-          dailyData={dailyData}
-          weeklyData={weeklyData}
-        />
-      </Grid>
-    </Grid>
+    </Container>
   );
 }

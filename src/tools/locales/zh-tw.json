@@ -145,6 +145,27 @@
         "pattern": "格式不正確 (請輸入4位數字)",
         "selectStock": "選擇股票",
         "unknownStock": "未知股票 ({{id}})"
+      },
+      "Prompt": {
+        "addTitle": "新增交易策略",
+        "editTitle": "編輯策略配置",
+        "strategyName": "策略識別名稱",
+        "hourlyConditions": "小時線條件 (Hourly)",
+        "dailyConditions": "日線條件 (Daily)",
+        "weeklyConditions": "週線條件 (Weekly)",
+        "emptyConditions": "尚無設定條件",
+        "create": "建立策略",
+        "creating": "策略建立中...",
+        "edit": "儲存修改",
+        "editing": "正在儲存...",
+        "cancel": "取消返回",
+        "remove": "移除條件",
+        "addRule": "加入規則",
+        "hourly": "小時線",
+        "daily": "日線",
+        "weekly": "週線",
+        "timeFrame": "時間週期",
+        "customValue": "自定義數值"
       }
     }
   },

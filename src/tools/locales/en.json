@@ -146,6 +146,27 @@
         "pattern": "Invalid format (4 digits)",
         "selectStock": "Select Stock",
         "unknownStock": "Unknown Stock ({{id}})"
+      },
+      "Prompt": {
+        "addTitle": "Add Strategy",
+        "editTitle": "Edit Strategy Configuration",
+        "strategyName": "Strategy Name",
+        "hourlyConditions": "Hourly Conditions",
+        "dailyConditions": "Daily Conditions",
+        "weeklyConditions": "Weekly Conditions",
+        "emptyConditions": "No conditions set",
+        "create": "Create Strategy",
+        "creating": "Creating...",
+        "edit": "Save Changes",
+        "editing": "Saving...",
+        "cancel": "Cancel & Return",
+        "remove": "Remove",
+        "addRule": "Add Rule",
+        "hourly": "Hourly",
+        "daily": "Daily",
+        "weekly": "Weekly",
+        "timeFrame": "Time Frame",
+        "customValue": "Custom Value"
       }
     }
   },
