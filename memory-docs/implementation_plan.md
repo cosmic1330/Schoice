@@ -95,3 +95,35 @@
 
 - **Manual Verification**:
   - 設定週線指標（如 MA5 > MA20）時，圖表正確過濾出符合週線趨勢的日期。
+
+---
+
+## 優化 Ichimoku Cloud 計算效能
+
+### 已完成變更
+
+- 修改 [src/pages/Detail/IchimokuCloud/ichimoku.ts](file:///Users/yangjunyu/rust_project/schoice/src/pages/Detail/IchimokuCloud/ichimoku.ts)
+  - 使用 `@ch20026103/anysis` 庫的 `Ichimoku` 類別替換原有的手動計算邏輯。
+  - 將 O(N\*M) 的迴圈計算優化為 O(N) 的串流計算。
+
+### 驗證結果
+
+- **Manual Verification**:
+  - 已確認代碼編譯無誤。
+  - 使用者應驗證 Ichimoku Cloud 頁面載入速度與圖表顯示正確性。
+
+### 進一步優化 IchimokuCloud.tsx 組件
+
+### 已完成變更
+
+- 修改 [src/pages/Detail/IchimokuCloud/IchimokuCloud.tsx](file:///Users/yangjunyu/rust_project/schoice/src/pages/Detail/IchimokuCloud/IchimokuCloud.tsx)
+  - 分離 `useMemo` 依賴：
+    - `fullData`：僅在 `deals` 變更時重新計算完整的 Ichimoku 和信號邏輯。
+    - `chartData`：在 `visibleCount` 或 `rightOffset` 變更時，僅進行陣列切片 (Slice)，避免重複進行昂貴的數學運算。
+  - 修正 Checklist 與 Score 的資料來源，直接使用 `fullData` 來確保分析結果總是基於最新資料，不受縮放影響。
+
+### 驗證結果
+
+- **Manual Verification**:
+  - 使用者應嘗試縮放和拖曳圖表，預期操作流暢度有顯著提升。
+  - 確認信號箭頭與右側清單內容正確。

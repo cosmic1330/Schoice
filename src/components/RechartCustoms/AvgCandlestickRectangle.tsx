@@ -13,9 +13,6 @@ type FormattedGraphicalItem = {
 // using Customized gives you access to all relevant chart props
 const AvgCandlestickRectangle = (props: any) => {
   const { formattedGraphicalItems } = props;
-  if (!formattedGraphicalItems || formattedGraphicalItems.length < 4) {
-    return null; // 確保有足夠的數據點
-  }
   // get first and second series in chart
   const highSeries = formattedGraphicalItems[0] as FormattedGraphicalItem;
   const closeSeries = formattedGraphicalItems[1] as FormattedGraphicalItem;

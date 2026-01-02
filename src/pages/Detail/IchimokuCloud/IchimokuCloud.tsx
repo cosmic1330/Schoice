@@ -895,76 +895,80 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
 
             {/* Signals */}
             {activeStep >= 4 && (
-              <>
-                <Scatter
-                  dataKey="buySignal"
-                  shape={<BuyArrow />}
-                  legendType="none"
-                />
-                <Scatter
-                  dataKey="exitSignal"
-                  shape={<ExitArrow />}
-                  legendType="none"
-                />
-              </>
+              <Scatter
+                dataKey="buySignal"
+                shape={<BuyArrow />}
+                legendType="none"
+              />
+            )}
+            {activeStep >= 4 && (
+              <Scatter
+                dataKey="exitSignal"
+                shape={<ExitArrow />}
+                legendType="none"
+              />
             )}
 
             {/* Cloud */}
             {showKumo && (
-              <>
-                <Area
-                  type="monotone"
-                  dataKey="kumo_bull"
-                  fill="rgba(244, 67, 54, 0.2)"
-                  stroke="none"
-                  name="Bullish Cloud"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="kumo_bear"
-                  fill="rgba(76, 175, 80, 0.2)"
-                  stroke="none"
-                  name="Bearish Cloud"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="senkouA"
-                  stroke="rgba(244, 67, 54, 0.6)"
-                  strokeWidth={2}
-                  dot={false}
-                  name="Senkou A"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="senkouB"
-                  stroke="rgba(76, 175, 80, 0.6)"
-                  strokeWidth={2}
-                  dot={false}
-                  name="Senkou B"
-                />
-              </>
+              <Area
+                type="monotone"
+                dataKey="kumo_bull"
+                fill="rgba(244, 67, 54, 0.2)"
+                stroke="none"
+                name="Bullish Cloud"
+              />
+            )}
+            {showKumo && (
+              <Area
+                type="monotone"
+                dataKey="kumo_bear"
+                fill="rgba(76, 175, 80, 0.2)"
+                stroke="none"
+                name="Bearish Cloud"
+              />
+            )}
+            {showKumo && (
+              <Line
+                type="monotone"
+                dataKey="senkouA"
+                stroke="rgba(244, 67, 54, 0.6)"
+                strokeWidth={2}
+                dot={false}
+                name="Senkou A"
+              />
+            )}
+            {showKumo && (
+              <Line
+                type="monotone"
+                dataKey="senkouB"
+                stroke="rgba(76, 175, 80, 0.6)"
+                strokeWidth={2}
+                dot={false}
+                name="Senkou B"
+              />
             )}
 
             {/* TK Lines */}
             {showTK && (
-              <>
-                <Line
-                  type="monotone"
-                  dataKey="tenkan"
-                  stroke="#29b6f6"
-                  strokeWidth={1}
-                  dot={false}
-                  name="Tenkan-sen (轉換)"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="kijun"
-                  stroke="#efaa50"
-                  strokeWidth={2}
-                  dot={false}
-                  name="Kijun-sen (基準)"
-                />
-              </>
+              <Line
+                type="monotone"
+                dataKey="tenkan"
+                stroke="#29b6f6"
+                strokeWidth={1}
+                dot={false}
+                name="Tenkan-sen (轉換)"
+              />
+            )}
+            {showTK && (
+              <Line
+                type="monotone"
+                dataKey="kijun"
+                stroke="#efaa50"
+                strokeWidth={2}
+                dot={false}
+                name="Kijun-sen (基準)"
+              />
             )}
 
             {/* Chikou */}
