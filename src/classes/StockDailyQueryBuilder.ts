@@ -112,8 +112,9 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
       day1Key = `"${day1Mapping.group}".${day1Mapping.key}`;
     } else {
       const day1Mapping = this.mapping[indicator1];
-      day1Key = `"${this.convertDayToNumber(day1)}${day1Mapping.group}".${day1Mapping.key
-        }`;
+      day1Key = `"${this.convertDayToNumber(day1)}${day1Mapping.group}".${
+        day1Mapping.key
+      }`;
     }
 
     let day2Key = "";
@@ -124,8 +125,9 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
       day2Key = `"${day2Mapping.group}".${day2Mapping.key}`;
     } else {
       const day2Mapping = this.mapping[indicator2];
-      day2Key = `"${this.convertDayToNumber(day2)}${day2Mapping.group}".${day2Mapping.key
-        }`;
+      day2Key = `"${this.convertDayToNumber(day2)}${day2Mapping.group}".${
+        day2Mapping.key
+      }`;
     }
     return [day1Key, operatorKey, day2Key];
   }
@@ -186,7 +188,7 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
           joins += ` JOIN daily_deal "${number}_day_ago" ON "0_day_ago".stock_id = "${number}_day_ago".stock_id AND "${number}_day_ago".t = '${dates[idx]}'`;
         }
         if (needSkills) {
-          joins += ` JOIN daily_skills "${number}_day_ago_sk" ON "0_day_ago".stock_id = "${number}_day_ago_sk".stock_id AND "${number}_day_ago_sk".t = '${dates[idx]}'`;
+          joins += ` LEFT JOIN daily_skills "${number}_day_ago_sk" ON "0_day_ago".stock_id = "${number}_day_ago_sk".stock_id AND "${number}_day_ago_sk".t = '${dates[idx]}'`;
         }
         return joins;
       })
@@ -199,9 +201,10 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
     const query = `
       SELECT "0_day_ago".stock_id as stock_id
       FROM daily_deal "0_day_ago"
-      JOIN daily_skills "0_day_ago_sk" ON "0_day_ago".stock_id = "0_day_ago_sk".stock_id AND "0_day_ago".t = "0_day_ago_sk".t
+      LEFT JOIN daily_skills "0_day_ago_sk" ON "0_day_ago".stock_id = "0_day_ago_sk".stock_id AND "0_day_ago".t = "0_day_ago_sk".t
       ${dayJoins}
-      WHERE "0_day_ago".t = '${dates[0]
+      WHERE "0_day_ago".t = '${
+        dates[0]
       }' ${stockIdCondition} AND ${conditions.join(" AND ")}
     `;
 

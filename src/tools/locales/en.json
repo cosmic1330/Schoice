@@ -128,7 +128,36 @@
         "msgError": "Operation failed, please try again",
         "editCondition": "Edit Condition",
         "deleteCondition": "Delete Condition"
+      },
+      "Favorite": {
+        "title": "Watchlist",
+        "alarmCompare": "Alarm Comparison",
+        "noStocks": "No watch stocks",
+        "noAlarmsActive": "No active alarms triggered",
+        "loading": "Loading...",
+        "addStock": "Add Stock",
+        "required": "Please select a stock",
+        "pattern": "Invalid format (4 digits)",
+        "selectStock": "Select Stock",
+        "unknownStock": "Unknown Stock ({{id}})"
       }
     }
+  },
+  "Components": {
+    "ResultTable": {
+      "date": "Date",
+      "id": "ID",
+      "name": "Name",
+      "priceVolume": "Price/Vol",
+      "hourlyChart": "Hourly",
+      "dailyChart": "Daily",
+      "weeklyChart": "Weekly",
+      "action": "Action"
+    }
+  },
+  "Messages": {
+    "loginRequired": "Please login first!",
+    "addSuccess": "Added {{name}} successfully!",
+    "removeSuccess": "Removed {{name}} successfully!"
   }
 }

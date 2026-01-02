@@ -10,6 +10,8 @@ import ResultTableRow from "./ResultTableRow";
 import SelectChartHead from "./SelectChartHead";
 import { ActionButtonType } from "./types";
 
+import { useTranslation } from "react-i18next";
+
 export default memo(function ResultTable({
   result,
   type = ActionButtonType.Increase,
@@ -17,20 +19,21 @@ export default memo(function ResultTable({
   result: StockTableType[];
   type?: ActionButtonType;
 }) {
+  const { t } = useTranslation();
   // 使用 useMemo 穩定 columns 陣列
   const columns = useMemo(
     () => [
-      "日期",
-      "代碼",
-      "名稱",
-      "收盤價量",
-      "小時趨勢圖",
-      "日趨勢圖",
-      "週趨勢圖",
+      t("Components.ResultTable.date"),
+      t("Components.ResultTable.id"),
+      t("Components.ResultTable.name"),
+      t("Components.ResultTable.priceVolume"),
+      t("Components.ResultTable.hourlyChart"),
+      t("Components.ResultTable.dailyChart"),
+      t("Components.ResultTable.weeklyChart"),
       <SelectChartHead key="select-chart-head" />,
-      "Action",
+      t("Components.ResultTable.action"),
     ],
-    []
+    [t]
   );
 
   // 使用 react-virtuoso 的 TableVirtuoso 取代手動切分與 IntersectionObserver
@@ -51,7 +54,7 @@ export default memo(function ResultTable({
       }}
       // 使用 fixedHeaderContent 來渲染表頭，避免 header 被 virtuoso 覆蓋
       fixedHeaderContent={() => (
-        <TableRow sx={{ backgroundColor: 'background.paper' }}>
+        <TableRow sx={{ backgroundColor: "background.paper" }}>
           <TableCell width={5}></TableCell>
           {columns.map((column, index) => (
             <TableCell key={index}>{column}</TableCell>

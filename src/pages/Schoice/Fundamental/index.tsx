@@ -154,7 +154,6 @@ export default function Fundamental() {
           >
             {t("Pages.Schoice.Fundamental.title")}
           </Typography>
-
           <Stack spacing={3}>
             <Box
               sx={{

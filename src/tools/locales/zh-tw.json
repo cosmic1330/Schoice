@@ -127,7 +127,36 @@
         "msgError": "操作失敗，請重試",
         "editCondition": "編輯條件",
         "deleteCondition": "刪除條件"
+      },
+      "Favorite": {
+        "title": "追蹤清單",
+        "alarmCompare": "警示條件對照",
+        "noStocks": "目前無追蹤股票",
+        "noAlarmsActive": "目前無觸發警示的條件",
+        "loading": "載入中...",
+        "addStock": "添加股票",
+        "required": "請選擇股票",
+        "pattern": "格式不正確 (請輸入4位數字)",
+        "selectStock": "選擇股票",
+        "unknownStock": "未知股票 ({{id}})"
       }
     }
+  },
+  "Components": {
+    "ResultTable": {
+      "date": "日期",
+      "id": "代碼",
+      "name": "名稱",
+      "priceVolume": "收盤價量",
+      "hourlyChart": "小時趨勢圖",
+      "dailyChart": "日趨勢圖",
+      "weeklyChart": "週趨勢圖",
+      "action": "操作"
+    }
+  },
+  "Messages": {
+    "loginRequired": "請先登入！",
+    "addSuccess": "添加 {{name}} 成功！",
+    "removeSuccess": "移除 {{name}} 成功！"
   }
 }

@@ -161,7 +161,7 @@ export class StockHourlyQueryBuilder extends BaseQueryBuilder {
           joins += ` JOIN hourly_deal "${number}_hour_ago" ON "0_hour_ago".stock_id = "${number}_hour_ago".stock_id AND "${number}_hour_ago".ts = '${dates[idx]}'`;
         }
         if (needSkills) {
-          joins += ` JOIN hourly_skills "${number}_hour_ago_sk" ON "0_hour_ago".stock_id = "${number}_hour_ago_sk".stock_id AND "${number}_hour_ago_sk".ts = '${dates[idx]}'`;
+          joins += ` LEFT JOIN hourly_skills "${number}_hour_ago_sk" ON "0_hour_ago".stock_id = "${number}_hour_ago_sk".stock_id AND "${number}_hour_ago_sk".ts = '${dates[idx]}'`;
         }
         return joins;
       })
@@ -174,7 +174,7 @@ export class StockHourlyQueryBuilder extends BaseQueryBuilder {
     const query = `
       SELECT "0_hour_ago".stock_id as stock_id
       FROM hourly_deal "0_hour_ago"
-      JOIN hourly_skills "0_hour_ago_sk" ON "0_hour_ago".stock_id = "0_hour_ago_sk".stock_id AND "0_hour_ago".ts = "0_hour_ago_sk".ts
+      LEFT JOIN hourly_skills "0_hour_ago_sk" ON "0_hour_ago".stock_id = "0_hour_ago_sk".stock_id AND "0_hour_ago".ts = "0_hour_ago_sk".ts
       ${hourJoins}
       WHERE "0_hour_ago".ts = '${
         dates[0]

@@ -5,7 +5,12 @@ import UpdateDeals from "./UpdateDeals";
 
 export default function Actions() {
   return (
-    <Stack direction="row" alignItems="center" justifyContent="space-between">
+    <Stack
+      direction="row"
+      alignItems="center"
+      justifyContent="space-between"
+      spacing={1}
+    >
       <FilterSelect />
       <DataCount />
       <UpdateDeals />

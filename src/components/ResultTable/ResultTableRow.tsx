@@ -30,6 +30,8 @@ const DailyUltraTinyLineChart = lazy(
   () => import("./Charts/DailyUltraTinyLineChart")
 );
 
+import { useTranslation } from "react-i18next";
+
 export default memo(function ResultTableRow({
   row,
   index,
@@ -39,6 +41,7 @@ export default memo(function ResultTableRow({
   index: number;
   type: ActionButtonType;
 }) {
+  const { t } = useTranslation();
   const { dates } = useContext(DatabaseContext);
   const { openDetailWindow } = useDetailWebviewWindow({
     id: row.stock_id,
@@ -53,13 +56,13 @@ export default memo(function ResultTableRow({
 
   const handleAddToWatchList = async () => {
     if (!user) {
-      toast.error("Please login first!");
+      toast.error(t("Messages.loginRequired"));
       return;
     }
     setAddLoading(true);
     try {
       await addToWatchList(row.stock_id, user.id);
-      toast.success(`Add ${row.stock_name} Success!`);
+      toast.success(t("Messages.addSuccess", { name: row.stock_name }));
     } finally {
       setAddLoading(false);
     }
@@ -67,13 +70,13 @@ export default memo(function ResultTableRow({
 
   const handleRemoveToWatchList = async () => {
     if (!user) {
-      toast.error("Please login first!");
+      toast.error(t("Messages.loginRequired"));
       return;
     }
     setRemoveLoading(true);
     try {
       await removeFromWatchList(row.stock_id, user.id);
-      toast.success(`Remove ${row.stock_name} Success!`);
+      toast.success(t("Messages.removeSuccess", { name: row.stock_name }));
     } finally {
       setRemoveLoading(false);
     }
