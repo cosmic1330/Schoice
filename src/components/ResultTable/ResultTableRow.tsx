@@ -36,10 +36,14 @@ export default memo(function ResultTableRow({
   row,
   index,
   type,
+  strategyName,
+  strategyScript,
 }: {
   row: StockTableType;
   index: number;
   type: ActionButtonType;
+  strategyName?: string;
+  strategyScript?: string;
 }) {
   const { t } = useTranslation();
   const { dates } = useContext(DatabaseContext);
@@ -61,7 +65,7 @@ export default memo(function ResultTableRow({
     }
     setAddLoading(true);
     try {
-      await addToWatchList(row.stock_id, user.id);
+      await addToWatchList(row.stock_id, user.id, strategyName, strategyScript);
       toast.success(t("Messages.addSuccess", { name: row.stock_name }));
     } finally {
       setAddLoading(false);

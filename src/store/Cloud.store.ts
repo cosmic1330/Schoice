@@ -23,7 +23,7 @@ interface CloudState {
     userId: string
   ) => void;
   removeFromWatchList: (stockId: string, userId: string) => Promise<void>;
-  addToWatchList: (stockId: string, userId: string) => Promise<void>;
+  addToWatchList: (stockId: string, userId: string, strategyName?: string, strategyScript?: string) => Promise<void>;
   addAlarm: (alarm: PromptItem, id: string, userId: string) => Promise<void>;
   removeAlarm: (id: string, userId: string) => Promise<void>;
   recover: (id: string, userId: string) => Promise<void>;
@@ -94,11 +94,18 @@ const useCloudStore = create<CloudState>((set, get) => ({
       handleError(err, "removeFromWatchList");
     }
   },
-  addToWatchList: async (stockId: string, userId: string) => {
+  addToWatchList: async (
+    stockId: string,
+    userId: string,
+    strategyName?: string,
+    strategyScript?: string
+  ) => {
     try {
       const { error } = await supabase.from("watch_stock").insert({
         stock_id: stockId,
         user_id: userId,
+        strategy_name: strategyName || null,
+        strategy_script: strategyScript || null,
       });
       if (error) {
         handleError(error, "addToWatchList");
@@ -448,15 +455,18 @@ const useCloudStore = create<CloudState>((set, get) => ({
         .select("*")
         .eq("user_id", userId);
       const fundamentalCondition =
-        fundamentalConditionData && fundamentalConditionData?.length > 0
-          && fundamentalConditionData[0].conditions;
+        fundamentalConditionData &&
+        fundamentalConditionData?.length > 0 &&
+        fundamentalConditionData[0].conditions;
       set(() => ({
         bulls,
         bears,
         alarms,
         trash,
         watchStocks: watchStocks,
-        fundamentalCondition: fundamentalCondition ? JSON.parse(fundamentalCondition) : null,
+        fundamentalCondition: fundamentalCondition
+          ? JSON.parse(fundamentalCondition)
+          : null,
       }));
     } catch (error) {
       handleError(error, "reload");

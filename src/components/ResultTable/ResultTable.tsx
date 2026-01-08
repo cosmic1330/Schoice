@@ -15,9 +15,13 @@ import { useTranslation } from "react-i18next";
 export default memo(function ResultTable({
   result,
   type = ActionButtonType.Increase,
+  strategyName,
+  strategyScript,
 }: {
   result: StockTableType[];
   type?: ActionButtonType;
+  strategyName?: string;
+  strategyScript?: string;
 }) {
   const { t } = useTranslation();
   // 使用 useMemo 穩定 columns 陣列
@@ -67,6 +71,8 @@ export default memo(function ResultTable({
           row={row}
           index={index}
           type={type}
+          strategyName={strategyName}
+          strategyScript={strategyScript}
         />
       )}
     />

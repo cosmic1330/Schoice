@@ -63,7 +63,19 @@ export default function Result({ select }: { select: SelectType }) {
       <Typography variant="subtitle2" sx={{ mb: 2 }}>
         符合策略結果共 {result.length} 筆
       </Typography>
-      <ResultTable {...{ result }} />
+      <ResultTable
+        {...{ result }}
+        strategyName={
+          select.type === "bull"
+            ? bulls[select.prompt_id]?.name
+            : bears[select.prompt_id]?.name
+        }
+        strategyScript={JSON.stringify(
+          select.type === "bull"
+            ? bulls[select.prompt_id]?.conditions
+            : bears[select.prompt_id]?.conditions
+        )}
+      />
     </Box>
   ) : (
     "讀取中..."
