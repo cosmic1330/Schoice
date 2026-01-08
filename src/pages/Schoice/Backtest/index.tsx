@@ -78,7 +78,29 @@ export default function Backtest() {
   const { t } = useTranslation();
   const { filterStocks, setBacktestPersent } = useSchoiceStore();
   const { bulls, bears, watchStocks } = useCloudStore();
-  const { dates } = useContext(DatabaseContext);
+  const { dates, dbType } = useContext(DatabaseContext);
+
+  if (dbType !== "sqlite") {
+    return (
+      <Box
+        sx={{
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+          gap: 2,
+        }}
+      >
+        <Typography variant="h5" color="text.secondary">
+          {t(
+            "Pages.Schoice.Backtest.sqliteOnly",
+            "回測功能僅在 SQLite 模式下可用"
+          )}
+        </Typography>
+      </Box>
+    );
+  }
   const [ctx, setCtx] = useState<Context>();
   const [selectedBull, setSelectedBull] = useState<string[]>([]);
   const [selectedBear, setSelectedBear] = useState<string[]>([]);
