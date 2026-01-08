@@ -39,6 +39,7 @@ import {
   calculateIndicators,
   EnhancedDealData,
 } from "../../../utils/indicatorUtils";
+import ChartTooltip from "../Tooltip/ChartTooltip";
 
 interface MfiChartData extends Partial<EnhancedDealData> {
   buySignal?: number | null;
@@ -485,16 +486,7 @@ export default function Mfi({
               axisLine={false}
               width={0}
             />
-            <Tooltip
-              offset={50}
-              contentStyle={{
-                backgroundColor: "#222",
-                border: "none",
-                borderRadius: 4,
-              }}
-              itemStyle={{ fontSize: 12 }}
-              labelStyle={{ color: "#aaa", marginBottom: 5 }}
-            />
+            <Tooltip content={<ChartTooltip />} offset={50} />
             <Line
               dataKey="h"
               stroke="#fff"
@@ -654,15 +646,7 @@ export default function Mfi({
               width={0}
             />
 
-            <Tooltip
-              offset={50}
-              contentStyle={{
-                backgroundColor: "#222",
-                border: "none",
-                borderRadius: 4,
-              }}
-              itemStyle={{ fontSize: 12, lineHeight: 1 }}
-            />
+            <Tooltip content={<ChartTooltip />} offset={50} />
 
             <ReferenceLine
               y={80}

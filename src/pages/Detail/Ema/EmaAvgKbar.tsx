@@ -36,6 +36,7 @@ import ma from "../../../cls_tools/ma";
 import AvgCandlestickRectangle from "../../../components/RechartCustoms/AvgCandlestickRectangle";
 import { DealsContext } from "../../../context/DealsContext";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
+import ChartTooltip from "../Tooltip/ChartTooltip";
 
 interface AvgMaChartData
   extends Partial<{
@@ -539,7 +540,7 @@ export default function AvgMaKbar({
         ref={chartContainerRef}
         sx={{ flexGrow: 1, minHeight: 0, height: "100%" }}
       >
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="75%">
           <ComposedChart
             data={chartData}
             syncId="avgSync"
@@ -557,16 +558,7 @@ export default function AvgMaKbar({
               width={0}
             />
             <ZAxis type="number" range={[10]} />
-            <Tooltip
-              offset={50}
-              contentStyle={{
-                backgroundColor: "#222",
-                border: "none",
-                borderRadius: 4,
-              }}
-              itemStyle={{ fontSize: 12 }}
-              labelStyle={{ color: "#aaa", marginBottom: 5 }}
-            />
+            <Tooltip content={<ChartTooltip />} offset={50} />
 
             <Line
               dataKey="h"
@@ -725,11 +717,7 @@ export default function AvgMaKbar({
             })}
           </ComposedChart>
         </ResponsiveContainer>
-      </Box>
-
-      {/* DMI Chart Section */}
-      <Box sx={{ height: "20%", width: "100%" }}>
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="25%">
           <ComposedChart data={chartData} syncId="avgSync">
             <CartesianGrid strokeDasharray="3 3" opacity={0.1} stroke="#fff" />
             <XAxis dataKey="t" hide />
@@ -745,14 +733,7 @@ export default function AvgMaKbar({
                 fontSize: 10,
               }}
             />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "rgba(20, 20, 30, 0.9)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                borderRadius: 4,
-              }}
-              itemStyle={{ fontSize: 11 }}
-            />
+            <Tooltip content={<ChartTooltip />} />
             <ReferenceLine y={20} stroke="#666" strokeDasharray="3 3" />
             <Line
               dataKey="adx"

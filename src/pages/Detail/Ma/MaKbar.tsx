@@ -469,6 +469,7 @@ export default function MaKbar({
             borderRadius: "4px",
             border: "1px solid #444",
             fontSize: "12px",
+            lineHeight: 1,
           }}
         >
           <p style={{ color: "#eee", margin: "0 0 5px 0" }}>

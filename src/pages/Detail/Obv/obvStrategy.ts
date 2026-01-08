@@ -6,7 +6,7 @@ export type SignalType =
   | "TRUE_BREAKOUT"
   | "FAKE_BREAKOUT"
   | "ACCUMULATION"
-  | "EXIT_WEAKNESS" 
+  | "EXIT_WEAKNESS"
   | "STOP_LOSS";
 
 export interface ObvSignal {
@@ -64,7 +64,7 @@ const checkObvHigherLow = (obvValues: number[], idx: number) => {
   return currentLow.val > previousLow.val;
 };
 
-export const calculateObvSignals = (deals: TaType[]): ObvSignal[] => {
+export const calculateObvSignals = (deals: TaType): ObvSignal[] => {
   if (!deals || deals.length < 60) return [];
 
   // 1. Calculate Core Data

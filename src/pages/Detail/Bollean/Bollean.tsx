@@ -34,6 +34,7 @@ import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCan
 import { DealsContext } from "../../../context/DealsContext";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
 import { calculateIndicators } from "../../../utils/indicatorUtils";
+import ChartTooltip from "../Tooltip/ChartTooltip";
 import Fundamental from "../Tooltip/Fundamental";
 
 interface BolleanChartData
@@ -564,14 +565,8 @@ export default function Bollean({
             />
 
             <Tooltip
+              content={<ChartTooltip hideKeys={["buySignal", "exitSignal"]} />}
               offset={50}
-              contentStyle={{
-                backgroundColor: "#222",
-                border: "none",
-                borderRadius: 4,
-              }}
-              itemStyle={{ fontSize: 12 }}
-              labelStyle={{ color: "#aaa", marginBottom: 5 }}
             />
 
             <Line

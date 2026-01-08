@@ -1,4 +1,4 @@
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import React from "react";
 import { UrlTaPerdOptions } from "../../../types";
 import { ControlButton, MenuContent, MenuPopup } from "./StyledComponents";
@@ -38,15 +38,13 @@ const PeriodMenu: React.FC<PeriodMenuProps> = ({
           },
         }}
       >
-        <Box
+        <Typography
           sx={{
             fontSize: "10px",
             color: "#90caf9",
-            fontWeight: "bold",
-            writingMode: "vertical-rl",
-            textOrientation: "upright",
-            letterSpacing: "2px",
-            py: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
           {perd === UrlTaPerdOptions.Hour
@@ -54,7 +52,7 @@ const PeriodMenu: React.FC<PeriodMenuProps> = ({
             : perd === UrlTaPerdOptions.Week
             ? "週線"
             : "日線"}
-        </Box>
+        </Typography>
         <MenuPopup className="period-list">
           <MenuContent>
             {options.map((opt) => (
@@ -84,9 +82,7 @@ const PeriodMenu: React.FC<PeriodMenuProps> = ({
       <Box
         sx={{
           width: "20px",
-          height: "1px",
           backgroundColor: "rgba(255,255,255,0.1)",
-          my: 0.5,
         }}
       />
       {options.map((opt) => (

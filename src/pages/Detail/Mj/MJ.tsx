@@ -34,6 +34,7 @@ import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCan
 import { DealsContext } from "../../../context/DealsContext";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
 import { calculateIndicators } from "../../../utils/indicatorUtils";
+import ChartTooltip from "../Tooltip/ChartTooltip";
 
 interface MjChartData
   extends Partial<{
@@ -453,16 +454,7 @@ export default function MJ({
               axisLine={false}
               width={0}
             />
-            <Tooltip
-              offset={50}
-              contentStyle={{
-                backgroundColor: "#222",
-                border: "none",
-                borderRadius: 4,
-              }}
-              itemStyle={{ fontSize: 12 }}
-              labelStyle={{ color: "#aaa", marginBottom: 5 }}
-            />
+            <Tooltip content={<ChartTooltip />} offset={50} />
             <Line
               dataKey="h"
               stroke="#fff"
@@ -640,10 +632,7 @@ export default function MJ({
               width={0}
             />
 
-            <Tooltip
-              offset={50}
-              contentStyle={{ backgroundColor: "#222", border: "none" }}
-            />
+            <Tooltip content={<ChartTooltip />} />
 
             <ReferenceLine y={0} yAxisId="left" stroke="#666" opacity={0.5} />
             <ReferenceLine

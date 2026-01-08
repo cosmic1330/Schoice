@@ -38,6 +38,7 @@ import {
   calculateIndicators,
   EnhancedDealData,
 } from "../../../utils/indicatorUtils";
+import ChartTooltip from "../Tooltip/ChartTooltip";
 
 interface KdChartData extends Partial<EnhancedDealData> {
   // signals and other properties if needed
@@ -442,16 +443,7 @@ export default function Kd({
               axisLine={false}
               width={0}
             />
-            <Tooltip
-              offset={50}
-              contentStyle={{
-                backgroundColor: "#222",
-                border: "none",
-                borderRadius: 4,
-              }}
-              itemStyle={{ fontSize: 12 }}
-              labelStyle={{ color: "#aaa", marginBottom: 5 }}
-            />
+            <Tooltip content={<ChartTooltip />} offset={50} />
             <Line
               dataKey="h"
               stroke="#fff"
@@ -601,15 +593,7 @@ export default function Kd({
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
             <XAxis dataKey="t" hide />
             <YAxis domain={[0, 100]} ticks={[0, 20, 50, 80, 100]} />
-            <Tooltip
-              offset={50}
-              contentStyle={{
-                backgroundColor: "#222",
-                border: "none",
-                borderRadius: 4,
-              }}
-              itemStyle={{ fontSize: 12, lineHeight: 1 }}
-            />
+            <Tooltip content={<ChartTooltip />} offset={50} />
             <ReferenceLine
               y={80}
               stroke="#f44336"

@@ -34,6 +34,7 @@ import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCan
 import { DealsContext } from "../../../context/DealsContext";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
 import { calculateIndicators } from "../../../utils/indicatorUtils";
+import ChartTooltip from "../Tooltip/ChartTooltip";
 
 interface MrChartData
   extends Partial<{
@@ -67,41 +68,6 @@ interface MrStep {
   description: string;
   checks: StepCheck[];
 }
-
-// Custom Tooltip
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div
-        style={{
-          backgroundColor: "#222",
-          padding: "10px",
-          borderRadius: "4px",
-          border: "1px solid #444",
-          fontSize: "12px",
-        }}
-      >
-        <p style={{ color: "#eee", margin: "0 0 5px 0" }}>{label}</p>
-        {payload.map((entry: any) => {
-          // Hide auxiliary areas
-          if (entry.name === "longZone" || entry.name === "shortZone")
-            return null;
-
-          const val =
-            typeof entry.value === "number"
-              ? entry.value.toFixed(2)
-              : entry.value;
-          return (
-            <p key={entry.name} style={{ color: entry.color, margin: 0 }}>
-              {entry.name}: {val}
-            </p>
-          );
-        })}
-      </div>
-    );
-  }
-  return null;
-};
 
 export default function MR({
   visibleCount,
@@ -486,7 +452,10 @@ export default function MR({
               axisLine={false}
               width={0}
             />
-            <Tooltip content={<CustomTooltip />} offset={50} />
+            <Tooltip
+              content={<ChartTooltip hideKeys={["longZone", "shortZone"]} />}
+              offset={50}
+            />
             <Line
               dataKey="h"
               stroke="#fff"
@@ -664,7 +633,10 @@ export default function MR({
               width={0}
             />
 
-            <Tooltip content={<CustomTooltip />} offset={50} />
+            <Tooltip
+              content={<ChartTooltip hideKeys={["longZone", "shortZone"]} />}
+              offset={50}
+            />
 
             <ReferenceLine y={0} yAxisId="left" stroke="#666" opacity={0.5} />
             <ReferenceLine
