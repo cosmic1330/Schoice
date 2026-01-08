@@ -9,6 +9,7 @@ import {
   CircularProgress,
   Container,
   Divider,
+  Tooltip as MuiTooltip,
   Stack,
   Step,
   StepButton,
@@ -17,7 +18,9 @@ import {
 } from "@mui/material";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Bar,
   CartesianGrid,
+  Cell,
   ComposedChart,
   Customized,
   Line,
@@ -28,6 +31,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import macd from "../../../cls_tools/macd";
 import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
 import { DealsContext } from "../../../context/DealsContext";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
@@ -41,6 +45,10 @@ interface MfiChartData extends Partial<EnhancedDealData> {
   exitSignal?: number | null;
   buyReason?: string;
   exitReason?: string;
+  // MACD
+  macdOsc?: number | null;
+  macdDif?: number | null;
+  macdDem?: number | null;
 }
 
 type CheckStatus = "pass" | "fail" | "manual";
@@ -70,6 +78,15 @@ export default function Mfi({
   const deals = useContext(DealsContext);
   const { settings } = useIndicatorSettings();
   const [activeStep, setActiveStep] = useState(0);
+
+  useEffect(() => {
+    const handleSwitchStep = () => {
+      setActiveStep((prev) => (prev + 1) % 4); // 4 steps total
+    };
+    window.addEventListener("detail-switch-step", handleSwitchStep);
+    return () =>
+      window.removeEventListener("detail-switch-step", handleSwitchStep);
+  }, []);
 
   // Zoom & Pan Control
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -149,6 +166,17 @@ export default function Mfi({
 
     const enhancedData = calculateIndicators(deals, settings);
 
+    // Calculate MACD manually since it might not be in enhancedData or we want specific params
+    let macdState = macd.init(deals[0]);
+    const macdValues = deals.map((d, i) => {
+      if (i > 0) macdState = macd.next(d, macdState);
+      return {
+        dif: (macdState as any).dif,
+        dem: (macdState as any).dem,
+        osc: macdState.osc,
+      };
+    });
+
     const initialData = enhancedData.slice(
       -(visibleCount + rightOffset),
       rightOffset === 0 ? undefined : -rightOffset
@@ -157,8 +185,19 @@ export default function Mfi({
     // Second pass for signals (Trend/Turn)
     const dataWithSignals = initialData.map(
       (d: MfiChartData, i: number, arr: MfiChartData[]) => {
-        if (i === 0) return d;
-        const prev = arr[i - 1];
+        // Find original index to get correct MACD value
+        const originalIndex = deals.findIndex((item) => item.t === d.t); // Performance note: optimization possible if needed
+        const macdVal = macdValues[originalIndex] || { dif: 0, dem: 0, osc: 0 };
+
+        const dataItem = {
+          ...d,
+          macdOsc: macdVal.osc,
+          macdDif: macdVal.dif,
+          macdDem: macdVal.dem,
+        };
+
+        if (i === 0) return dataItem;
+        const prev = arr[i - 1]; // Note: This prev doesn't have macd yet, careful if using prev signals
         const currMfi = d.mfi || 50;
         const prevMfi = prev.mfi || 50;
 
@@ -178,7 +217,7 @@ export default function Mfi({
           exitReason = "超買反轉";
         }
 
-        return { ...d, buySignal, exitSignal, buyReason, exitReason };
+        return { ...dataItem, buySignal, exitSignal, buyReason, exitReason };
       }
     );
 
@@ -199,6 +238,7 @@ export default function Mfi({
     const bollMa = current.bollMa;
     const vol = current.v;
     const volMa = current.volMa20;
+    const macdOsc = current.macdOsc || 0;
 
     if (
       !isNum(price) ||
@@ -220,6 +260,7 @@ export default function Mfi({
     const isOversold = mfiVal < 20;
     const isOverbought = mfiVal > 80;
     const mfiRising = mfiVal > (prev.mfi || 0);
+    const macdBullish = macdOsc > 0 && macdOsc > (prev.macdOsc || 0);
 
     // III. Risk
     const stopLoss = (price * 0.97).toFixed(2); // 3% trail or recent low
@@ -230,15 +271,20 @@ export default function Mfi({
     if (isVolStable) totalScore += 20;
     // 2. Trend (20)
     if (bollMaRising || price > bollMa) totalScore += 20;
-    // 3. MFI Position (40)
-    if (isOversold && mfiRising) totalScore += 40; // Perfect buy setup
+    // 3. MFI Position (30)
+    if (isOversold && mfiRising) totalScore += 30; // Perfect buy setup
     else if (mfiVal > 40 && mfiVal < 60 && mfiRising && price > bollMa)
-      totalScore += 30; // Momentum continuation
+      totalScore += 20; // Momentum continuation
     else if (isOverbought) totalScore -= 20; // Warning
-    // 4. Price Action (20)
+
+    // 4. MACD Confirmation (10)
+    if (macdBullish) totalScore += 10;
+
+    // 5. Price Action (20)
     if (price > (current.o || 0)) totalScore += 20; // Green candle
 
     if (totalScore < 0) totalScore = 0;
+    if (totalScore > 100) totalScore = 100;
 
     let rec = "Reject";
     if (totalScore >= 80) rec = "Strong Buy";
@@ -248,7 +294,19 @@ export default function Mfi({
 
     const mfiSteps: MfiStep[] = [
       {
-        label: "I. 市場環境",
+        label: "I. 綜合評估",
+        description: `得分: ${totalScore} - ${rec}`,
+        checks: [
+          {
+            label: "趨勢動能強 (MFI > 50 & Rising)",
+            status: mfiVal > 50 && mfiRising ? "pass" : "fail",
+          },
+          { label: "無頂部背離 (Bearish Div)", status: "manual" },
+          { label: "量價配合", status: isVolStable ? "pass" : "manual" },
+        ],
+      },
+      {
+        label: "II. 市場環境",
         description: "流動性與趨勢 (Regime)",
         checks: [
           {
@@ -263,7 +321,7 @@ export default function Mfi({
         ],
       },
       {
-        label: "II. 入場條件",
+        label: "III. 入場條件",
         description: "超賣反轉或動能 (Entry)",
         checks: [
           {
@@ -274,11 +332,14 @@ export default function Mfi({
             label: "MFI 低點抬高 (Turn Up)",
             status: mfiVal > (prev.mfi || 0) ? "pass" : "fail",
           },
-          { label: "價格未跌破前低", status: "manual" },
+          {
+            label: `MACD 翻紅: ${macdBullish ? "Yes" : "No"}`,
+            status: macdBullish ? "pass" : "manual",
+          },
         ],
       },
       {
-        label: "III. 風險控管",
+        label: "IV. 風險控管",
         description: "停損與部位 (Risk)",
         checks: [
           { label: `建議停損: ${stopLoss}`, status: "manual" },
@@ -287,18 +348,6 @@ export default function Mfi({
             status: mfiVal < 15 || mfiVal > 85 ? "fail" : "pass",
           },
           { label: "單筆風險 < 1.2%", status: "manual" },
-        ],
-      },
-      {
-        label: "IV. 綜合評估",
-        description: `得分: ${totalScore} - ${rec}`,
-        checks: [
-          {
-            label: "趨勢動能強 (MFI > 50 & Rising)",
-            status: mfiVal > 50 && mfiRising ? "pass" : "fail",
-          },
-          { label: "無頂部背離 (Bearish Div)", status: "manual" },
-          { label: "量價配合", status: isVolStable ? "pass" : "manual" },
         ],
       },
     ];
@@ -349,9 +398,11 @@ export default function Mfi({
       }}
     >
       <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="h6" component="div" color="white">
-          MFI
-        </Typography>
+        <MuiTooltip title="MFI 較敏感，MACD 較穩重。兩者結合可減少 MFI 頻繁震盪產生的雜訊。\n 價格是否觸碰布林軌道邊界?MACD 是否出現轉向交叉? 有的話可信度越高">
+          <Typography variant="h6" component="div" color="white">
+            MFI
+          </Typography>
+        </MuiTooltip>
 
         <Chip
           label={`${score}分 - ${recommendation}`}
@@ -406,13 +457,34 @@ export default function Mfi({
         </CardContent>
       </Card>
 
-      <Box ref={chartContainerRef} sx={{ flexGrow: 1, minHeight: 0 }}>
+      <Box
+        ref={chartContainerRef}
+        sx={{
+          flexGrow: 1,
+          minHeight: 0,
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         {/* Price Chart */}
-        <ResponsiveContainer width="100%" height="60%">
-          <ComposedChart data={chartData} syncId="mfiSync">
+        <ResponsiveContainer width="100%" height="65%">
+          <ComposedChart
+            data={chartData}
+            syncId="mfiSync"
+            margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
+          >
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
             <XAxis dataKey="t" hide />
             <YAxis domain={["auto", "auto"]} />
+            <YAxis
+              yAxisId="volAxis"
+              orientation="right"
+              domain={[0, (dataMax: number) => dataMax * 4]}
+              tick={false}
+              axisLine={false}
+              width={0}
+            />
             <Tooltip
               offset={50}
               contentStyle={{
@@ -456,6 +528,26 @@ export default function Mfi({
               legendType="none"
             />
             <Customized component={BaseCandlestickRectangle} />
+
+            <Bar
+              dataKey="v"
+              yAxisId="volAxis"
+              name="Volume"
+              shape={(props: any) => {
+                const { x, y, width, height, payload } = props;
+                const isUp = payload.c > payload.o;
+                return (
+                  <rect
+                    x={x}
+                    y={y}
+                    width={width}
+                    height={height}
+                    fill={isUp ? "#f44336" : "#4caf50"}
+                    opacity={0.2}
+                  />
+                );
+              }}
+            />
 
             <Line
               dataKey="bollMa"
@@ -533,12 +625,35 @@ export default function Mfi({
           </ComposedChart>
         </ResponsiveContainer>
 
-        {/* MFI Chart */}
-        <ResponsiveContainer width="100%" height="40%">
-          <ComposedChart data={chartData} syncId="mfiSync">
+        {/* Combined MFI & MACD Chart */}
+        <ResponsiveContainer width="100%" height="35%">
+          <ComposedChart
+            data={chartData}
+            syncId="mfiSync"
+            margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
+          >
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-            <XAxis dataKey="t" />
-            <YAxis domain={[0, 100]} ticks={[0, 20, 50, 80, 100]} />
+            <XAxis dataKey="t" hide />
+
+            {/* Left Axis: MACD Osc */}
+            <YAxis
+              yAxisId="left"
+              orientation="left"
+              stroke="#666"
+              fontSize={10}
+            />
+
+            {/* Right Axis: MFI */}
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              domain={[0, 100]}
+              ticks={[20, 50, 80]}
+              stroke="#2196f3"
+              fontSize={10}
+              width={0}
+            />
+
             <Tooltip
               offset={50}
               contentStyle={{
@@ -546,25 +661,62 @@ export default function Mfi({
                 border: "none",
                 borderRadius: 4,
               }}
-              itemStyle={{ fontSize: 12 }}
-              labelStyle={{ color: "#aaa", marginBottom: 5 }}
+              itemStyle={{ fontSize: 12, lineHeight: 1 }}
             />
+
             <ReferenceLine
               y={80}
+              yAxisId="right"
               stroke="#f44336"
               strokeDasharray="3 3"
-              label={{ value: "Overbought", fill: "#f44336", fontSize: 10 }}
+              label={{
+                value: "Overbought",
+                fill: "#f44336",
+                fontSize: 10,
+                position: "insideRight",
+              }}
             />
             <ReferenceLine
               y={20}
+              yAxisId="right"
               stroke="#4caf50"
               strokeDasharray="3 3"
-              label={{ value: "Oversold", fill: "#4caf50", fontSize: 10 }}
+              label={{
+                value: "Oversold",
+                fill: "#4caf50",
+                fontSize: 10,
+                position: "insideRight",
+              }}
             />
-            <ReferenceLine y={50} stroke="#666" strokeDasharray="3 3" />
+            <ReferenceLine
+              y={50}
+              yAxisId="right"
+              stroke="#666"
+              strokeDasharray="3 3"
+            />
+            <ReferenceLine y={0} yAxisId="left" stroke="#666" opacity={0.5} />
 
+            {/* MACD Bars (Left Axis) */}
+            <Bar
+              dataKey="macdOsc"
+              yAxisId="left"
+              name="Osc"
+              fill="#ffeb3b"
+              barSize={3}
+            >
+              {chartData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={(entry.macdOsc || 0) > 0 ? "#f44336" : "#4caf50"}
+                  opacity={0.5}
+                />
+              ))}
+            </Bar>
+
+            {/* MFI Line (Right Axis) */}
             <Line
               dataKey="mfi"
+              yAxisId="right"
               stroke="#2196f3"
               dot={false}
               activeDot={false}

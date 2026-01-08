@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Bar,
   CartesianGrid,
   ComposedChart,
   Customized,
@@ -69,6 +70,15 @@ export default function Kd({
   const { settings } = useIndicatorSettings();
   const deals = useContext(DealsContext);
   const [activeStep, setActiveStep] = useState(0);
+
+  useEffect(() => {
+    const handleSwitchStep = () => {
+      setActiveStep((prev) => (prev + 1) % 4); // 4 steps total
+    };
+    window.addEventListener("detail-switch-step", handleSwitchStep);
+    return () =>
+      window.removeEventListener("detail-switch-step", handleSwitchStep);
+  }, []);
 
   // Zoom & Pan Control
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -246,7 +256,22 @@ export default function Kd({
 
     const kdSteps: KdStep[] = [
       {
-        label: "I. 市場環境",
+        label: "I. 綜合評估",
+        description: `得分: ${totalScore} - ${rec}`,
+        checks: [
+          {
+            label: "趨勢動能強 (K > D)",
+            status: kVal > dVal ? "pass" : "fail",
+          },
+          {
+            label: "無頂部背離",
+            status: recentBearishDiv ? "fail" : "pass",
+          },
+          { label: "量價配合", status: isVolStable ? "pass" : "manual" },
+        ],
+      },
+      {
+        label: "II. 市場環境",
         description: "流動性與趨勢 (Regime)",
         checks: [
           {
@@ -261,7 +286,7 @@ export default function Kd({
         ],
       },
       {
-        label: "II. 入場條件",
+        label: "III. 入場條件",
         description: "交叉與背離 (Entry)",
         checks: [
           {
@@ -279,7 +304,7 @@ export default function Kd({
         ],
       },
       {
-        label: "III. 風險控管",
+        label: "IV. 風險控管",
         description: "停損與部位 (Risk)",
         checks: [
           { label: `建議停損: ${stopLoss}`, status: "manual" },
@@ -288,21 +313,6 @@ export default function Kd({
             status: kVal > 85 ? "fail" : "pass",
           },
           { label: "死亡交叉警示", status: deathCross ? "fail" : "pass" },
-        ],
-      },
-      {
-        label: "IV. 綜合評估",
-        description: `得分: ${totalScore} - ${rec}`,
-        checks: [
-          {
-            label: "趨勢動能強 (K > D)",
-            status: kVal > dVal ? "pass" : "fail",
-          },
-          {
-            label: "無頂部背離",
-            status: recentBearishDiv ? "fail" : "pass",
-          },
-          { label: "量價配合", status: isVolStable ? "pass" : "manual" },
         ],
       },
     ];
@@ -410,13 +420,28 @@ export default function Kd({
         </CardContent>
       </Card>
 
-      <Box ref={chartContainerRef} sx={{ flexGrow: 1, minHeight: 0 }}>
+      <Box
+        ref={chartContainerRef}
+        sx={{ flexGrow: 1, minHeight: 0, width: "100%" }}
+      >
         {/* Price Chart */}
         <ResponsiveContainer width="100%" height="60%">
-          <ComposedChart data={chartData} syncId="kdSync">
+          <ComposedChart
+            data={chartData}
+            syncId="kdSync"
+            margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
+          >
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
             <XAxis dataKey="t" hide />
             <YAxis domain={["auto", "auto"]} />
+            <YAxis
+              yAxisId="volAxis"
+              orientation="right"
+              domain={[0, (dataMax: number) => dataMax * 4]}
+              tick={false}
+              axisLine={false}
+              width={0}
+            />
             <Tooltip
               offset={50}
               contentStyle={{
@@ -460,6 +485,26 @@ export default function Kd({
               legendType="none"
             />
             <Customized component={BaseCandlestickRectangle} />
+
+            <Bar
+              dataKey="v"
+              yAxisId="volAxis"
+              name="Volume"
+              shape={(props: any) => {
+                const { x, y, width, height, payload } = props;
+                const isUp = payload.c > payload.o;
+                return (
+                  <rect
+                    x={x}
+                    y={y}
+                    width={width}
+                    height={height}
+                    fill={isUp ? "#f44336" : "#4caf50"}
+                    opacity={0.2}
+                  />
+                );
+              }}
+            />
 
             <Line
               dataKey="bollMa"
@@ -547,10 +592,14 @@ export default function Kd({
         </ResponsiveContainer>
 
         {/* KD Chart */}
-        <ResponsiveContainer width="100%" height="40%">
-          <ComposedChart data={chartData} syncId="kdSync">
+        <ResponsiveContainer width="100%" height="35%">
+          <ComposedChart
+            data={chartData}
+            syncId="kdSync"
+            margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
+          >
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-            <XAxis dataKey="t" />
+            <XAxis dataKey="t" hide />
             <YAxis domain={[0, 100]} ticks={[0, 20, 50, 80, 100]} />
             <Tooltip
               offset={50}
@@ -559,8 +608,7 @@ export default function Kd({
                 border: "none",
                 borderRadius: 4,
               }}
-              itemStyle={{ fontSize: 12 }}
-              labelStyle={{ color: "#aaa", marginBottom: 5 }}
+              itemStyle={{ fontSize: 12, lineHeight: 1 }}
             />
             <ReferenceLine
               y={80}

@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Bar,
   CartesianGrid,
   ComposedChart,
   Customized,
@@ -29,12 +30,12 @@ import {
   YAxis,
   ZAxis,
 } from "recharts";
+import dmi from "../../../cls_tools/dmi";
 import ema from "../../../cls_tools/ema";
 import ma from "../../../cls_tools/ma";
 import AvgCandlestickRectangle from "../../../components/RechartCustoms/AvgCandlestickRectangle";
 import { DealsContext } from "../../../context/DealsContext";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
-import { calculateDMI } from "../../../utils/technicalIndicators";
 
 interface AvgMaChartData
   extends Partial<{
@@ -86,6 +87,15 @@ export default function AvgMaKbar({
   const { settings } = useIndicatorSettings();
   const deals = useContext(DealsContext);
   const [activeStep, setActiveStep] = useState(0);
+
+  useEffect(() => {
+    const handleSwitchStep = () => {
+      setActiveStep((prev) => (prev + 1) % 5); // 5 steps total
+    };
+    window.addEventListener("detail-switch-step", handleSwitchStep);
+    return () =>
+      window.removeEventListener("detail-switch-step", handleSwitchStep);
+  }, []);
 
   // Zoom & Pan Control
   // const [visibleCount, setVisibleCount] = useState(160);
@@ -168,6 +178,7 @@ export default function AvgMaKbar({
     let ema5_data = ema.init(deals[0], settings.emaShort);
     let ema10_data = ema.init(deals[0], settings.emaLong);
     let ma60_data = ma.init(deals[0], settings.ma60);
+    let dmi_data = dmi.init(deals[0], 14);
 
     const response: AvgMaChartData[] = [];
 
@@ -179,6 +190,7 @@ export default function AvgMaKbar({
         ema5_data = ema.next(deal, ema5_data, settings.emaShort);
         ema10_data = ema.next(deal, ema10_data, settings.emaLong);
         ma60_data = ma.next(deal, ma60_data, settings.ma60);
+        dmi_data = dmi.next(deal, dmi_data, 14);
       }
 
       // Vol MA20
@@ -197,21 +209,13 @@ export default function AvgMaKbar({
         ema10: ema10_data.ema || null,
         ma60: ma60_data.ma || null,
         volMa20,
-        diPlus: null,
-        diMinus: null,
-        adx: null,
+        diPlus: dmi_data.pDi ?? null,
+        diMinus: dmi_data.mDi ?? null,
+        adx: dmi_data.adx ?? null,
       });
     }
 
-    // DMI calculation
-    const { diPlus, diMinus, adx } = calculateDMI(deals, 14);
-
-    const finalData = response.map((d, i) => ({
-      ...d,
-      diPlus: diPlus[i],
-      diMinus: diMinus[i],
-      adx: adx[i],
-    }));
+    const finalData = response;
 
     return finalData.slice(
       -(visibleCount + rightOffset),
@@ -341,7 +345,17 @@ export default function AvgMaKbar({
 
     const avgSteps: AvgMaStep[] = [
       {
-        label: "I. 趨勢判斷",
+        label: "I. 綜合評估",
+        description: `得分: ${totalScore} - ${rec}`,
+        checks: [
+          {
+            label: `目前建議: ${rec}`,
+            status: totalScore >= 60 ? "pass" : "manual",
+          },
+        ],
+      },
+      {
+        label: "II. 趨勢判斷",
         description: "多空生命線 (MA60)",
         checks: [
           {
@@ -357,7 +371,7 @@ export default function AvgMaKbar({
         ],
       },
       {
-        label: "II. 趨勢強度 (DMI)",
+        label: "III. 趨勢強度 (DMI)",
         description: "ADX 與 DI 方向",
         checks: [
           {
@@ -372,7 +386,7 @@ export default function AvgMaKbar({
         ],
       },
       {
-        label: "III. 進場訊號",
+        label: "IV. 進場訊號",
         description: "交叉與型態",
         checks: [
           {
@@ -403,7 +417,7 @@ export default function AvgMaKbar({
         ],
       },
       {
-        label: "IV. 動能確認",
+        label: "V. 動能確認",
         description: "量價與均線",
         checks: [
           {
@@ -413,16 +427,6 @@ export default function AvgMaKbar({
           {
             label: `成交量 > 均量: ${volOk ? "Yes" : "No"}`,
             status: volOk ? "pass" : "manual",
-          },
-        ],
-      },
-      {
-        label: "V. 綜合評估",
-        description: `得分: ${totalScore} - ${rec}`,
-        checks: [
-          {
-            label: `目前建議: ${rec}`,
-            status: totalScore >= 60 ? "pass" : "manual",
           },
         ],
       },
@@ -533,13 +537,25 @@ export default function AvgMaKbar({
 
       <Box
         ref={chartContainerRef}
-        sx={{ flexGrow: 1, minHeight: 0, height: "70%" }}
+        sx={{ flexGrow: 1, minHeight: 0, height: "100%" }}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData} syncId="avgSync">
+          <ComposedChart
+            data={chartData}
+            syncId="avgSync"
+            margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
+          >
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-            <XAxis dataKey="t" />
+            <XAxis dataKey="t" hide />
             <YAxis domain={["dataMin", hMax]} dataKey="l" />
+            <YAxis
+              yAxisId="volAxis"
+              orientation="right"
+              domain={[0, (dataMax: number) => dataMax * 4]}
+              tick={false}
+              axisLine={false}
+              width={0}
+            />
             <ZAxis type="number" range={[10]} />
             <Tooltip
               offset={50}
@@ -585,6 +601,25 @@ export default function AvgMaKbar({
               legendType="none"
             />
             <Customized component={AvgCandlestickRectangle} />
+            <Bar
+              dataKey="v"
+              yAxisId="volAxis"
+              name="Volume"
+              shape={(props: any) => {
+                const { x, y, width, height, payload } = props;
+                const isUp = payload.c > payload.o;
+                return (
+                  <rect
+                    x={x}
+                    y={y}
+                    width={width}
+                    height={height}
+                    fill={isUp ? "#f44336" : "#4caf50"}
+                    opacity={0.2}
+                  />
+                );
+              }}
+            />
 
             <Line
               dataKey="ema5"
@@ -693,7 +728,7 @@ export default function AvgMaKbar({
       </Box>
 
       {/* DMI Chart Section */}
-      <Box sx={{ height: "20%", minHeight: 0 }}>
+      <Box sx={{ height: "20%", width: "100%" }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} syncId="avgSync">
             <CartesianGrid strokeDasharray="3 3" opacity={0.1} stroke="#fff" />

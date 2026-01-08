@@ -1,4 +1,4 @@
-import { Box, styled, createTheme, ThemeProvider } from "@mui/material";
+import { Box, createTheme, styled, ThemeProvider } from "@mui/material";
 import { listen } from "@tauri-apps/api/event";
 import { AnimatePresence, motion, Variants } from "framer-motion";
 import React, {
@@ -7,8 +7,8 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
-  useState,
   useRef,
+  useState,
 } from "react";
 import { useNavigate, useParams } from "react-router";
 import useSWR from "swr";
@@ -21,8 +21,9 @@ import {
   IndicatorsDateTimeType,
 } from "../../utils/analyzeIndicatorsData";
 import generateDealDataDownloadUrl from "../../utils/generateDealDataDownloadUrl";
-import AvgMaKbar from "./Ema/EmaAvgKbar";
 import Bollean from "./Bollean/Bollean";
+import AvgMaKbar from "./Ema/EmaAvgKbar";
+import GlassBar from "./GlassBar";
 
 // lazy load components
 const MaKbar = lazy(() => import("./Ma/MaKbar"));
@@ -32,7 +33,6 @@ const MJ = lazy(() => import("./Mj/MJ"));
 const MR = lazy(() => import("./Mr/MR"));
 const Kd = lazy(() => import("./Kd/Kd"));
 const Mfi = lazy(() => import("./Mfi/Mfi"));
-import GlassBar from "./GlassBar";
 
 const PageContainer = styled(Box)`
   width: 100vw;
@@ -97,6 +97,11 @@ const FullscreenVerticalCarousel: React.FC = () => {
   // Shared zoom and pan state
   const [visibleCount, setVisibleCount] = useState(180);
   const [rightOffset, setRightOffset] = useState(0);
+
+  const handleSetPerd = useCallback((newPerd: UrlTaPerdOptions) => {
+    localStorage.setItem("detail:perd:type", newPerd);
+    setPerd(newPerd);
+  }, []);
 
   // slides 需依賴 perd，移到 useMemo 內
   const slides = useMemo(
@@ -224,10 +229,46 @@ const FullscreenVerticalCarousel: React.FC = () => {
     [current, scrolling, goToSlide]
   );
 
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (scrolling) return;
+
+      if (e.key === "ArrowUp") {
+        goToSlide(current - 1);
+      } else if (e.key === "ArrowDown") {
+        goToSlide(current + 1);
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        const options = [
+          UrlTaPerdOptions.Hour,
+          UrlTaPerdOptions.Day,
+          UrlTaPerdOptions.Week,
+        ];
+        const idx = options.indexOf(perd);
+        if (e.key === "ArrowLeft") {
+          if (idx > 0) {
+            handleSetPerd(options[idx - 1]);
+          }
+        } else if (e.key === "ArrowRight") {
+          if (idx < options.length - 1) {
+            handleSetPerd(options[idx + 1]);
+          }
+        }
+      } else if (e.key === " ") {
+        e.preventDefault(); // Prevent page scroll
+        window.dispatchEvent(new CustomEvent("detail-switch-step"));
+      }
+    },
+    [current, scrolling, goToSlide, perd, handleSetPerd]
+  );
+
   useEffect(() => {
     window.addEventListener("wheel", handleWheel, { passive: true });
-    return () => window.removeEventListener("wheel", handleWheel);
-  }, [handleWheel]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("wheel", handleWheel);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleWheel, handleKeyDown]);
 
   const slideVariants: Variants = {
     initial: (direction: number) => ({

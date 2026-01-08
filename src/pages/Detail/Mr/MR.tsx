@@ -118,6 +118,15 @@ export default function MR({
   const { settings } = useIndicatorSettings();
   const [activeStep, setActiveStep] = useState(0);
 
+  useEffect(() => {
+    const handleSwitchStep = () => {
+      setActiveStep((prev) => (prev + 1) % 4); // 4 steps total
+    };
+    window.addEventListener("detail-switch-step", handleSwitchStep);
+    return () =>
+      window.removeEventListener("detail-switch-step", handleSwitchStep);
+  }, []);
+
   // Zoom & Pan Control
   // const [visibleCount, setVisibleCount] = useState(160);
   // const [rightOffset, setRightOffset] = useState(0);
@@ -292,7 +301,17 @@ export default function MR({
 
     const mrSteps: MrStep[] = [
       {
-        label: "I. 指標狀態",
+        label: "I. 綜合評估",
+        description: `得分: ${totalScore} - ${rec}`,
+        checks: [
+          {
+            label: `目前建議: ${rec}`,
+            status: totalScore >= 60 ? "pass" : "manual",
+          },
+        ],
+      },
+      {
+        label: "II. 指標狀態",
         description: "MR 雙指標 (RSI & MACD)",
         checks: [
           {
@@ -306,7 +325,7 @@ export default function MR({
         ],
       },
       {
-        label: "II. 訊號判定",
+        label: "III. 訊號判定",
         description: "多空區域確認",
         checks: [
           {
@@ -320,7 +339,7 @@ export default function MR({
         ],
       },
       {
-        label: "III. 趨勢與動能",
+        label: "IV. 趨勢與動能",
         description: "MA20 與 動能方向",
         checks: [
           {
@@ -330,16 +349,6 @@ export default function MR({
           {
             label: `RSI 上升中: ${rsiRising ? "Yes" : "No"}`,
             status: rsiRising ? "pass" : "fail",
-          },
-        ],
-      },
-      {
-        label: "IV. 綜合評估",
-        description: `得分: ${totalScore} - ${rec}`,
-        checks: [
-          {
-            label: `目前建議: ${rec}`,
-            status: totalScore >= 60 ? "pass" : "manual",
           },
         ],
       },
@@ -448,10 +457,17 @@ export default function MR({
         </CardContent>
       </Card>
 
-      <Box ref={chartContainerRef} sx={{ flexGrow: 1, minHeight: 0 }}>
+      <Box
+        ref={chartContainerRef}
+        sx={{ flexGrow: 1, minHeight: 0, width: "100%" }}
+      >
         {/* Main Price Chart (65%) */}
         <ResponsiveContainer width="100%" height="65%">
-          <ComposedChart data={chartData} syncId="mrSync">
+          <ComposedChart
+            data={chartData}
+            syncId="mrSync"
+            margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
+          >
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
             <XAxis dataKey="t" hide />
             <YAxis domain={["auto", "auto"]} />
@@ -460,7 +476,15 @@ export default function MR({
               orientation="right"
               tick={false}
               axisLine={false}
-              width={40}
+              width={0}
+            />
+            <YAxis
+              yAxisId="volAxis"
+              orientation="right"
+              domain={[0, (dataMax: number) => dataMax * 4]}
+              tick={false}
+              axisLine={false}
+              width={0}
             />
             <Tooltip content={<CustomTooltip />} offset={50} />
             <Line
@@ -496,6 +520,26 @@ export default function MR({
               legendType="none"
             />
             <Customized component={BaseCandlestickRectangle} />
+
+            <Bar
+              dataKey="v"
+              yAxisId="volAxis"
+              name="Volume"
+              shape={(props: any) => {
+                const { x, y, width, height, payload } = props;
+                const isUp = payload.c > payload.o;
+                return (
+                  <rect
+                    x={x}
+                    y={y}
+                    width={width}
+                    height={height}
+                    fill={isUp ? "#f44336" : "#4caf50"}
+                    opacity={0.2}
+                  />
+                );
+              }}
+            />
 
             <Line
               dataKey="bollMa"
@@ -593,9 +637,13 @@ export default function MR({
 
         {/* Combined RSI & MACD Chart (35%) */}
         <ResponsiveContainer width="100%" height="35%">
-          <ComposedChart data={chartData} syncId="mrSync">
+          <ComposedChart
+            data={chartData}
+            syncId="mrSync"
+            margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
+          >
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-            <XAxis dataKey="t" />
+            <XAxis dataKey="t" hide />
 
             {/* Left Axis for MACD Osc */}
             <YAxis
@@ -613,7 +661,7 @@ export default function MR({
               ticks={[0, 25, 50, 75, 100]}
               stroke="#2196f3"
               fontSize={10}
-              width={40}
+              width={0}
             />
 
             <Tooltip content={<CustomTooltip />} offset={50} />

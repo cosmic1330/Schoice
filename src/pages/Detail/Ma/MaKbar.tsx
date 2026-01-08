@@ -78,7 +78,7 @@ export default function MaKbar({
 
   // --- States ---
   const [activeStep, setActiveStep] = useState(0);
-  const [showGaps, setShowGaps] = useState(false);
+  const [showGaps, setShowGaps] = useState(true);
   const [showOnlyUnfilled, setShowOnlyUnfilled] = useState(false);
   const [hoveredGapDate, setHoveredGapDate] = useState<
     number | string | undefined
@@ -102,6 +102,15 @@ export default function MaKbar({
   }, [deals, settings]);
 
   // Handle Zoom (Wheel)
+  useEffect(() => {
+    const handleSwitchStep = () => {
+      setActiveStep((prev) => (prev + 1) % 4); // 4 steps total
+    };
+    window.addEventListener("detail-switch-step", handleSwitchStep);
+    return () =>
+      window.removeEventListener("detail-switch-step", handleSwitchStep);
+  }, []);
+
   useEffect(() => {
     const container = chartContainerRef.current;
     if (!container) return;
@@ -310,7 +319,18 @@ export default function MaKbar({
 
     const dashSteps: StrategyStep[] = [
       {
-        label: "I. 趨勢分析",
+        label: "I. 綜合評估",
+        description: `得分: ${totalScore} - ${rec}`,
+        checks: [
+          {
+            label: `目前建議: ${rec}`,
+            status: totalScore >= 60 ? "pass" : "manual",
+          },
+          { label: "近期金叉訊號", status: isRecentBuy ? "pass" : "manual" },
+        ],
+      },
+      {
+        label: "II. 趨勢分析",
         description: `MA 排列: ${trend}`,
         checks: [
           {
@@ -324,7 +344,7 @@ export default function MaKbar({
         ],
       },
       {
-        label: "II. 缺口研判",
+        label: "III. 缺口研判",
         description: `未補: ${unfilledGapsCount} / 近期: ${
           lastGap ? (lastGap.type === "up" ? "↑" : "↓") : "無"
         }`,
@@ -337,7 +357,7 @@ export default function MaKbar({
         ],
       },
       {
-        label: "III. 力道動能",
+        label: "IV. 力道動能",
         description: powerStr,
         checks: [
           { label: "多方力道增強", status: isPowerBullish ? "pass" : "fail" },
@@ -349,17 +369,6 @@ export default function MaKbar({
               ? "fail"
               : "manual",
           },
-        ],
-      },
-      {
-        label: "IV. 綜合評估",
-        description: `得分: ${totalScore} - ${rec}`,
-        checks: [
-          {
-            label: `目前建議: ${rec}`,
-            status: totalScore >= 60 ? "pass" : "manual",
-          },
-          { label: "近期金叉訊號", status: isRecentBuy ? "pass" : "manual" },
         ],
       },
     ];
@@ -378,36 +387,6 @@ export default function MaKbar({
     setActiveStep(step);
     // 根據步驟自動調整顯示
     if (step === 0) {
-      // 趨勢分析：全開 MA，關閉缺口
-      setVisibleMAs({
-        ma5: true,
-        ma10: true,
-        ma20: true,
-        ma60: true,
-        ma240: true,
-      });
-      setShowGaps(false);
-    } else if (step === 1) {
-      // 缺口研判：關閉 MA，開啟缺口
-      setVisibleMAs({
-        ma5: false,
-        ma10: false,
-        ma20: false,
-        ma60: false,
-        ma240: false,
-      });
-      setShowGaps(true);
-    } else if (step === 2) {
-      // 力道動能：僅開短期 MA
-      setVisibleMAs({
-        ma5: true,
-        ma10: true,
-        ma20: true,
-        ma60: false,
-        ma240: false,
-      });
-      setShowGaps(false);
-    } else if (step === 3) {
       // 綜合評估：全開
       setVisibleMAs({
         ma5: true,
@@ -417,6 +396,36 @@ export default function MaKbar({
         ma240: true,
       });
       setShowGaps(true);
+    } else if (step === 1) {
+      // 趨勢分析：全開 MA，關閉缺口
+      setVisibleMAs({
+        ma5: true,
+        ma10: true,
+        ma20: true,
+        ma60: true,
+        ma240: true,
+      });
+      setShowGaps(false);
+    } else if (step === 2) {
+      // 缺口研判：關閉 MA，開啟缺口
+      setVisibleMAs({
+        ma5: false,
+        ma10: false,
+        ma20: false,
+        ma60: false,
+        ma240: false,
+      });
+      setShowGaps(true);
+    } else if (step === 3) {
+      // 力道動能：僅開短期 MA
+      setVisibleMAs({
+        ma5: true,
+        ma10: true,
+        ma20: true,
+        ma60: false,
+        ma240: false,
+      });
+      setShowGaps(false);
     }
   };
 
@@ -599,7 +608,7 @@ export default function MaKbar({
               sx={{ display: { xs: "none", md: "block" }, mx: 1 }}
             />
             <Stack direction="row" spacing={1} alignItems="center">
-              {(activeStep === 0 || activeStep === 2 || activeStep === 3) && (
+              {(activeStep === 0 || activeStep === 1 || activeStep === 3) && (
                 <>
                   {[
                     {
@@ -629,7 +638,7 @@ export default function MaKbar({
                     },
                   ]
                     .filter((m) =>
-                      activeStep === 2
+                      activeStep === 3
                         ? ["ma5", "ma10", "ma20"].includes(m.key)
                         : true
                     )
@@ -661,7 +670,7 @@ export default function MaKbar({
                 </>
               )}
 
-              {(activeStep === 1 || activeStep === 3) && (
+              {(activeStep === 0 || activeStep === 2) && (
                 <Stack direction="row" spacing={1} alignItems="center">
                   <FormControlLabel
                     control={
@@ -730,7 +739,7 @@ export default function MaKbar({
               yAxisId="volAxis"
               orientation="right"
               domain={[0, (dataMax: number) => dataMax * 4]}
-              width={40}
+              width={0}
               tick={false}
               axisLine={false}
             />

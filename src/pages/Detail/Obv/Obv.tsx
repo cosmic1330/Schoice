@@ -18,26 +18,25 @@ import {
 } from "@mui/material";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Bar,
   CartesianGrid,
+  Cell,
   ComposedChart,
   Customized,
   Line,
   Tooltip as RechartsTooltip,
   ReferenceDot,
-  ReferenceLine,
   ResponsiveContainer,
   XAxis,
   YAxis,
 } from "recharts";
+import ma from "../../../cls_tools/ma";
+import macd from "../../../cls_tools/macd";
 import obvTool from "../../../cls_tools/obv";
+import rsi from "../../../cls_tools/rsi";
 import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
 import { DealsContext } from "../../../context/DealsContext";
-import { calculateObvSignals } from "../../../utils/obvStrategy";
-import {
-  calculateBollingerBands,
-  calculateDMI,
-  calculateSMA,
-} from "../../../utils/technicalIndicators";
+import { calculateObvSignals } from "./obvStrategy";
 
 // Types
 interface ObvChartData
@@ -50,24 +49,25 @@ interface ObvChartData
     v: number | null;
   }> {
   // Price Indicators
-  ma20: number | null;
-  ma50: number | null;
-  bbUpper: number | null;
-  bbLower: number | null;
+  ma60: number | null;
+  ma20: number | null; // Keep for reference
+  volMa20: number | null;
   // OBV Indicators
   obv: number | null;
   obvMa20: number | null;
-  obvOscillator: number | null;
-  // DMI Indicators
-  diPlus: number | null;
-  diMinus: number | null;
-  adx: number | null;
+  // RSI & MACD
+  rsi: number | null;
+  macdOsc: number | null;
+  macdDif: number | null;
   // Signals
-  longEntry?: number | null;
-  shortEntry?: number | null;
-  longExit?: number | null;
-  shortExit?: number | null;
+  trueBreakout?: number | null;
+  fakeBreakout?: number | null;
+  accumulation?: number | null;
+  exitWeakness?: number | null;
+  stopLoss?: number | null;
   signalReason?: string | null;
+  // Others
+  obvHist?: number | null;
 }
 
 type CheckStatus = "pass" | "fail" | "manual";
@@ -97,21 +97,16 @@ const CustomTooltip = ({ active, payload, label, showSignals = true }: any) => {
     const data = payload[0].payload;
     const dateStr = formatDateTick(label);
 
-    // Sort payload: Signal entries first, then DMI, then OBV, then Price
+    // Sort payload: Signal entries first, then Indicators
     const sortedPayload = [...payload].sort((a, b) => {
-      // Signals first
-      const isSignalA = [
-        "longEntry",
-        "shortEntry",
-        "longExit",
-        "shortExit",
-      ].includes(a.dataKey);
-      const isSignalB = [
-        "longEntry",
-        "shortEntry",
-        "longExit",
-        "shortExit",
-      ].includes(b.dataKey);
+      const signalKeys = [
+        "trueBreakout",
+        "fakeBreakout",
+        "accumulation",
+        "exitWeakness",
+      ];
+      const isSignalA = signalKeys.includes(a.dataKey);
+      const isSignalB = signalKeys.includes(b.dataKey);
       if (isSignalA && !isSignalB) return -1;
       if (!isSignalA && isSignalB) return 1;
       return 0;
@@ -209,6 +204,15 @@ export default function Obv({
   const fullDeals = useContext(DealsContext);
   const [activeStep, setActiveStep] = useState(0);
 
+  useEffect(() => {
+    const handleSwitchStep = () => {
+      setActiveStep((prev) => (prev + 1) % 3); // 3 steps total
+    };
+    window.addEventListener("detail-switch-step", handleSwitchStep);
+    return () =>
+      window.removeEventListener("detail-switch-step", handleSwitchStep);
+  }, []);
+
   // Zoom & Pan Control
   // const [visibleCount, setVisibleCount] = useState(150);
   // const [rightOffset, setRightOffset] = useState(0);
@@ -294,70 +298,77 @@ export default function Obv({
   }, [fullDeals.length, visibleCount, rightOffset]);
 
   // --- Data Processing ---
-  const deals = useMemo(() => {
-    return fullDeals.slice(
-      -(visibleCount + rightOffset),
-      rightOffset === 0 ? undefined : -rightOffset
-    );
-  }, [fullDeals, visibleCount, rightOffset]);
-
   const signals = useMemo(() => {
-    if (!deals || deals.length === 0) return [];
-    return calculateObvSignals(deals);
-  }, [deals]);
+    if (!fullDeals || fullDeals.length === 0) return [];
+    return calculateObvSignals(fullDeals);
+  }, [fullDeals]);
 
   const chartData = useMemo((): ObvChartData[] => {
-    if (!deals || deals.length === 0) return [];
+    if (!fullDeals || fullDeals.length === 0) return [];
 
-    // Calculate Indicators
-    const closes = deals.map((d) => d.c);
+    // Initial states for cls_tools
+    let obvState = obvTool.init(fullDeals[0]);
+    let ma20State = ma.init(fullDeals[0], 20);
+    let ma60State = ma.init(fullDeals[0], 60);
+    let rsiState = rsi.init(fullDeals[0], 14);
+    let macdState = macd.init(fullDeals[0]);
+    let volMa20State = ma.init({ c: fullDeals[0].v } as any, 20);
 
-    // OBV
-    let obvData = obvTool.init(deals[0]);
-    const obvValues = [obvData.obv];
-    for (let i = 1; i < deals.length; i++) {
-      obvData = obvTool.next(deals[i], obvData);
-      obvValues.push(obvData.obv);
+    // Pre-calculate OBV for its MA
+    const obvValues: number[] = [];
+    for (let i = 0; i < fullDeals.length; i++) {
+      if (i > 0) obvState = obvTool.next(fullDeals[i], obvState);
+      obvValues.push(obvState.obv);
     }
-    const obvMa20 = calculateSMA(obvValues, 20);
 
-    // Price MAs & BB
-    const ma20 = calculateSMA(closes, 20);
-    const ma50 = calculateSMA(closes, 50);
-    const bb20 = calculateBollingerBands(closes, 20, 2);
-
-    // DMI
-    const { diPlus, diMinus, adx } = calculateDMI(deals, 14);
+    let obvMaState20 = ma.init({ c: obvValues[0] } as any, 20);
+    const obvMaValues20 = [obvMaState20.ma];
+    for (let i = 1; i < obvValues.length; i++) {
+      obvMaState20 = ma.next({ c: obvValues[i] } as any, obvMaState20, 20);
+      obvMaValues20.push(obvMaState20.ma);
+    }
 
     // Map Signals
     const signalMap = new Map(signals.map((s) => [s.t, s]));
 
-    return deals.map((d, i) => {
+    const allData = fullDeals.map((d, i) => {
+      if (i > 0) {
+        ma20State = ma.next(d, ma20State, 20);
+        ma60State = ma.next(d, ma60State, 60);
+        rsiState = rsi.next(d, rsiState, 14);
+        macdState = macd.next(d, macdState);
+        volMa20State = ma.next({ c: d.v } as any, volMa20State, 20);
+      }
+
       const signal = signalMap.get(d.t);
       const obvVal = obvValues[i];
-      const obvMa = obvMa20[i];
-      const obvOsc = obvVal !== null && obvMa !== null ? obvVal - obvMa : null;
+      const obvMa20 = obvMaValues20[i];
 
       return {
         ...d,
-        ma20: ma20[i],
-        ma50: ma50[i],
-        bbUpper: bb20.upper[i],
-        bbLower: bb20.lower[i],
+        ma20: i >= 19 ? ma20State.ma : null,
+        ma60: i >= 59 ? ma60State.ma : null,
+        volMa20: i >= 19 ? volMa20State.ma : null,
         obv: obvVal,
-        obvMa20: obvMa,
-        obvOscillator: obvOsc,
-        diPlus: diPlus[i],
-        diMinus: diMinus[i],
-        adx: adx[i],
-        longEntry: signal?.type === "LONG_ENTRY" ? d.l * 0.98 : null,
-        shortEntry: signal?.type === "SHORT_ENTRY" ? d.h * 1.02 : null,
-        longExit: signal?.type === "LONG_EXIT" ? d.h * 1.02 : null,
-        shortExit: signal?.type === "SHORT_EXIT" ? d.l * 0.98 : null,
+        obvMa20: i >= 19 ? obvMa20 : null,
+        obvHist: obvVal !== null && obvMa20 !== null ? obvVal - obvMa20 : null,
+        rsi: i >= 13 ? rsiState.rsi : null,
+        macdOsc: macdState.osc,
+        macdDif: (macdState as any).dif || null,
+        trueBreakout: signal?.type === "TRUE_BREAKOUT" ? d.h * 1.02 : null,
+        fakeBreakout: signal?.type === "FAKE_BREAKOUT" ? d.h * 1.02 : null,
+        accumulation: signal?.type === "ACCUMULATION" ? d.l * 0.98 : null,
+        exitWeakness: signal?.type === "EXIT_WEAKNESS" ? d.l * 0.98 : null,
+        stopLoss: (signal as any)?.type === "STOP_LOSS" ? d.h * 1.02 : null,
         signalReason: signal?.reason || null,
       };
     });
-  }, [deals, signals]);
+
+    return allData.slice(
+      -(visibleCount + rightOffset),
+      rightOffset === 0 ? undefined : -rightOffset
+    );
+  }, [fullDeals, signals, visibleCount, rightOffset]);
 
   // --- Analysis Steps Logic ---
   const { steps, score, recommendation } = useMemo(() => {
@@ -365,91 +376,93 @@ export default function Obv({
       return { steps: [], score: 0, recommendation: "" };
 
     const current = chartData[chartData.length - 1];
-    const prev = chartData[chartData.length - 2] || current;
-
     // Helper Checks
-    const isUptrend =
-      (current.diPlus || 0) > (current.diMinus || 0) && (current.adx || 0) > 20;
-    const isDowntrend =
-      (current.diMinus || 0) > (current.diPlus || 0) && (current.adx || 0) > 20;
-
-    const obvRising = (current.obv || 0) > (current.obvMa20 || 0);
-    const priceAboveMa = (current.c || 0) > (current.ma20 || 0);
-    const adxRising = (current.adx || 0) > (prev.adx || 0);
-
-    // Score Calculation
+    // Scoring Logic
     let totalScore = 0;
+    const currentPrice = current.c || 0;
+    const currentMa60 = current.ma60 || null;
+    const currentObv = current.obv || null;
+    const currentObvMa = current.obvMa20 || null;
+    const currentRsi = current.rsi || null;
+    const currentOsc = current.macdOsc || null;
+    const currentVol = current.v || 0;
+    const currentVolMa = current.volMa20 || null;
 
-    // 1. Trend (DMI) - 30pts
-    if (isUptrend) totalScore += 30;
-    else if (isDowntrend) totalScore -= 10;
+    // 1. Trend (Price vs MA60) - 25pts
+    if (currentMa60 !== null && currentPrice > currentMa60) totalScore += 25;
 
-    // 2. Volume (OBV) - 30pts
-    if (obvRising) totalScore += 30;
-    else if ((current.obv || 0) > (prev.obv || 0)) totalScore += 10;
+    // 2. Volume & Momentum (OBV & Attack Vol) - 25pts
+    let volScore = 0;
+    if (
+      currentObvMa !== null &&
+      currentObv !== null &&
+      currentObv > currentObvMa
+    )
+      volScore += 15;
+    if (currentVolMa !== null && currentVol > currentVolMa * 1.5)
+      volScore += 10;
+    totalScore += volScore;
 
-    // 3. Price Action - 20pts
-    if (priceAboveMa) totalScore += 20;
+    // 3. Momentum (RSI) - 25pts
+    if (currentRsi !== null) {
+      if (currentRsi > 40 && currentRsi < 70) totalScore += 25;
+      else if (currentRsi >= 70) totalScore += 10;
+    }
 
-    // 4. Momentum (ADX Rising) - 20pts
-    if (adxRising && (current.adx || 0) > 20) totalScore += 20;
-
-    if (totalScore < 0) totalScore = 0;
+    // 4. Turning Point (MACD) - 25pts
+    if (currentOsc !== null && currentOsc > 0) totalScore += 25;
 
     let rec = "Neutral";
-    if (totalScore >= 80) rec = "Strong Buy";
-    else if (totalScore >= 60) rec = "Buy";
-    else if (totalScore <= 30) rec = "Sell";
+    if (totalScore >= 75) rec = "Strong Buy";
+    else if (totalScore >= 50) rec = "Buy";
+    else if (totalScore <= 25) rec = "Sell";
 
     const analysisSteps: AnalysisStep[] = [
       {
-        label: "I. 趨勢強度 (DMI)",
-        description: "ADX 與 DI 方向",
-        checks: [
-          {
-            label: `ADX 強度 (>20): ${(current.adx || 0).toFixed(1)}`,
-            status: (current.adx || 0) > 20 ? "pass" : "fail",
-          },
-          {
-            label: "多頭趨勢 (DI+ > DI-)",
-            status:
-              (current.diPlus || 0) > (current.diMinus || 0) ? "pass" : "fail",
-          },
-          {
-            label: "動能增強 (ADX Rising)",
-            status: adxRising ? "pass" : "manual",
-          },
-        ],
-      },
-      {
-        label: "II. 量能分析 (OBV)",
-        description: "OBV 趨勢確認",
-        checks: [
-          {
-            label: "OBV > MA20",
-            status: obvRising ? "pass" : "fail",
-          },
-          {
-            label: "OBV 創新高",
-            status: "manual", // Hard to check purely on last bar without lookback context here
-          },
-        ],
-      },
-      {
-        label: "III. 綜合訊號",
+        label: "I. 綜合訊號",
         description: `得分: ${totalScore} - ${rec}`,
         checks: [
           {
-            label: "價格 > MA20",
-            status: priceAboveMa ? "pass" : "fail",
+            label: `目前建議: ${rec}`,
+            status: totalScore >= 50 ? "pass" : "fail",
           },
+        ],
+      },
+      {
+        label: "II. 量能與趨勢",
+        description: "OBV 與 攻擊量確認",
+        checks: [
           {
-            label: "與前日相比走勢一致",
+            label: "價格 > MA60",
             status:
-              (current.c || 0) > (prev.c || 0) ===
-              (current.obv || 0) > (prev.obv || 0)
+              currentMa60 !== null && currentPrice > currentMa60
                 ? "pass"
                 : "fail",
+          },
+          {
+            label: "OBV 轉強 / 攻擊量",
+            status: volScore >= 15 ? "pass" : "fail",
+          },
+        ],
+      },
+      {
+        label: "III. 動能指標",
+        description: "RSI 與 MACD",
+        checks: [
+          {
+            label: `RSI(14): ${
+              currentRsi !== null ? currentRsi.toFixed(1) : "N/A"
+            }`,
+            status:
+              currentRsi !== null && currentRsi > 40 && currentRsi < 70
+                ? "pass"
+                : "manual",
+          },
+          {
+            label: `MACD Osc: ${
+              currentOsc !== null ? currentOsc.toFixed(2) : "N/A"
+            }`,
+            status: currentOsc !== null && currentOsc > 0 ? "pass" : "fail",
           },
         ],
       },
@@ -574,7 +587,7 @@ export default function Obv({
             fontWeight="bold"
             color="white"
           >
-            OBV.DMI
+            OBV
           </Typography>
         </MuiTooltip>
 
@@ -645,13 +658,14 @@ export default function Obv({
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
+          width: "100%",
         }}
       >
-        {/* 1. Price Chart (50%) */}
-        <ResponsiveContainer width="100%" height="50%">
+        {/* 1. Price Chart (40%) */}
+        <ResponsiveContainer width="100%" height="75%">
           <ComposedChart
             data={chartData}
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
             syncId="obvSync"
           >
             <CartesianGrid strokeDasharray="3 3" opacity={0.1} stroke="#fff" />
@@ -660,6 +674,14 @@ export default function Obv({
               domain={["auto", "auto"]}
               tick={{ fill: "rgba(255,255,255,0.7)" }}
               stroke="rgba(255,255,255,0.3)"
+            />
+            <YAxis
+              yAxisId="volAxis"
+              orientation="right"
+              domain={[0, (dataMax: number) => dataMax * 4]}
+              tick={false}
+              axisLine={false}
+              width={0}
             />
 
             <RechartsTooltip content={<CustomTooltip showSignals={true} />} />
@@ -695,34 +717,18 @@ export default function Obv({
 
             {/* Price Indicators */}
             <Line
+              dataKey="ma60"
+              stroke="#64b5f6"
+              strokeWidth={1}
+              dot={false}
+              name="MA60"
+            />
+            <Line
               dataKey="ma20"
               stroke="#f1af20ff"
-              strokeWidth={1}
+              strokeWidth={0.5}
               dot={false}
               name="MA20"
-            />
-            <Line
-              dataKey="ma50"
-              stroke="#9c27b0"
-              strokeWidth={1}
-              dot={false}
-              name="MA50"
-            />
-            <Line
-              dataKey="bbUpper"
-              stroke="#9e9e9e"
-              strokeDasharray="3 3"
-              dot={false}
-              name="BB Up"
-              opacity={0.5}
-            />
-            <Line
-              dataKey="bbLower"
-              stroke="#9e9e9e"
-              strokeDasharray="3 3"
-              dot={false}
-              name="BB Low"
-              opacity={0.5}
             />
 
             <Customized
@@ -731,43 +737,105 @@ export default function Obv({
               downColor="#52c41a"
             />
 
+            <Bar
+              dataKey="v"
+              yAxisId="volAxis"
+              name="Volume"
+              shape={(props: any) => {
+                const { x, y, width, height, payload } = props;
+                const isUp = payload.c > payload.o;
+                return (
+                  <rect
+                    x={x}
+                    y={y}
+                    width={width}
+                    height={height}
+                    fill={isUp ? "#f44336" : "#4caf50"}
+                    opacity={0.2}
+                  />
+                );
+              }}
+            />
             {/* Signal Markers */}
             {chartData.map((d) => {
-              const isLong = d.longEntry !== null;
-              const isShort = d.shortEntry !== null;
-              if (!isLong && !isShort) return null;
+              const breakout = d.trueBreakout !== null;
+              const fakeBreak = d.fakeBreakout !== null;
+              const accum = d.accumulation !== null;
+              const weak = d.exitWeakness !== null;
+              const stop = d.stopLoss !== null;
 
-              const signalPrice = isLong ? d.l! : d.h!;
-              const yPos = isLong ? signalPrice * 0.99 : signalPrice * 1.01;
-              const color = isLong ? "#f44336" : "#4caf50";
+              if (!breakout && !fakeBreak && !accum && !weak && !stop)
+                return null;
+
+              const isEntry = breakout || accum;
+              const signalPrice = isEntry ? d.l! : d.h!;
+              const yPos = isEntry ? signalPrice * 0.98 : signalPrice * 1.02;
+
+              let icon = "";
+              let color = "";
+              let label = "";
+
+              if (breakout) {
+                icon = "▲";
+                color = "#FFD700"; // Gold
+                label = "Buy";
+              } else if (fakeBreak) {
+                icon = "▼";
+                color = "#f44336"; // Red
+                label = "Fake";
+              } else if (accum) {
+                icon = "●";
+                color = "#2196f3"; // Blue
+                label = "Accum";
+              } else if (weak) {
+                icon = "X";
+                color = "#ff9800"; // Orange
+                label = "Weak";
+              } else if (stop) {
+                icon = "X";
+                color = "#f44336"; // Red
+                label = "Stop";
+              }
 
               return (
                 <ReferenceDot
                   key={`signal-${d.t}`}
                   x={d.t}
                   y={yPos}
-                  r={4}
+                  r={5}
                   stroke="none"
                   shape={(props: any) => {
                     const { cx, cy } = props;
-                    if (!cx || !cy) return <g />;
                     return (
                       <g>
-                        {isLong ? (
-                          <path
-                            d={`M${cx - 5},${cy + 10} L${cx + 5},${
-                              cy + 10
-                            } L${cx},${cy} Z`}
-                            fill={color}
-                          />
-                        ) : (
-                          <path
-                            d={`M${cx - 5},${cy - 10} L${cx + 5},${
-                              cy - 10
-                            } L${cx},${cy} Z`}
-                            fill={color}
-                          />
-                        )}
+                        <circle
+                          cx={cx}
+                          cy={cy}
+                          r={10}
+                          fill={color}
+                          fillOpacity={0.2}
+                        />
+                        <text
+                          x={cx}
+                          y={cy}
+                          dy={5}
+                          textAnchor="middle"
+                          fill={color}
+                          fontSize={12}
+                          fontWeight="bold"
+                        >
+                          {icon}
+                        </text>
+                        <text
+                          x={cx}
+                          y={cy}
+                          dy={22}
+                          textAnchor="middle"
+                          fill={color}
+                          fontSize={8}
+                        >
+                          {label}
+                        </text>
                       </g>
                     );
                   }}
@@ -777,11 +845,11 @@ export default function Obv({
           </ComposedChart>
         </ResponsiveContainer>
 
-        {/* 2. OBV Chart (25%) */}
-        <ResponsiveContainer width="100%" height="25%">
+        {/* 2. OBV Chart (20%) */}
+        <ResponsiveContainer width="100%" height="20%">
           <ComposedChart
             data={chartData}
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
             syncId="obvSync"
           >
             <CartesianGrid strokeDasharray="3 3" opacity={0.1} stroke="#fff" />
@@ -808,67 +876,22 @@ export default function Obv({
             />
             <Line
               dataKey="obvMa20"
-              stroke="#ffeb3b"
+              stroke="#fff"
               strokeWidth={1}
+              strokeDasharray="3 3"
               dot={false}
               name="OBV MA20"
+              opacity={0.5}
             />
-          </ComposedChart>
-        </ResponsiveContainer>
-
-        {/* 3. DMI Chart (25%) */}
-        <ResponsiveContainer width="100%" height="25%">
-          <ComposedChart
-            data={chartData}
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-            syncId="obvSync"
-          >
-            <CartesianGrid strokeDasharray="3 3" opacity={0.1} stroke="#fff" />
-            <XAxis
-              dataKey="t"
-              tickFormatter={formatDateTick}
-              tick={{ fill: "rgba(255,255,255,0.7)" }}
-              stroke="rgba(255,255,255,0.3)"
-            />
-            {/* Primary Left Axis: DMI (0-60) */}
-            <YAxis
-              domain={[0, 60]}
-              tick={{ fill: "rgba(255,255,255,0.7)" }}
-              stroke="rgba(255,255,255,0.3)"
-              label={{
-                value: "DMI",
-                angle: -90,
-                position: "insideLeft",
-                fill: "#999",
-              }}
-            />
-
-            <RechartsTooltip content={<CustomTooltip showSignals={false} />} />
-
-            <ReferenceLine y={20} stroke="#666" strokeDasharray="3 3" />
-
-            {/* DMI Lines (Foreground) */}
-            <Line
-              dataKey="adx"
-              stroke="#ffeb3b"
-              strokeWidth={2}
-              dot={false}
-              name="ADX"
-            />
-            <Line
-              dataKey="diPlus"
-              stroke="#ff4d4f"
-              strokeWidth={1}
-              dot={false}
-              name="DI+"
-            />
-            <Line
-              dataKey="diMinus"
-              stroke="#52c41a"
-              strokeWidth={1}
-              dot={false}
-              name="DI-"
-            />
+            <Bar dataKey="obvHist" name="OBV Histogram">
+              {chartData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={(entry.obvHist || 0) >= 0 ? "#f44336" : "#52c41a"}
+                  fillOpacity={0.3}
+                />
+              ))}
+            </Bar>
           </ComposedChart>
         </ResponsiveContainer>
       </Box>

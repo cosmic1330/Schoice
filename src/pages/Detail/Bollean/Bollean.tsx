@@ -9,6 +9,7 @@ import {
   CircularProgress,
   Container,
   Divider,
+  Tooltip as MuiTooltip,
   Stack,
   Step,
   StepButton,
@@ -16,6 +17,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "react-router";
 import {
   Bar,
   CartesianGrid,
@@ -32,6 +34,7 @@ import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCan
 import { DealsContext } from "../../../context/DealsContext";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
 import { calculateIndicators } from "../../../utils/indicatorUtils";
+import Fundamental from "../Tooltip/Fundamental";
 
 interface BolleanChartData
   extends Partial<{
@@ -129,6 +132,16 @@ export default function Bollean({
   const { settings } = useIndicatorSettings();
   const deals = useContext(DealsContext);
   const [activeStep, setActiveStep] = useState(0);
+
+  useEffect(() => {
+    const handleSwitchStep = () => {
+      setActiveStep((prev) => (prev + 1) % 4); // 4 steps total
+    };
+    window.addEventListener("detail-switch-step", handleSwitchStep);
+    return () =>
+      window.removeEventListener("detail-switch-step", handleSwitchStep);
+  }, []);
+  const { id } = useParams();
 
   // Zoom & Pan Control
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -364,7 +377,16 @@ export default function Bollean({
 
     const bolleanSteps: BolleanStep[] = [
       {
-        label: "I. 市場環境",
+        label: "I. 綜合評估",
+        description: `得分: ${totalScore} - ${rec}`,
+        checks: [
+          { label: "趨勢明確 (MA斜率)", status: maRising ? "pass" : "fail" },
+          { label: "成交量配合", status: volSpike ? "pass" : "manual" },
+          { label: "無假突破跡象", status: "manual" },
+        ],
+      },
+      {
+        label: "II. 市場環境",
         description: "波動度與趨勢 (Macro & Regime)",
         checks: [
           {
@@ -384,7 +406,7 @@ export default function Bollean({
         ],
       },
       {
-        label: "II. 入場條件",
+        label: "III. 入場條件",
         description: "多/空策略與突破 (Entry)",
         checks: [
           {
@@ -402,7 +424,7 @@ export default function Bollean({
         ],
       },
       {
-        label: "III. 風險控管",
+        label: "IV. 風險控管",
         description: "停損與部位 (Risk Control)",
         checks: [
           { label: `建議停損位: ${stopLoss} (中軌)`, status: "manual" },
@@ -411,15 +433,6 @@ export default function Bollean({
             status: isWide ? "fail" : "pass",
           },
           { label: "單筆風險 < 1.5%", status: "manual" },
-        ],
-      },
-      {
-        label: "IV. 綜合評估",
-        description: `得分: ${totalScore} - ${rec}`,
-        checks: [
-          { label: "趨勢明確 (MA斜率)", status: maRising ? "pass" : "fail" },
-          { label: "成交量配合", status: volSpike ? "pass" : "manual" },
-          { label: "無假突破跡象", status: "manual" },
         ],
       },
     ];
@@ -470,9 +483,11 @@ export default function Bollean({
       }}
     >
       <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="h6" component="div" color="white">
-          Bolling
-        </Typography>
+        <MuiTooltip title={<Fundamental id={id} />} arrow>
+          <Typography variant="h6" component="div" color="white">
+            Bolling
+          </Typography>
+        </MuiTooltip>
 
         <Chip
           label={`${score}分 - ${recommendation}`}
@@ -527,20 +542,25 @@ export default function Bollean({
         </CardContent>
       </Card>
 
-      <Box ref={chartContainerRef} sx={{ flexGrow: 1, minHeight: 0 }}>
+      <Box
+        ref={chartContainerRef}
+        sx={{ flexGrow: 1, minHeight: 0, width: "100%" }}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={chartData}
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-            <XAxis dataKey="t" />
+            <XAxis dataKey="t" hide />
             <YAxis domain={["auto", "auto"]} />
             <YAxis
               yAxisId="right"
               orientation="right"
               domain={[0, (dataMax: number) => dataMax * 4]}
-              hide={activeStep < 1}
+              width={0}
+              tick={false}
+              axisLine={false}
             />
 
             <Tooltip
@@ -588,7 +608,7 @@ export default function Bollean({
             />
             <Customized component={BaseCandlestickRectangle} />
 
-            {activeStep >= 1 && (
+            {(activeStep === 0 || activeStep === 2) && (
               <Bar
                 dataKey="v"
                 yAxisId="right"
@@ -625,7 +645,7 @@ export default function Bollean({
             />
 
             {/* Signals */}
-            {activeStep >= 1 && (
+            {(activeStep === 0 || activeStep === 2) && (
               <>
                 <Scatter
                   dataKey="buySignal"

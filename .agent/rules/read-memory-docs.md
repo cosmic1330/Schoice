@@ -1,5 +1,5 @@
 ---
-trigger: always_on
+trigger: manual
 description: when prompt have goal.md words
 ---
 

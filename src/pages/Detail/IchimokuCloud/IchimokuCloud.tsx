@@ -203,6 +203,15 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
   const deals = useContext(DealsContext);
   const [activeStep, setActiveStep] = useState(0);
 
+  useEffect(() => {
+    const handleSwitchStep = () => {
+      setActiveStep((prev) => (prev + 1) % 5); // 5 steps total
+    };
+    window.addEventListener("detail-switch-step", handleSwitchStep);
+    return () =>
+      window.removeEventListener("detail-switch-step", handleSwitchStep);
+  }, []);
+
   // Zoom & Pan Control
   const [visibleCount, setVisibleCount] = useState(180);
   const [rightOffset, setRightOffset] = useState(0);
@@ -658,7 +667,17 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
 
     const resultSteps: IchimokuStep[] = [
       {
-        label: "A. 趨勢確認",
+        label: "I. 綜合評估",
+        description: `得分: ${totalScore} - ${rec}`,
+        checks: [
+          { label: "當前量 > 20MA量", status: volumeCheck },
+          { label: `參考停損 (Kijun): ${kijunPrice}`, status: "manual" },
+          { label: `雲帶下緣 (Cloud): ${cloudBottom}`, status: "manual" },
+          { label: "大盤與週線趨勢一致", status: "manual" },
+        ],
+      },
+      {
+        label: "II. 趨勢確認",
         description: "K 線 vs 雲區 (Trend Filter)",
         checks: [
           {
@@ -670,7 +689,7 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
         ],
       },
       {
-        label: "B. 進場訊號",
+        label: "III. 進場訊號",
         description: "TK Cross (短中期動能)",
         checks: [
           { label: "Tenkan > Kijun (黃金交叉)", status: signalTkCross },
@@ -682,7 +701,7 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
         ],
       },
       {
-        label: "C. 動能確認",
+        label: "IV. 動能確認",
         description: "Chikou Span (延遲線)",
         checks: [
           { label: "滯後線 > 26 天前價格", status: chikouAbovePrice },
@@ -690,21 +709,11 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
         ],
       },
       {
-        label: "D. 未來結構",
+        label: "V. 未來結構",
         description: "Future Kumo (前瞻)",
         checks: [
           { label: "未來雲為綠色", status: futureCloudGreen },
           { label: "未來雲角度向上", status: futureCloudRising },
-        ],
-      },
-      {
-        label: "E. 綜合評估",
-        description: `得分: ${totalScore} - ${rec}`,
-        checks: [
-          { label: "當前量 > 20MA量", status: volumeCheck },
-          { label: `參考停損 (Kijun): ${kijunPrice}`, status: "manual" },
-          { label: `雲帶下緣 (Cloud): ${cloudBottom}`, status: "manual" },
-          { label: "大盤與週線趨勢一致", status: "manual" },
         ],
       },
     ];
@@ -730,9 +739,9 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
 
   // Visibility logic
   const showKumo = activeStep >= 0;
-  const showTK = activeStep >= 1;
-  const showChikou = activeStep >= 2;
-  const showVolume = activeStep >= 4;
+  const showTK = activeStep === 0 || activeStep >= 2;
+  const showChikou = activeStep === 0 || activeStep >= 3;
+  const showVolume = activeStep === 0;
 
   if (chartData.length === 0) {
     return (
@@ -819,20 +828,23 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
         </CardContent>
       </Card>
 
-      <Box ref={chartContainerRef} sx={{ flexGrow: 1, minHeight: 0 }}>
+      <Box
+        ref={chartContainerRef}
+        sx={{ flexGrow: 1, minHeight: 0, width: "100%" }}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={chartData}
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-            <XAxis dataKey="t" />
+            <XAxis dataKey="t" hide />
             <YAxis domain={["auto", "auto"]} />
             <YAxis
               yAxisId="right"
               orientation="right"
               domain={[0, (dataMax: number) => dataMax * 4]}
-              hide={!showVolume}
+              hide
             />
 
             <Tooltip
