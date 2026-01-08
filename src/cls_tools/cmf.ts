@@ -12,7 +12,7 @@ export interface CmfState {
 }
 
 class Cmf {
-  init(candle: Candle, period: number): CmfState {
+  init(candle: Candle): CmfState {
     const { mfv, v } = this.calculateMfv(candle);
     return {
       mfvBuffer: [mfv],

@@ -68,7 +68,7 @@ export const useIchimokuData = (
 
     // 2. Calculate Indicators (CMF, MACD)
     let macdState = macdTool.init(deals[0]);
-    let cmfState = cmfTool.init(baseIchimoku[0], 21); // CMF(21)
+    let cmfState = cmfTool.init(baseIchimoku[0]); // CMF(21)
 
     // Parallel arrays for fast access if needed, or just map
     const enrichedDataTemp: any[] = [];

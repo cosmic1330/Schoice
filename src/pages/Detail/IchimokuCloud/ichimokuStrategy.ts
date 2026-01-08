@@ -118,8 +118,6 @@ export const calculateIchimokuSignals = (
     const prevCmfEma5 = prev.cmfEma5;
 
     const isCmfBull = cmf !== null && cmf > 0;
-    const isCmfStrong = cmf !== null && cmf > 0.1;
-    const isCmfDump = cmf !== null && cmf < -0.1;
 
     const isCmfEmaUp =
       cmfEma5 !== null && prevCmfEma5 !== null && cmfEma5 > prevCmfEma5;
@@ -138,21 +136,25 @@ export const calculateIchimokuSignals = (
         isAboveCloud && isTkGold && isKijunStable && isCmfBull && isCmfEmaUp;
 
       if (isStrongBullish) {
+        // Thick Cloud Confirmation
+        const reason = isThickCloud
+          ? "強勢買進 (Strong Buy)"
+          : "強勢買進 (注意薄雲風險/Weak Cloud)";
+
         signals.push({
           t: current.t,
           type: "BUY",
-          reason: "強勢買進 (Strong Buy)",
+          reason: reason,
           price: low * 0.98,
         });
         lastSignalState = "buy";
       }
 
       // B. Early Accumulation (CMF Leading)
-      // Scenario: Price <= CloudTop (In Cloud or Below), but CMF > -0.05 and Diverging Up?
-      // Logic: Price Lows not rising, but CMF Lows rising? Hard to detect divergence in stream without lookback.
-      // Simplified Logic: In Cloud/Below + CMF > -0.05 + CMF Just Crossed Up EMA5? OR Just CMF > -0.05 Cross
-      // Let's use: Price In Cloud/Below + CMF > -0.05 and rising
-      const isAccumulation = !isAboveCloud && (cmf || -1) > -0.05 && isCmfEmaUp;
+      // Scenario: Price in Cloud or Below, but CMF > -0.05 and Rising
+      // Logic: Price Lows not rising, but CMF rising (Divergence approx)
+      const isAccumulation =
+        (isInCloud || isBelowCloud) && (cmf || -1) > -0.05 && isCmfEmaUp;
 
       // We only mark accumulation if we haven't marked it recently? Or just once.
       // Let's make it a unique signal type that doesn't trigger "buy" state but visualizes it.
@@ -229,6 +231,21 @@ export const calculateIchimokuSignals = (
         pResult = "趨勢崩壞 (Structure Break)";
       }
 
+      // 4. TK Dead Cross (Trend Reversal Warning)
+      // "When TK Dead Cross and CMF drops below 0"
+      if (isTkDead && (cmf || 0) < 0) {
+        exitTrigger = true;
+        pResult = "空頭反轉 (TK Dead & CMF<0)";
+      }
+
+      // 5. Hard CMF Stop (Risk Management)
+      if ((cmf || 0) < -0.05) {
+        // "Stop Loss adjustment: if CMF drops below -0.05"
+        // This might be too aggressive for full exit, but let's signal weakness/exit
+        exitTrigger = true;
+        pResult = "資金撤離 (CMF Stop)";
+      }
+
       if (exitTrigger) {
         signals.push({
           t: current.t,
@@ -241,8 +258,6 @@ export const calculateIchimokuSignals = (
     }
   });
 
-  // --- Latest Analysis (Checklist Matrix) ---
-  const lastRealIndex = data.length - 1;
   let currentIdx = -1;
   for (let k = data.length - 1; k >= 0; k--) {
     if (data[k].c !== null) {

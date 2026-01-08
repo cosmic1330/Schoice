@@ -387,3 +387,11 @@ export type FundamentalPrompt = {
 };
 
 export type FundamentalPrompts = FundamentalPrompt[];
+
+
+export interface StepCheck {
+  label: string;
+  status: CheckStatus;
+}
+
+export type CheckStatus = "pass" | "fail" | "manual";

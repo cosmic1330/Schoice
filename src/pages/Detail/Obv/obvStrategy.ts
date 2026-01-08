@@ -64,7 +64,7 @@ const checkObvHigherLow = (obvValues: number[], idx: number) => {
   return currentLow.val > previousLow.val;
 };
 
-export const calculateObvSignals = (deals: TaType): ObvSignal[] => {
+export const calculateObvSignals = (deals: TaType[]): ObvSignal[] => {
   if (!deals || deals.length < 60) return [];
 
   // 1. Calculate Core Data
@@ -127,7 +127,7 @@ export const calculateObvSignals = (deals: TaType): ObvSignal[] => {
     const support = getExtrema(closes, i, 20, "MIN");
     const obvHigh20 = getExtrema(obvValues, i, 20, "MAX");
 
-    const avgPrice = closes.slice(i - 20, i).reduce((a, b) => a + b, 0) / 20;
+    const avgPrice = closes.slice(i - 20, i).reduce((a: number, b: number) => a + b, 0) / 20;
     const boxWidth = (resistance - support) / avgPrice;
 
     // Check states
