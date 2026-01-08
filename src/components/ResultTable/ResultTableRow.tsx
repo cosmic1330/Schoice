@@ -1,7 +1,7 @@
 import InfoIcon from "@mui/icons-material/Info";
 import PostAddIcon from "@mui/icons-material/PostAdd";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
-import { IconButton, Tooltip } from "@mui/material";
+import { Box, IconButton, Tooltip, Typography } from "@mui/material";
 import TableCell from "@mui/material/TableCell";
 // TableRow removed: Virtuoso provides the row wrapper
 import { open } from "@tauri-apps/plugin-shell";
@@ -12,7 +12,7 @@ import { useUser } from "../../context/UserContext";
 import useDetailWebviewWindow from "../../hooks/useDetailWebviewWindow";
 import useCloudStore from "../../store/Cloud.store";
 import useSchoiceStore from "../../store/Schoice.store";
-import { StockTableType } from "../../types";
+import { StockTableType, WatchStockItem } from "../../types";
 import ClosePrice from "./ClosePrice";
 import FundamentalTooltip from "./FundamentalTooltip";
 import { ActionButtonType } from "./types";
@@ -38,12 +38,14 @@ export default memo(function ResultTableRow({
   type,
   strategyName,
   strategyScript,
+  options,
 }: {
   row: StockTableType;
   index: number;
   type: ActionButtonType;
   strategyName?: string;
   strategyScript?: string;
+  options?: Map<string, WatchStockItem>;
 }) {
   const { t } = useTranslation();
   const { dates } = useContext(DatabaseContext);
@@ -91,7 +93,33 @@ export default memo(function ResultTableRow({
     <Fragment>
       <TableCell>{index + 1}.</TableCell>
       <TableCell>{dates[todayDate]}</TableCell>
-      <TableCell>{row.stock_id}</TableCell>
+      <TableCell> 
+        <Tooltip
+          placement="top-start"
+          title={
+            <Box>
+              <Typography variant="body2">
+                加入時間: {options?.get(row.stock_id)?.added_date}
+              </Typography>
+              <Typography variant="body2">
+                策略名稱: {options?.get(row.stock_id)?.strategy_name || "-"}
+              </Typography>
+            </Box>
+          }
+          slotProps={{
+            popper: {
+              sx: {
+                "& .MuiTooltip-tooltip": {
+                  width: "auto",
+                  maxWidth: "none",
+                },
+              },
+            },
+          }}
+        >
+          <span>{row.stock_id}</span>
+        </Tooltip>
+      </TableCell>
       <TableCell>
         <Tooltip
           placement="top-start"

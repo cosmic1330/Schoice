@@ -64,6 +64,7 @@ export type StockTableType = {
   stock_name: string;
   industry_group: string;
   market_type: string;
+  options?: Map<string, WatchStockItem>;
 };
 
 export type FinancialMetricTableType = {
@@ -84,6 +85,12 @@ export type FinancialMetricTableType = {
 export type FundamentalConditionTableType = {
   user_id: string;
   conditions: string | null;
+};
+
+export type WatchStockItem = {
+  stock_id: string;
+  added_date: string;
+  strategy_name?: string;
 };
 
 export type WatchStockTableType = {

@@ -9,6 +9,7 @@ import {
   PromptType,
   PromptValue,
   TrashPrompt,
+  WatchStockItem,
 } from "../types";
 
 interface CloudState {
@@ -17,13 +18,18 @@ interface CloudState {
   alarms: PromptsMap;
   trash: TrashPrompt[];
   fundamentalCondition: FundamentalPrompts | null;
-  watchStocks: string[];
+  watchStocks: WatchStockItem[];
   setFundamentalCondition: (
     condition: FundamentalPrompts | null,
     userId: string
   ) => void;
   removeFromWatchList: (stockId: string, userId: string) => Promise<void>;
-  addToWatchList: (stockId: string, userId: string, strategyName?: string, strategyScript?: string) => Promise<void>;
+  addToWatchList: (
+    stockId: string,
+    userId: string,
+    strategyName?: string,
+    strategyScript?: string
+  ) => Promise<void>;
   addAlarm: (alarm: PromptItem, id: string, userId: string) => Promise<void>;
   removeAlarm: (id: string, userId: string) => Promise<void>;
   recover: (id: string, userId: string) => Promise<void>;
@@ -87,7 +93,7 @@ const useCloudStore = create<CloudState>((set, get) => ({
       }
       set((state) => ({
         watchStocks: state.watchStocks?.filter(
-          (stock_id) => stock_id !== stockId
+          (item) => item.stock_id !== stockId
         ),
       }));
     } catch (err) {
@@ -101,18 +107,27 @@ const useCloudStore = create<CloudState>((set, get) => ({
     strategyScript?: string
   ) => {
     try {
+      const now = new Date().toISOString().split("T")[0];
       const { error } = await supabase.from("watch_stock").insert({
         stock_id: stockId,
         user_id: userId,
         strategy_name: strategyName || null,
         strategy_script: strategyScript || null,
+        date: now,
       });
       if (error) {
         handleError(error, "addToWatchList");
         return;
       }
       set((state) => ({
-        watchStocks: [...state.watchStocks, stockId],
+        watchStocks: [
+          ...state.watchStocks,
+          {
+            stock_id: stockId,
+            added_date: now,
+            strategy_name: strategyName,
+          },
+        ],
       }));
     } catch (err) {
       handleError(err, "addToWatchList");
@@ -445,10 +460,14 @@ const useCloudStore = create<CloudState>((set, get) => ({
       }
       const { data: watchStocksData } = await supabase
         .from("watch_stock")
-        .select("stock_id")
+        .select("stock_id, date, strategy_name")
         .eq("user_id", userId);
-      const watchStocks: string[] =
-        watchStocksData?.map((item) => item.stock_id) || [];
+      const watchStocks: WatchStockItem[] =
+        watchStocksData?.map((item) => ({
+          stock_id: item.stock_id,
+          added_date: item.date,
+          strategy_name: item.strategy_name,
+        })) || [];
 
       const { data: fundamentalConditionData } = await supabase
         .from("fundamental_condition")

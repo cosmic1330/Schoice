@@ -54,18 +54,20 @@ export default function Favorite() {
     }
     query(
       `SELECT * FROM stock WHERE stock_id IN (${watchStocks
-        .map((id) => `'${id}'`)
+        .map((data) => `'${data.stock_id}'`)
         .join(",")})`
     ).then((data: StockTableType[] | null) => {
       const dbStocks = data || [];
       const dbStockMap = new Map(dbStocks.map((s) => [s.stock_id, s]));
 
       // 確保所有 watchStocks 中的 ID 都會顯示，即使資料庫查不到元資料
-      const mergedStocks = watchStocks.map((id) => {
+      const mergedStocks = watchStocks.map((data) => {
         return (
-          dbStockMap.get(id) || {
-            stock_id: id,
-            stock_name: t("Pages.Schoice.Favorite.unknownStock", { id }),
+          dbStockMap.get(data.stock_id) || {
+            stock_id: data.stock_id,
+            stock_name: t("Pages.Schoice.Favorite.unknownStock", {
+              id: data.stock_id,
+            }),
             industry_group: "",
             market_type: "",
           }
@@ -120,7 +122,11 @@ export default function Favorite() {
                 <InsertFavorite />
               </Box>
 
-              <ResultTable result={stocks} type={ActionButtonType.Decrease} />
+              <ResultTable
+                result={stocks}
+                type={ActionButtonType.Decrease}
+                options={new Map(watchStocks.map((data) => [data.stock_id, data]))}
+              />
             </GlassCard>
           </Grid>
         </Grid>

@@ -5,7 +5,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
 import React, { memo, useMemo } from "react";
 import { TableVirtuoso } from "react-virtuoso";
-import { StockTableType } from "../../types";
+import { StockTableType, WatchStockItem } from "../../types";
 import ResultTableRow from "./ResultTableRow";
 import SelectChartHead from "./SelectChartHead";
 import { ActionButtonType } from "./types";
@@ -17,11 +17,13 @@ export default memo(function ResultTable({
   type = ActionButtonType.Increase,
   strategyName,
   strategyScript,
+  options,
 }: {
   result: StockTableType[];
   type?: ActionButtonType;
   strategyName?: string;
   strategyScript?: string;
+  options?: Map<string, WatchStockItem>;
 }) {
   const { t } = useTranslation();
   // 使用 useMemo 穩定 columns 陣列
@@ -73,6 +75,7 @@ export default memo(function ResultTable({
           type={type}
           strategyName={strategyName}
           strategyScript={strategyScript}
+          options={options}
         />
       )}
     />
