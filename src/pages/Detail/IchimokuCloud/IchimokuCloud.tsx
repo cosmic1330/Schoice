@@ -7,8 +7,11 @@ import IchimokuChecklist from "./components/IchimokuChecklist";
 import IchimokuHeader from "./components/IchimokuHeader";
 import { useIchimokuData } from "./useIchimokuData";
 
+import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
+
 export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
   const deals = useContext(DealsContext);
+  const { settings } = useIndicatorSettings();
   const [activeStep, setActiveStep] = useState(0);
 
   // --- Zoom & Pan Logic (Adapted from Obv.tsx) ---
@@ -24,7 +27,8 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
     deals,
     perd,
     visibleCount,
-    rightOffset
+    rightOffset,
+    settings
   );
 
   // Handle Step Switching Event (from external or header)
@@ -148,6 +152,7 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
         ref={chartContainerRef}
         data={chartData}
         signals={signals}
+        cmfEmaPeriod={settings.cmfEma}
       />
     </Container>
   );

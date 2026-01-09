@@ -12,6 +12,8 @@ export interface IndicatorSettings {
   ma240: number;
   emaShort: number;
   emaLong: number;
+  cmf: number;
+  cmfEma: number;
 }
 
 const DEFAULT_SETTINGS: IndicatorSettings = {
@@ -26,6 +28,8 @@ const DEFAULT_SETTINGS: IndicatorSettings = {
   ma240: 240,
   emaShort: 5,
   emaLong: 10,
+  cmf: 21,
+  cmfEma: 5,
 };
 
 export default function useIndicatorSettings() {

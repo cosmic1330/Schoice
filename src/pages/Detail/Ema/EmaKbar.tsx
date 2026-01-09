@@ -32,8 +32,7 @@ import {
 } from "recharts";
 import dmi from "../../../cls_tools/dmi";
 import ema from "../../../cls_tools/ema";
-import ma from "../../../cls_tools/ma";
-import AvgCandlestickRectangle from "../../../components/RechartCustoms/AvgCandlestickRectangle";
+import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
 import { DealsContext } from "../../../context/DealsContext";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
 import ChartTooltip from "../Tooltip/ChartTooltip";
@@ -49,7 +48,7 @@ interface AvgMaChartData
   }> {
   ema5: number | null;
   ema10: number | null;
-  ma60: number | null;
+  ema120: number | null;
   volMa20?: number | null;
   diPlus: number | null;
   diMinus: number | null;
@@ -71,7 +70,7 @@ interface AvgMaStep {
 
 interface SignalPoint extends AvgMaChartData {
   type: "golden" | "death";
-  subType: "trend" | "rebound"; // trend = with MA60, rebound = against MA60
+  subType: "trend" | "rebound"; // trend = with EMA120, rebound = against EMA120
 }
 
 export default function AvgMaKbar({
@@ -178,7 +177,7 @@ export default function AvgMaKbar({
 
     let ema5_data = ema.init(deals[0], settings.emaShort);
     let ema10_data = ema.init(deals[0], settings.emaLong);
-    let ma60_data = ma.init(deals[0], settings.ma60);
+    let ema120_data = ema.init(deals[0], 120);
     let dmi_data = dmi.init(deals[0], 14);
 
     const response: AvgMaChartData[] = [];
@@ -190,7 +189,7 @@ export default function AvgMaKbar({
       if (i > 0) {
         ema5_data = ema.next(deal, ema5_data, settings.emaShort);
         ema10_data = ema.next(deal, ema10_data, settings.emaLong);
-        ma60_data = ma.next(deal, ma60_data, settings.ma60);
+        ema120_data = ema.next(deal, ema120_data, 120);
         dmi_data = dmi.next(deal, dmi_data, 14);
       }
 
@@ -208,7 +207,7 @@ export default function AvgMaKbar({
         ...deal,
         ema5: ema5_data.ema || null,
         ema10: ema10_data.ema || null,
-        ma60: ma60_data.ma || null,
+        ema120: ema120_data.ema || null,
         volMa20,
         diPlus: dmi_data.pDi ?? null,
         diMinus: dmi_data.mDi ?? null,
@@ -242,11 +241,11 @@ export default function AvgMaKbar({
         curr.ema10 !== null
       ) {
         const price = curr.c || 0;
-        const ma60 = curr.ma60 || 0;
+        const ema120 = curr.ema120 || 0;
 
         if (prev.ema5 < prev.ema10 && curr.ema5 > curr.ema10) {
           // Golden Cross
-          const isTrendBuy = ma60 > 0 && price > ma60;
+          const isTrendBuy = ema120 > 0 && price > ema120;
 
           points.push({
             ...curr,
@@ -255,7 +254,7 @@ export default function AvgMaKbar({
           });
         } else if (prev.ema5 > prev.ema10 && curr.ema5 < curr.ema10) {
           // Death Cross
-          const isTrendSell = ma60 > 0 && price < ma60;
+          const isTrendSell = ema120 > 0 && price < ema120;
 
           points.push({
             ...curr,
@@ -279,7 +278,7 @@ export default function AvgMaKbar({
     const price = current.c;
     const ema5 = current.ema5;
     const ema10 = current.ema10;
-    const ma60 = current.ma60;
+    const ema120 = current.ema120;
     const vol = current.v;
     const volMa = current.volMa20;
 
@@ -301,7 +300,7 @@ export default function AvgMaKbar({
             )
         : null;
     const trendUp = ema5 > ema10;
-    const aboveLifeLine = isNum(ma60) && price > ma60;
+    const aboveLifeLine = isNum(ema120) && price > ema120;
     const volOk = isNum(vol) && isNum(volMa) && vol > volMa; // Volume support
 
     // Scoring
@@ -357,10 +356,10 @@ export default function AvgMaKbar({
       },
       {
         label: "II. 趨勢判斷",
-        description: "多空生命線 (MA60)",
+        description: "多空生命線 (EMA120)",
         checks: [
           {
-            label: `價格 > MA60 (多頭格局): ${aboveLifeLine ? "Yes" : "No"}`,
+            label: `價格 > EMA120 (多頭格局): ${aboveLifeLine ? "Yes" : "No"}`,
             status: aboveLifeLine ? "pass" : "fail",
           },
           {
@@ -592,7 +591,10 @@ export default function AvgMaKbar({
               activeDot={false}
               legendType="none"
             />
-            <Customized component={AvgCandlestickRectangle} />
+
+            <Customized component={BaseCandlestickRectangle} />
+
+            {/* Volume Bars (Overlay) */}
             <Bar
               dataKey="v"
               yAxisId="volAxis"
@@ -630,12 +632,12 @@ export default function AvgMaKbar({
               name={`EMA ${settings.emaLong}`}
             />
             <Line
-              dataKey="ma60"
+              dataKey="ema120"
               stroke="#9c27b0"
               dot={false}
               activeDot={false}
               strokeWidth={2}
-              name={`MA ${settings.ma60}`}
+              name={`EMA 120`}
               opacity={0.6}
             />
 

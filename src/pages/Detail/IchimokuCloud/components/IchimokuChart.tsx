@@ -21,10 +21,11 @@ import IchimokuCloudArea from "./IchimokuCloudArea";
 interface IchimokuChartProps {
   data: IchimokuCombinedData[];
   signals: SignalResult[];
+  cmfEmaPeriod?: number;
 }
 
 const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
-  ({ data, signals }, ref) => {
+  ({ data, signals, cmfEmaPeriod = 5 }, ref) => {
     // Map signals for easy lookup
     const signalMap = useMemo(
       () => new Map(signals.map((s) => [s.t, s])),
@@ -42,6 +43,24 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
         };
       });
     }, [data, signalMap]);
+
+    // Calculate max absolute value for CMF y-axis to center 0
+    const cmfDomain = useMemo(() => {
+      let maxAbs = 0.3; // Default minimum range
+      mergedData.forEach((d) => {
+        if (d.cmf !== null && d.cmf !== undefined) {
+          const val = Math.abs(d.cmf);
+          if (val > maxAbs) maxAbs = val;
+        }
+        if (d.cmfEma5 !== null && d.cmfEma5 !== undefined) {
+          const val = Math.abs(d.cmfEma5);
+          if (val > maxAbs) maxAbs = val;
+        }
+      });
+      // Add a little padding
+      maxAbs = maxAbs * 1.1;
+      return [-maxAbs, maxAbs];
+    }, [mergedData]);
 
     return (
       <Box
@@ -252,8 +271,9 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
             <CartesianGrid strokeDasharray="3 3" opacity={0.1} stroke="#fff" />
             <XAxis dataKey="t" hide />
             <YAxis
-              domain={[-0.3, 0.3]}
+              domain={cmfDomain as any}
               tick={{ fill: "rgba(255,255,255,0.7)", fontSize: 10 }}
+              tickFormatter={(value) => value.toFixed(2)}
               stroke="rgba(255,255,255,0.3)"
               label={{
                 value: "CMF",
@@ -292,7 +312,7 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
               stroke="#ff9800"
               strokeWidth={1}
               dot={false}
-              name="EMA5"
+              name={`EMA${cmfEmaPeriod}`}
             />
             <defs>
               <linearGradient id="colorCmf" x1="0" y1="0" x2="0" y2="1">

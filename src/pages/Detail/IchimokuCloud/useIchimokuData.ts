@@ -5,9 +5,8 @@ import { UrlTaPerdOptions } from "../../../types";
 import { dateFormat } from "@ch20026103/anysis";
 import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
 import cmfTool from "../../../cls_tools/cmf";
-import emaTool from "../../../cls_tools/ema";
+import ichimokuTool from "../../../cls_tools/ichimoku";
 import macdTool from "../../../cls_tools/macd";
-import ichimoku from "./ichimoku"; // Ensure this path is correct relative to the hook
 import {
   calculateIchimokuSignals,
   IchimokuCombinedData,
@@ -51,7 +50,8 @@ export const useIchimokuData = (
   deals: any[],
   perd: UrlTaPerdOptions,
   visibleCount: number,
-  rightOffset: number
+  rightOffset: number,
+  settings?: any // Accept settings
 ) => {
   const { combinedData, signals, analysis } = useMemo(() => {
     if (!deals || deals.length < 52) {
@@ -62,51 +62,44 @@ export const useIchimokuData = (
       };
     }
 
-    // 1. Calculate Standard Ichimoku (Base Data)
-    // ichimoku.ts returns { tenkan, kijun, senkouA, senkouB, chikou, ... } populated
-    const baseIchimoku = ichimoku.calculate(deals);
+    const cmfPeriod = settings?.cmf || 21;
+    const cmfEmaPeriod = settings?.cmfEma || 5;
 
-    // 2. Calculate Indicators (CMF, MACD)
+    // 1. Calculate Indicators (Ichimoku, CMF, MACD) in one pass
+    let ichimokuState = ichimokuTool.init(deals[0]);
     let macdState = macdTool.init(deals[0]);
-    let cmfState = cmfTool.init(baseIchimoku[0]); // CMF(21)
+    let cmfState = cmfTool.init(deals[0]); // CMF state initialization may need adjustment if it caches params, but usually it stores accumulation.
+    // Assuming cmfTool.init doesn't depend on period, only .next does.
+    // If it does, we assume defaults or re-initialization if key changes (but this runs in useMemo dependent on settings)
 
     // Parallel arrays for fast access if needed, or just map
     const enrichedDataTemp: any[] = [];
 
-    baseIchimoku.forEach((d, i) => {
+    deals.forEach((d, i) => {
+      // Ichimoku
+      if (i > 0) {
+        ichimokuState = ichimokuTool.next(d, ichimokuState);
+      }
+
       // MACD
-      if (i > 0) macdState = macdTool.next(deals[i], macdState);
+      if (i > 0) macdState = macdTool.next(d, macdState);
 
       // CMF
-      // Note: cmfTool.next expects prev state
-      // We need to maintain chain.
-      // But map doesn't easily allow passing state from prev iteration unless we use a let variable outside.
-      if (i > 0) cmfState = cmfTool.next(d, cmfState, 21);
+      if (i > 0) cmfState = cmfTool.next(d, cmfState, cmfPeriod, cmfEmaPeriod);
 
       enrichedDataTemp.push({
         ...d,
+        tenkan: ichimokuState.ichimoku.tenkan,
+        kijun: ichimokuState.ichimoku.kijun,
+        senkouA: ichimokuState.ichimoku.senkouA,
+        senkouB: ichimokuState.ichimoku.senkouB,
+        chikou: ichimokuState.ichimoku.chikou,
         osc: macdState.osc,
         cmf: cmfState.cmf,
+        cmfEma5: cmfState.ema,
       });
     });
-
-    // 3. Calc EMA5 for CMF
-    // emaTool.init takes {c: val}
-    let emaState = emaTool.init({ c: enrichedDataTemp[0].cmf || 0 } as any, 5);
-    const enrichedData = enrichedDataTemp.map((d, i) => {
-      const val = d.cmf !== null ? d.cmf : 0;
-      let cmfEma5: number | null = null;
-      if (d.cmf !== null) {
-        if (i === 0) {
-          emaState = emaTool.init({ c: val } as any, 5);
-          cmfEma5 = emaState.ema;
-        } else {
-          emaState = emaTool.next({ c: val } as any, emaState, 5);
-          cmfEma5 = emaState.ema;
-        }
-      }
-      return { ...d, cmfEma5 };
-    });
+    const enrichedData = enrichedDataTemp;
 
     // 4. Prepare Final Data Structure (Visual Shift)
     // Standard Ichimoku logic for visualization:
@@ -198,7 +191,7 @@ export const useIchimokuData = (
     }
 
     return { combinedData: chartRows, signals, analysis: lastAnalysis };
-  }, [deals, perd]);
+  }, [deals, perd, settings]);
 
   const slicedData = useMemo(() => {
     if (!combinedData || combinedData.length === 0) return [];
