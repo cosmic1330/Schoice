@@ -235,6 +235,7 @@ export type SkillsTableType = {
   di_plus: number;
   di_minus: number;
   adx: number;
+  cmf: number;
 };
 
 export type TickDealsType = {
@@ -304,6 +305,7 @@ export type TimeSharingSkillsTableType = {
   di_plus: number;
   di_minus: number;
   adx: number;
+  cmf: number;
 };
 
 /****

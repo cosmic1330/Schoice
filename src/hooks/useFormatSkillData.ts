@@ -10,6 +10,7 @@ import {
   Rsi,
   Ichimoku,
   Dmi,
+  Cmf,
 } from "@ch20026103/anysis";
 import { useMemo } from "react";
 import { SkillsTableType, TaListType } from "../types";
@@ -39,6 +40,7 @@ export default function useFormatSkillData(data: TaListType) {
     const mfi = new Mfi();
     const ichimoku = new Ichimoku();
     const dmi = new Dmi();
+    const cmf = new Cmf();
 
     const init = data[0];
     let ma5_data = ma.init(init, 5);
@@ -64,6 +66,7 @@ export default function useFormatSkillData(data: TaListType) {
     let mfi_data = mfi.init(init, 14);
     let ichimoku_data = ichimoku.init(init);
     let dmi_data = dmi.init(init, 14);
+    let cmf_data = cmf.init(init);
 
     deals.push({
       ...init,
@@ -111,6 +114,7 @@ export default function useFormatSkillData(data: TaListType) {
       di_plus: dmi_data.pDi,
       di_minus: dmi_data.mDi,
       adx: dmi_data.adx,
+      cmf: cmf_data.cmf,
     });
 
     for (let i = 1; i < data.length; i++) {
@@ -138,6 +142,7 @@ export default function useFormatSkillData(data: TaListType) {
       mfi_data = mfi.next(value, mfi_data, 14);
       ichimoku_data = ichimoku.next(value, ichimoku_data);
       dmi_data = dmi.next(value, dmi_data, 14);
+      cmf_data = cmf.next(value, cmf_data);
 
       deals.push({
         ...value,
@@ -185,6 +190,7 @@ export default function useFormatSkillData(data: TaListType) {
         di_plus: dmi_data.pDi,
         di_minus: dmi_data.mDi,
         adx: dmi_data.adx,
+        cmf: cmf_data.cmf,
       });
     }
     return deals;

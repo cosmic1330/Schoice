@@ -64,6 +64,7 @@ CREATE TABLE daily_skills (
     di_plus DOUBLE PRECISION,
     di_minus DOUBLE PRECISION,
     adx DOUBLE PRECISION,
+    cmf DOUBLE PRECISION,
     PRIMARY KEY (stock_id, t)
 );
 
@@ -125,6 +126,7 @@ CREATE TABLE weekly_skills (
     di_plus DOUBLE PRECISION,
     di_minus DOUBLE PRECISION,
     adx DOUBLE PRECISION,
+    cmf DOUBLE PRECISION,
     PRIMARY KEY (stock_id, t)
 );
 
@@ -186,6 +188,7 @@ CREATE TABLE hourly_skills (
     di_plus DOUBLE PRECISION,
     di_minus DOUBLE PRECISION,
     adx DOUBLE PRECISION,
+    cmf DOUBLE PRECISION,
     PRIMARY KEY (stock_id, ts)
 );
 
