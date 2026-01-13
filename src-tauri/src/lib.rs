@@ -123,7 +123,7 @@ fn get_db_size(app_handle: tauri::AppHandle) -> Result<(u64, String), String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let result = tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_store::Builder::new().build())
@@ -153,6 +153,91 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![greet, get_db_size])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .run(tauri::generate_context!());
+
+    if let Err(e) = result {
+        eprintln!("Error while running tauri application: {}", e);
+        let error_str = e.to_string();
+        if error_str.contains("migration") || error_str.contains("duplicate column") {
+            // Check for Chinese locale
+            let is_chinese = std::process::Command::new("defaults")
+                .arg("read")
+                .arg("-g")
+                .arg("AppleLocale")
+                .output()
+                .map(|output| {
+                    let locale = String::from_utf8_lossy(&output.stdout);
+                    locale.trim().starts_with("zh")
+                })
+                .unwrap_or(false);
+
+            let escaped_error = error_str.replace("\\", "\\\\").replace("\"", "\\\"");
+            
+            let (title, msg, btn_exit, btn_reset, reset_success) = if is_chinese {
+                (
+                    "資料庫錯誤",
+                    format!(
+                        "資料庫遷移失敗。\\n\\n詳細錯誤：{}\\n\\n您的本地資料庫與新版本不相容。\\n您想要重置資料庫嗎？\\n\\n警告：這將刪除所有本地數據。",
+                        escaped_error
+                    ),
+                    "離開",
+                    "重置資料庫",
+                    "資料庫已重置。請重啟應用程式。"
+                )
+            } else {
+                (
+                    "Database Error",
+                    format!(
+                        "Database migration failed.\\n\\nDetailed error: {}\\n\\nYour local database is incompatible with the new version.\\nWould you like to reset the database?\\n\\nWARNING: This will delete all local data.",
+                        escaped_error
+                    ),
+                    "Exit",
+                    "Reset Database",
+                    "Database has been reset. Please restart the application."
+                )
+            };
+            
+            let script = format!(
+                "display dialog \"{}\" with title \"{}\" buttons {{\"chn_wrapper_exit\", \"chn_wrapper_reset\"}} default button \"chn_wrapper_reset\" with icon stop",
+                msg, title
+            )
+            .replace("chn_wrapper_exit", btn_exit)
+            .replace("chn_wrapper_reset", btn_reset);
+
+            eprintln!("Attempting to show dialog with script: {}", script);
+
+            let output = std::process::Command::new("/usr/bin/osascript")
+                .arg("-e")
+                .arg(&script)
+                .output();
+
+            match output {
+                Ok(out) => {
+                    if !out.status.success() {
+                        eprintln!("osascript failed: {}", String::from_utf8_lossy(&out.stderr));
+                    }
+                    let stdout = String::from_utf8_lossy(&out.stdout);
+                    if stdout.contains(btn_reset) {
+                        let _ = std::process::Command::new("sh")
+                            .arg("-c")
+                            .arg("rm \"$HOME/Library/Application Support/schoice/schoice.db\"")
+                            .output();
+                        
+                        let success_script = format!(
+                            "display dialog \"{}\" buttons {{\"OK\"}} default button \"OK\" with icon note",
+                            reset_success
+                        );
+                        let _ = std::process::Command::new("/usr/bin/osascript")
+                            .arg("-e")
+                            .arg(&success_script)
+                            .output();
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Failed to execute osascript: {}", e);
+                }
+            }
+        }
+        std::process::exit(1);
+    }
 }

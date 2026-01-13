@@ -386,7 +386,7 @@ pub fn value() -> Vec<Migration> {
             kind: MigrationKind::Up,
         },
         Migration {
-            version: 4,
+            version: 7,
             description: "add_cmf_column_to_skills_tables",
             sql: "
                 ALTER TABLE daily_skills
