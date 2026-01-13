@@ -165,47 +165,31 @@ export default function Mfi({
   const chartData = useMemo((): MfiChartData[] => {
     if (!deals || deals.length === 0) return [];
 
+    // 1. Initial enhancement (MAs, Boll, RSI, MFI)
     const enhancedData = calculateIndicators(deals, settings);
 
-    // Calculate MACD manually since it might not be in enhancedData or we want specific params
+    // 2. Full dataset signal calculation
     let macdState = macd.init(deals[0]);
-    const macdValues = deals.map((d, i) => {
-      if (i > 0) macdState = macd.next(d, macdState);
+    const fullDataWithMacd = enhancedData.map((d, i) => {
+      if (i > 0) macdState = macd.next(d as any, macdState);
       return {
-        dif: (macdState as any).dif,
-        dem: (macdState as any).dem,
-        osc: macdState.osc,
+        ...d,
+        macdOsc: macdState.osc,
+        macdDif: (macdState as any).dif,
+        macdDem: (macdState as any).dem,
       };
     });
 
-    const initialData = enhancedData.slice(
-      -(visibleCount + rightOffset),
-      rightOffset === 0 ? undefined : -rightOffset
-    );
+    const fullDataWithSignals = fullDataWithMacd.map((d, i, arr) => {
+      let buySignal: number | null = null;
+      let exitSignal: number | null = null;
+      let buyReason: string | undefined;
+      let exitReason: string | undefined;
 
-    // Second pass for signals (Trend/Turn)
-    const dataWithSignals = initialData.map(
-      (d: MfiChartData, i: number, arr: MfiChartData[]) => {
-        // Find original index to get correct MACD value
-        const originalIndex = deals.findIndex((item) => item.t === d.t); // Performance note: optimization possible if needed
-        const macdVal = macdValues[originalIndex] || { dif: 0, dem: 0, osc: 0 };
-
-        const dataItem = {
-          ...d,
-          macdOsc: macdVal.osc,
-          macdDif: macdVal.dif,
-          macdDem: macdVal.dem,
-        };
-
-        if (i === 0) return dataItem;
-        const prev = arr[i - 1]; // Note: This prev doesn't have macd yet, careful if using prev signals
+      if (i > 0) {
+        const prev = arr[i - 1];
         const currMfi = d.mfi || 50;
         const prevMfi = prev.mfi || 50;
-
-        let buySignal: number | null = null;
-        let exitSignal: number | null = null;
-        let buyReason: string | undefined;
-        let exitReason: string | undefined;
 
         // Buy: Oversold (<20) and Turning Up
         if (prevMfi < 20 && currMfi > prevMfi) {
@@ -217,12 +201,18 @@ export default function Mfi({
           exitSignal = d.h ? d.h * 1.02 : null;
           exitReason = "超買反轉";
         }
-
-        return { ...dataItem, buySignal, exitSignal, buyReason, exitReason };
       }
+
+      return { ...d, buySignal, exitSignal, buyReason, exitReason };
+    });
+
+    // 3. Slice for visible area
+    const slicedData = fullDataWithSignals.slice(
+      -(visibleCount + rightOffset),
+      rightOffset === 0 ? undefined : -rightOffset
     );
 
-    return dataWithSignals;
+    return slicedData;
   }, [deals, settings, visibleCount, rightOffset]);
 
   const { steps, score, recommendation } = useMemo(() => {
@@ -567,8 +557,8 @@ export default function Mfi({
             />
 
             {chartData.map((d) => {
-              const isBuy = d.buySignal !== null;
-              const isExit = d.exitSignal !== null;
+              const isBuy = typeof d.buySignal === "number";
+              const isExit = typeof d.exitSignal === "number";
               if (!isBuy && !isExit) return null;
 
               const yPos = isBuy ? d.l! * 0.99 : d.h! * 1.01;

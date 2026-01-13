@@ -13,6 +13,7 @@ import React, {
 import { useNavigate, useParams } from "react-router";
 import useSWR from "swr";
 import { tauriFetcher } from "../../tools/http";
+import DocModal from "../../components/DocModal";
 import { DealsContext } from "../../context/DealsContext";
 import { FutureIds, UrlTaPerdOptions, UrlType } from "../../types";
 import {
@@ -24,6 +25,17 @@ import generateDealDataDownloadUrl from "../../utils/generateDealDataDownloadUrl
 import Bollean from "./Bollean/Bollean";
 import AvgMaKbar from "./Ema/EmaKbar";
 import GlassBar from "./GlassBar";
+
+// Import doc assets
+import bolleanDoc from "./Bollean/Bollean.md?raw";
+import emaDoc from "./Ema/Ema.md?raw";
+import ichimokuDoc from "./IchimokuCloud/ichimoku.md?raw";
+import kdDoc from "./Kd/Kd.md?raw";
+import maDoc from "./Ma/Ma.md?raw";
+import mfiDoc from "./Mfi/Mfi.md?raw";
+import mjDoc from "./Mj/Mj.md?raw";
+import mrDoc from "./Mr/MR.md?raw";
+import obvDoc from "./Obv/Obv.md?raw";
 
 // lazy load components
 const MaKbar = lazy(() => import("./Ma/MaKbar"));
@@ -97,6 +109,24 @@ const FullscreenVerticalCarousel: React.FC = () => {
   // Shared zoom and pan state
   const [visibleCount, setVisibleCount] = useState(180);
   const [rightOffset, setRightOffset] = useState(0);
+
+  // Documentation modal state
+  const [isDocOpen, setIsDocOpen] = useState(false);
+
+  const docMap = useMemo(
+    () => ({
+      bollean: { title: "布林通道策略", content: bolleanDoc },
+      ma_k: { title: "均線與缺口策略", content: maDoc },
+      ema: { title: "EMA趨勢策略", content: emaDoc },
+      obv: { title: "OBV動能策略", content: obvDoc },
+      mj: { title: "MJ雙指標共振", content: mjDoc },
+      mr: { title: "MR雙指標共振", content: mrDoc },
+      kd: { title: "KD隨機指標策略", content: kdDoc },
+      mfi: { title: "MFI資金流便覽", content: mfiDoc },
+      ichimoku_cloud: { title: "一目均衡表說明", content: ichimokuDoc },
+    }),
+    []
+  );
 
   const handleSetPerd = useCallback((newPerd: UrlTaPerdOptions) => {
     localStorage.setItem("detail:perd:type", newPerd);
@@ -215,7 +245,7 @@ const FullscreenVerticalCarousel: React.FC = () => {
 
   const handleWheel = useCallback(
     (e: WheelEvent) => {
-      if (scrolling) return;
+      if (scrolling || isDocOpen) return;
       setScrolling(true);
 
       if (e.deltaY > 0) {
@@ -226,12 +256,12 @@ const FullscreenVerticalCarousel: React.FC = () => {
 
       setTimeout(() => setScrolling(false), 800);
     },
-    [current, scrolling, goToSlide]
+    [current, scrolling, goToSlide, isDocOpen]
   );
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (scrolling) return;
+      if (scrolling || isDocOpen) return;
 
       if (e.key === "ArrowUp") {
         goToSlide(current - 1);
@@ -258,7 +288,7 @@ const FullscreenVerticalCarousel: React.FC = () => {
         window.dispatchEvent(new CustomEvent("detail-switch-step"));
       }
     },
-    [current, scrolling, goToSlide, perd, handleSetPerd]
+    [current, scrolling, goToSlide, perd, handleSetPerd, isDocOpen]
   );
 
   useEffect(() => {
@@ -383,6 +413,18 @@ const FullscreenVerticalCarousel: React.FC = () => {
             current={current}
             goToSlide={goToSlide}
             pageRef={pageRef}
+            onOpenDoc={() => setIsDocOpen(true)}
+          />
+
+          <DocModal
+            open={isDocOpen}
+            onClose={() => setIsDocOpen(false)}
+            title={
+              docMap[slides[current].id as keyof typeof docMap]?.title || "文件"
+            }
+            markdown={
+              docMap[slides[current].id as keyof typeof docMap]?.content || ""
+            }
           />
         </DealsContext.Provider>
       </PageContainer>

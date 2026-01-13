@@ -5,8 +5,10 @@ import {
   CartesianGrid,
   ComposedChart,
   Customized,
+  Label,
   Line,
   Tooltip as RechartsTooltip,
+  ReferenceArea,
   ReferenceDot,
   ReferenceLine,
   ResponsiveContainer,
@@ -16,7 +18,6 @@ import {
 import BaseCandlestickRectangle from "../../../../components/RechartCustoms/BaseCandlestickRectangle";
 import ChartTooltip from "../../Tooltip/ChartTooltip";
 import { IchimokuCombinedData, SignalResult } from "../ichimokuStrategy";
-import IchimokuCloudArea from "./IchimokuCloudArea";
 
 interface IchimokuChartProps {
   data: IchimokuCombinedData[];
@@ -32,17 +33,145 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
       [signals]
     );
 
-    // Merge signals into data for Tooltip to pick up "signalReason" or similar
+    // Calculate baseline avgPrice once for thickness comparison
+    const avgPrice = useMemo(() => {
+      let sum = 0;
+      let count = 0;
+      data.forEach((d) => {
+        if (d.c) {
+          sum += d.c;
+          count++;
+        }
+      });
+      return sum / (count || 1);
+    }, [data]);
+
+    // Merge signals and calculate per-bar future analysis
     const mergedData = useMemo(() => {
       return data.map((d) => {
         const sig = signalMap.get(d.t);
+        const isBull =
+          d.senkouA !== null && d.senkouB !== null && d.senkouA > d.senkouB;
+        const isBear =
+          d.senkouA !== null && d.senkouB !== null && d.senkouB > d.senkouA;
+
+        // Future Analysis & Current Status
+        const isFuture = d.c === null;
+        let futureTrend = "";
+        let futureReason = "";
+        let currentStatus = "";
+        let thicknessStatus = "";
+
+        if (d.senkouA !== null && d.senkouB !== null) {
+          const thickness = Math.abs(d.senkouA - d.senkouB);
+          const ratio = thickness / (avgPrice || 1);
+          const cloudTop = Math.max(d.senkouA, d.senkouB);
+          const cloudBottom = Math.min(d.senkouA, d.senkouB);
+
+          thicknessStatus =
+            ratio > 0.03 ? "厚雲位 (強支撐/阻力)" : "薄雲位 (易突破)";
+
+          if (isFuture) {
+            futureTrend = isBull
+              ? "未來趨勢：多頭趨勢 (陽雲)"
+              : "未來趨勢：空頭趨勢 (陰雲)";
+            if (ratio > 0.03) {
+              futureReason = isBull
+                ? "先行雲厚實：未來強大支撐"
+                : "先行雲厚實：未來強大阻力";
+            } else if (ratio > 0.01) {
+              futureReason = "預計未來波動性增加";
+            } else {
+              const isTwistNext = ratio < 0.002;
+              futureReason = isTwistNext
+                ? "預計未來發生 Kumo Twist 趨勢轉向"
+                : "先行雲薄弱：預計未來支撐下降";
+            }
+          } else if (d.c !== null) {
+            // Historical Logic
+            if (d.c > cloudTop) {
+              currentStatus = isBear
+                ? "突破陰雲：看多 (空轉多訊號)"
+                : "位於陽雲上方：偏多強勢";
+            } else if (d.c < cloudBottom) {
+              currentStatus = isBull
+                ? "跌破陽雲：看空 (多轉空訊號)"
+                : "位於陰雲下方：偏空弱勢";
+            } else {
+              currentStatus = "位於雲層內：行情整理中";
+            }
+          }
+        }
+
         return {
           ...d,
           signalReason: sig ? sig.reason : undefined,
           signalType: sig ? sig.type : undefined,
+          bullCloud:
+            isBull || d.senkouA === d.senkouB ? [d.senkouB, d.senkouA] : null,
+          bearCloud:
+            isBear || d.senkouA === d.senkouB ? [d.senkouA, d.senkouB] : null,
+          isFuture,
+          futureTrend,
+          futureReason,
+          currentStatus,
+          thicknessStatus,
         };
       });
-    }, [data, signalMap]);
+    }, [data, signalMap, avgPrice]);
+
+    // Find the transition point to future cloud
+    const todayBarT = useMemo(() => {
+      for (let i = mergedData.length - 1; i >= 0; i--) {
+        if (mergedData[i].c !== null) return mergedData[i].t;
+      }
+      return null;
+    }, [mergedData]);
+
+    const futureAnalysis = useMemo(() => {
+      if (!todayBarT) return null;
+      const todayIdx = mergedData.findIndex((d) => d.t === todayBarT);
+      if (todayIdx === -1) return null;
+
+      const futureData = mergedData.slice(todayIdx + 1);
+      if (futureData.length === 0) return null;
+
+      const lastBar = futureData[futureData.length - 1];
+      if (lastBar.senkouA === null || lastBar.senkouB === null) return null;
+
+      const isBull = lastBar.senkouA > lastBar.senkouB;
+      const thickness = Math.abs(lastBar.senkouA - lastBar.senkouB);
+
+      // Estimate "Thick" vs "Thin" based on relative price %
+      let sumPrice = 0;
+      let count = 0;
+      mergedData.forEach((d) => {
+        if (d.c) {
+          sumPrice += d.c;
+          count++;
+        }
+      });
+      const avgPrice = sumPrice / (count || 1);
+      const thicknessRatio = thickness / (avgPrice || 1);
+
+      return {
+        isBull,
+        trendSymbol: isBull ? "📈" : "📉",
+        structureSymbol: thicknessRatio > 0.02 ? "🧱" : "☁️",
+        trend: isBull ? "未來趨勢：偏多 (陽雲)" : "未來趨勢：偏空 (陰雲)",
+        structure:
+          thicknessRatio > 0.02 ? "厚雲位 (強支撐/阻力)" : "薄雲位 (易突破)",
+        lastBarT: lastBar.t,
+        lastBarY: (lastBar.senkouA + lastBar.senkouB) / 2,
+        midBarT: futureData[Math.floor(futureData.length / 2)]?.t || lastBar.t,
+        midBarY:
+          ((futureData[Math.floor(futureData.length / 2)]?.senkouA || 0) +
+            (futureData[Math.floor(futureData.length / 2)]?.senkouB || 0)) /
+          2,
+        futureStart: futureData[0].t,
+        futureEnd: lastBar.t,
+      };
+    }, [mergedData, todayBarT]);
 
     // Calculate max absolute value for CMF y-axis to center 0
     const cmfDomain = useMemo(() => {
@@ -139,8 +268,8 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
             />
             <Line
               dataKey="chikou"
-              stroke="#43aa8b"
-              strokeWidth={1}
+              stroke="#f0942cff"
+              strokeWidth={2}
               dot={false}
               name="遲行線"
               strokeDasharray="3 3"
@@ -148,26 +277,96 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
               connectNulls={false}
             />
 
-            {/* Cloud (Senkou A/B) - Using Area with fills */}
-            <Line
-              dataKey="senkouA"
-              stroke="#2196f3"
+            {/* Cloud (Senkou A/B) - Using standard Area with fills */}
+            <Area
+              dataKey="bullCloud"
+              fill="#ff4d4f"
+              fillOpacity={0.2}
+              stroke="#ff4d4f"
               strokeWidth={0.5}
-              dot={false}
-              name="雲帶A"
               strokeDasharray="2 2"
+              dot={false}
+              activeDot={false}
+              connectNulls={false}
+              name="先行雲(陽)"
             />
-            <Line
-              dataKey="senkouB"
-              stroke="#f44336"
-              strokeWidth={1}
-              dot={false}
-              name="雲帶B"
+            <Area
+              dataKey="bearCloud"
+              fill="#52c41a"
+              fillOpacity={0.2}
+              stroke="#52c41a"
+              strokeWidth={0.5}
               strokeDasharray="2 2"
+              dot={false}
+              activeDot={false}
+              connectNulls={false}
+              name="先行雲(陰)"
             />
 
-            {/* Custom Cloud Area Fill */}
-            <Customized component={IchimokuCloudArea} data={data} />
+            {/* 1. Future Projection Area Highlight */}
+            {futureAnalysis && (
+              <ReferenceArea
+                x1={futureAnalysis.futureStart}
+                x2={futureAnalysis.futureEnd}
+                fill="rgba(255,255,255,0.03)"
+                stroke="none"
+              />
+            )}
+
+            {/* 2. Today Marker with Label */}
+            {todayBarT && (
+              <ReferenceLine
+                x={todayBarT}
+                stroke="#fff"
+                strokeOpacity={0.8}
+                strokeWidth={1.5}
+                strokeDasharray="3 3"
+              >
+                <Label
+                  value="← 歷史數據 | 未來預測區 →"
+                  position="top"
+                  fill="#90caf9"
+                  fontSize={10}
+                  offset={10}
+                />
+              </ReferenceLine>
+            )}
+
+            {/* 3. Future Trend Analysis Labels */}
+            {futureAnalysis && (
+              <>
+                <ReferenceLine
+                  x={futureAnalysis.lastBarT}
+                  stroke="rgba(255,255,255,0.2)"
+                  strokeDasharray="2 2"
+                />
+                {/* Symbols restored using ReferenceDot with larger offsets to avoid covering the cloud */}
+                <ReferenceDot
+                  x={futureAnalysis.midBarT}
+                  y={futureAnalysis.midBarY}
+                  r={0}
+                  label={{
+                    value: `${futureAnalysis.trendSymbol} ${futureAnalysis.structureSymbol}`,
+                    position: "top",
+                    fill: "#fff",
+                    fontSize: 20,
+                    offset: 20, // Reduced from 30
+                  }}
+                />
+                <ReferenceDot
+                  x={futureAnalysis.midBarT}
+                  y={futureAnalysis.midBarY}
+                  r={0}
+                  label={{
+                    value: "未來趨勢預估",
+                    position: "bottom",
+                    fill: "rgba(255,255,255,0.5)",
+                    fontSize: 9,
+                    offset: 15, // Reduced from 20
+                  }}
+                />
+              </>
+            )}
 
             {/* Candlesticks */}
             <Customized
@@ -282,7 +481,11 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
                 fill: "#9c27b0",
               }}
             />
-            <RechartsTooltip content={<ChartTooltip showSignals={false} />} />
+            <RechartsTooltip
+              content={
+                <ChartTooltip showSignals={false} showIchimoku={false} />
+              }
+            />
 
             <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" />
             <ReferenceLine

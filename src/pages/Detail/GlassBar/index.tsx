@@ -14,6 +14,7 @@ interface GlassBarProps {
   current: number;
   goToSlide: (index: number) => void;
   pageRef: React.RefObject<any>;
+  onOpenDoc: () => void;
 }
 
 const GlassBar: React.FC<GlassBarProps> = ({
@@ -24,6 +25,7 @@ const GlassBar: React.FC<GlassBarProps> = ({
   current,
   goToSlide,
   pageRef,
+  onOpenDoc,
 }) => {
   return (
     <GlassBarContainer
@@ -43,6 +45,7 @@ const GlassBar: React.FC<GlassBarProps> = ({
           setIsCollapsed={setIsCollapsed}
           current={current}
           goToSlide={goToSlide}
+          onOpenDoc={onOpenDoc}
         />
 
         {isCollapsed && <ChartMenu current={current} goToSlide={goToSlide} />}

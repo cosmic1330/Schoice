@@ -32,7 +32,8 @@ import {
 } from "recharts";
 import dmi from "../../../cls_tools/dmi";
 import ema from "../../../cls_tools/ema";
-import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
+import AvgCandlestickRectangle from "../../../components/RechartCustoms/AvgCandlestickRectangle";
+import ma from "../../../cls_tools/ma";
 import { DealsContext } from "../../../context/DealsContext";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
 import ChartTooltip from "../Tooltip/ChartTooltip";
@@ -48,7 +49,8 @@ interface AvgMaChartData
   }> {
   ema5: number | null;
   ema10: number | null;
-  ema120: number | null;
+  ema60: number | null;
+  sma200: number | null;
   volMa20?: number | null;
   diPlus: number | null;
   diMinus: number | null;
@@ -70,7 +72,7 @@ interface AvgMaStep {
 
 interface SignalPoint extends AvgMaChartData {
   type: "golden" | "death";
-  subType: "trend" | "rebound"; // trend = with EMA120, rebound = against EMA120
+  subType: "trend" | "rebound"; // trend = with EMA60/SMA200, rebound = against them
 }
 
 export default function AvgMaKbar({
@@ -177,7 +179,8 @@ export default function AvgMaKbar({
 
     let ema5_data = ema.init(deals[0], settings.emaShort);
     let ema10_data = ema.init(deals[0], settings.emaLong);
-    let ema120_data = ema.init(deals[0], 120);
+    let ema60_data = ema.init(deals[0], 60);
+    let sma200_data = ma.init(deals[0], 200);
     let dmi_data = dmi.init(deals[0], 14);
 
     const response: AvgMaChartData[] = [];
@@ -189,7 +192,8 @@ export default function AvgMaKbar({
       if (i > 0) {
         ema5_data = ema.next(deal, ema5_data, settings.emaShort);
         ema10_data = ema.next(deal, ema10_data, settings.emaLong);
-        ema120_data = ema.next(deal, ema120_data, 120);
+        ema60_data = ema.next(deal, ema60_data, 60);
+        sma200_data = ma.next(deal, sma200_data, 200);
         dmi_data = dmi.next(deal, dmi_data, 14);
       }
 
@@ -207,7 +211,8 @@ export default function AvgMaKbar({
         ...deal,
         ema5: ema5_data.ema || null,
         ema10: ema10_data.ema || null,
-        ema120: ema120_data.ema || null,
+        ema60: ema60_data.ema || null,
+        sma200: sma200_data.ma || null,
         volMa20,
         diPlus: dmi_data.pDi ?? null,
         diMinus: dmi_data.mDi ?? null,
@@ -241,11 +246,14 @@ export default function AvgMaKbar({
         curr.ema10 !== null
       ) {
         const price = curr.c || 0;
-        const ema120 = curr.ema120 || 0;
+        const ema60 = curr.ema60 || 0;
+        const sma200 = curr.sma200 || 0;
 
         if (prev.ema5 < prev.ema10 && curr.ema5 > curr.ema10) {
           // Golden Cross
-          const isTrendBuy = ema120 > 0 && price > ema120;
+          // Trend buy if price > ema60 AND price > sma200
+          const isTrendBuy =
+            ema60 > 0 && sma200 > 0 && price > ema60 && price > sma200;
 
           points.push({
             ...curr,
@@ -254,7 +262,8 @@ export default function AvgMaKbar({
           });
         } else if (prev.ema5 > prev.ema10 && curr.ema5 < curr.ema10) {
           // Death Cross
-          const isTrendSell = ema120 > 0 && price < ema120;
+          const isTrendSell =
+            ema60 > 0 && sma200 > 0 && price < ema60 && price < sma200;
 
           points.push({
             ...curr,
@@ -278,7 +287,8 @@ export default function AvgMaKbar({
     const price = current.c;
     const ema5 = current.ema5;
     const ema10 = current.ema10;
-    const ema120 = current.ema120;
+    const ema60 = current.ema60;
+    const sma200 = current.sma200;
     const vol = current.v;
     const volMa = current.volMa20;
 
@@ -300,23 +310,27 @@ export default function AvgMaKbar({
             )
         : null;
     const trendUp = ema5 > ema10;
-    const aboveLifeLine = isNum(ema120) && price > ema120;
+    const aboveLifeLine =
+      isNum(ema60) && isNum(sma200) && price > ema60 && price > sma200;
     const volOk = isNum(vol) && isNum(volMa) && vol > volMa; // Volume support
 
     // Scoring
     let totalScore = 0;
 
     // 1. Trend (30)
-    if (trendUp) totalScore += 15;
-    if (aboveLifeLine) totalScore += 15;
+    if (trendUp) totalScore += 10;
+    if (isNum(ema60) && price > ema60) totalScore += 10;
+    if (isNum(sma200) && price > sma200) totalScore += 10;
 
     // 2. Signal Quality (40)
     if (recentCross) {
       if (recentCross.type === "golden") {
-        if (recentCross.subType === "trend") totalScore += 40; // Strong buy
-        else totalScore += 20; // Rebound buy
+        if (recentCross.subType === "trend")
+          totalScore += 40; // Strong buy (Above both lines)
+        else totalScore += 20; // Rebound buy (Between or below lines)
       } else {
-        if (recentCross.subType === "trend") totalScore -= 40; // Strong sell
+        if (recentCross.subType === "trend")
+          totalScore -= 40; // Strong sell (Below both lines)
         else totalScore -= 20; // Correction
       }
     } else {
@@ -356,16 +370,24 @@ export default function AvgMaKbar({
       },
       {
         label: "II. 趨勢判斷",
-        description: "多空生命線 (EMA120)",
+        description: "核心趨勢帶 (EMA60 & SMA200)",
         checks: [
           {
-            label: `價格 > EMA120 (多頭格局): ${aboveLifeLine ? "Yes" : "No"}`,
-            status: aboveLifeLine ? "pass" : "fail",
+            label: `價格 > EMA60 (季線): ${
+              isNum(ema60) && price > ema60 ? "Yes" : "No"
+            }`,
+            status: isNum(ema60) && price > ema60 ? "pass" : "fail",
           },
           {
-            label: `EMA${settings.emaShort} > EMA${
-              settings.emaLong
-            } (短線趨勢): ${trendUp ? "Yes" : "No"}`,
+            label: `價格 > SMA200 (年線): ${
+              isNum(sma200) && price > sma200 ? "Yes" : "No"
+            }`,
+            status: isNum(sma200) && price > sma200 ? "pass" : "fail",
+          },
+          {
+            label: `EMA${settings.emaShort} > EMA${settings.emaLong} (短線): ${
+              trendUp ? "Yes" : "No"
+            }`,
             status: trendUp ? "pass" : "fail",
           },
         ],
@@ -592,7 +614,7 @@ export default function AvgMaKbar({
               legendType="none"
             />
 
-            <Customized component={BaseCandlestickRectangle} />
+            <Customized component={AvgCandlestickRectangle} />
 
             {/* Volume Bars (Overlay) */}
             <Bar
@@ -632,13 +654,24 @@ export default function AvgMaKbar({
               name={`EMA ${settings.emaLong}`}
             />
             <Line
-              dataKey="ema120"
+              dataKey="ema60"
               stroke="#9c27b0"
               dot={false}
               activeDot={false}
-              strokeWidth={2}
-              name={`EMA 120`}
-              opacity={0.6}
+              strokeWidth={1}
+              strokeDasharray="5 5"
+              name={`EMA 60`}
+              opacity={0.8}
+            />
+            <Line
+              dataKey="sma200"
+              stroke="#607d8b"
+              dot={false}
+              activeDot={false}
+              strokeWidth={1}
+              strokeDasharray="3 3"
+              name={`SMA 200`}
+              opacity={0.8}
             />
 
             {signals.map((signal) => {
