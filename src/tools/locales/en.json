@@ -207,7 +207,10 @@
           "addAlarmError": "Failed to add alarm",
           "removeAlarmSuccess": "Alarm removed successfully",
           "removeAlarmError": "Failed to remove alarm",
-          "noAlarmFound": "No alarm found"
+          "noAlarmFound": "No alarm found",
+          "moveToTrashConfirmTitle": "Move to Trash",
+          "moveToTrashConfirmContent": "Are you sure you want to move \"{{name}}\" to the trash bin?",
+          "moveToTrashConfirmButton": "Move to Trash"
         }
       }
     }

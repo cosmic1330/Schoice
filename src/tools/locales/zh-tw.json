@@ -206,7 +206,10 @@
           "addAlarmError": "加入告警失敗",
           "removeAlarmSuccess": "移除告警成功",
           "removeAlarmError": "移除告警失敗",
-          "noAlarmFound": "找不到對應告警"
+          "noAlarmFound": "找不到對應告警",
+          "moveToTrashConfirmTitle": "移至回收站",
+          "moveToTrashConfirmContent": "確定要將「{{name}}」移至回收站嗎？",
+          "moveToTrashConfirmButton": "移至回收站"
         }
       }
     }

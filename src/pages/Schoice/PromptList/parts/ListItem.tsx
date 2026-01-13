@@ -1,12 +1,20 @@
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import {
   Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   IconButton,
   Stack as MuiStack,
   Typography,
   styled,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useUser } from "../../../../context/UserContext";
 import useCloudStore from "../../../../store/Cloud.store";
 import useSchoiceStore from "../../../../store/Schoice.store";
@@ -110,14 +118,25 @@ export default function ListItem({
   const { remove } = useCloudStore();
   const { setSelect, select } = useSchoiceStore();
   const { user } = useUser();
+  const { t } = useTranslation();
 
   const isActive = select?.prompt_id === id;
+  const [openConfirm, setOpenConfirm] = useState(false);
 
-  const handleDelete = (event: React.SyntheticEvent) => {
+  const handleDeleteClick = (event: React.SyntheticEvent) => {
     event.stopPropagation();
+    setOpenConfirm(true);
+  };
+
+  const handleConfirmDelete = () => {
     if (user) {
       remove(id, promptType, user.id);
     }
+    setOpenConfirm(false);
+  };
+
+  const handleCancelDelete = () => {
+    setOpenConfirm(false);
   };
 
   const handleSelect = () => {
@@ -149,7 +168,7 @@ export default function ListItem({
 
       <IconButton
         size="small"
-        onClick={handleDelete}
+        onClick={handleDeleteClick}
         className="action-btn"
         sx={{
           opacity: 0,
@@ -163,6 +182,31 @@ export default function ListItem({
       >
         <DeleteRoundedIcon fontSize="small" />
       </IconButton>
+
+      <Dialog
+        open={openConfirm}
+        onClose={handleCancelDelete}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <DialogTitle>
+          {t("Pages.Schoice.PromptList.messages.moveToTrashConfirmTitle")}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t("Pages.Schoice.PromptList.messages.moveToTrashConfirmContent", {
+              name,
+            })}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete} color="inherit">
+            {t("Pages.Schoice.Header.cancel")}
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error" autoFocus>
+            {t("Pages.Schoice.PromptList.messages.moveToTrashConfirmButton")}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </ItemCard>
   );
 }
