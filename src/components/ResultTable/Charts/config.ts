@@ -104,3 +104,10 @@ export const DmiIndicatorColor: IndicatorColorType[] = [
     color: "#ff7300",
   },
 ];
+
+export const CmfIndicatorColor: IndicatorColorType[] = [
+  {
+    key: "cmf",
+    color: "#82ca9d",
+  },
+];
