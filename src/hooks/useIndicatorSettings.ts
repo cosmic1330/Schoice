@@ -5,11 +5,12 @@ export interface IndicatorSettings {
   ma10: number;
   ma20: number;
   ma60: number;
+  ma120: number;
+  ma240: number;
   boll: number;
   kd: number;
   mfi: number;
   rsi: number;
-  ma240: number;
   emaShort: number;
   emaLong: number;
   cmf: number;
@@ -21,11 +22,12 @@ const DEFAULT_SETTINGS: IndicatorSettings = {
   ma10: 10,
   ma20: 20,
   ma60: 60,
+  ma120: 120,
+  ma240: 240,
   boll: 20,
   kd: 9,
   mfi: 14,
   rsi: 5,
-  ma240: 240,
   emaShort: 5,
   emaLong: 10,
   cmf: 21,

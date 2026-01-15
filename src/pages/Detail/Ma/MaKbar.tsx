@@ -27,6 +27,7 @@ import {
   Customized,
   Line,
   ReferenceDot,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -83,11 +84,13 @@ export default function MaKbar({
   const [hoveredGapDate, setHoveredGapDate] = useState<
     number | string | undefined
   >(undefined);
+  const [showDeductions, setShowDeductions] = useState(false);
   const [visibleMAs, setVisibleMAs] = useState({
     ma5: true,
     ma10: true,
     ma20: true,
     ma60: true,
+    ma120: true,
     ma240: true,
   });
 
@@ -243,6 +246,72 @@ export default function MaKbar({
     return result;
   }, [enhancedChartData]);
 
+  // Current Deduction Points (based on latest bar)
+  const deductionPoints = useMemo(() => {
+    if (enhancedChartData.length === 0 || !showDeductions) return [];
+    const latest = enhancedChartData[enhancedChartData.length - 1];
+    const points: {
+      t: number | string;
+      price: number;
+      label: string;
+      color: string;
+    }[] = [];
+
+    const maConfigs = [
+      {
+        key: "ma5",
+        deductionKey: "deduction5",
+        color: "#2196f3",
+        label: `MA${settings.ma5}扣抵`,
+      },
+      {
+        key: "ma10",
+        deductionKey: "deduction10",
+        color: "#ffeb3b",
+        label: `MA${settings.ma10}扣抵`,
+      },
+      {
+        key: "ma20",
+        deductionKey: "deduction20",
+        color: "#ff9800",
+        label: `MA${settings.ma20}扣抵`,
+      },
+      {
+        key: "ma60",
+        deductionKey: "deduction60",
+        color: "#f44336",
+        label: `MA${settings.ma60}扣抵`,
+      },
+      {
+        key: "ma120",
+        deductionKey: "deduction120",
+        color: "#4caf50",
+        label: `MA${settings.ma120}扣抵`,
+      },
+    ];
+
+    maConfigs.forEach((config) => {
+      if (
+        visibleMAs[config.key as keyof typeof visibleMAs] &&
+        (latest as any)[config.deductionKey]
+      ) {
+        const t = (latest as any)[config.deductionKey];
+        // Find price in full chartData
+        const target = chartData.find((d) => d.t === t);
+        if (target) {
+          points.push({
+            t,
+            price: target.c,
+            label: config.label,
+            color: config.color,
+          });
+        }
+      }
+    });
+
+    return points;
+  }, [enhancedChartData, visibleMAs, showDeductions, chartData, settings]);
+
   // Derived Logic for Dashboard
   const { steps, score, recommendation } = useMemo(() => {
     if (enhancedChartData.length === 0)
@@ -393,9 +462,11 @@ export default function MaKbar({
         ma10: true,
         ma20: true,
         ma60: true,
+        ma120: true,
         ma240: true,
       });
       setShowGaps(true);
+      setShowDeductions(true);
     } else if (step === 1) {
       // 趨勢分析：全開 MA，關閉缺口
       setVisibleMAs({
@@ -403,6 +474,7 @@ export default function MaKbar({
         ma10: true,
         ma20: true,
         ma60: true,
+        ma120: true,
         ma240: true,
       });
       setShowGaps(false);
@@ -413,6 +485,7 @@ export default function MaKbar({
         ma10: false,
         ma20: false,
         ma60: false,
+        ma120: false,
         ma240: false,
       });
       setShowGaps(true);
@@ -423,6 +496,7 @@ export default function MaKbar({
         ma10: true,
         ma20: true,
         ma60: false,
+        ma120: false,
         ma240: false,
       });
       setShowGaps(false);
@@ -633,6 +707,11 @@ export default function MaKbar({
                       color: "#f44336",
                     },
                     {
+                      key: "ma120" as const,
+                      label: `MA${settings.ma120}`,
+                      color: "#4caf50",
+                    },
+                    {
                       key: "ma240" as const,
                       label: `MA${settings.ma240}`,
                       color: "#9c27b0",
@@ -707,6 +786,24 @@ export default function MaKbar({
                         sx={{ fontSize: "0.65rem", color: "#888" }}
                       >
                         僅未補
+                      </Typography>
+                    }
+                    sx={{ m: 0 }}
+                  />
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        size="small"
+                        checked={showDeductions}
+                        onChange={(e) => setShowDeductions(e.target.checked)}
+                      />
+                    }
+                    label={
+                      <Typography
+                        variant="caption"
+                        sx={{ fontSize: "0.65rem", color: "#888" }}
+                      >
+                        扣抵
                       </Typography>
                     }
                     sx={{ m: 0 }}
@@ -843,6 +940,16 @@ export default function MaKbar({
                 strokeWidth={1.5}
               />
             )}
+            {visibleMAs.ma120 && (
+              <Line
+                dataKey="ma120"
+                stroke="#4caf50"
+                dot={false}
+                activeDot={false}
+                name={`MA${settings.ma120}`}
+                strokeWidth={1.5}
+              />
+            )}
             {visibleMAs.ma240 && (
               <Line
                 dataKey="ma240"
@@ -947,6 +1054,52 @@ export default function MaKbar({
                   />,
                 ])
                 .flat()}
+
+            {/* Deduction Markers */}
+            {showDeductions &&
+              deductionPoints.map((p) => {
+                const maPeriod = p.label.match(/\d+/)?.[0] || "";
+                return (
+                  <ReferenceLine
+                    key={`${p.label}-${p.t}`}
+                    x={p.t}
+                    stroke={p.color}
+                    strokeDasharray="3 3"
+                    opacity={0.4}
+                    isFront={false}
+                    label={(props: any) => {
+                      const { viewBox } = props;
+                      if (!viewBox) return <g />;
+                      const { x } = viewBox;
+                      return (
+                        <g>
+                          <rect
+                            x={x - 12}
+                            y={5}
+                            width={24}
+                            height={18}
+                            fill="#1a1a1a"
+                            rx={4}
+                            stroke={p.color}
+                            strokeWidth={1}
+                            opacity={0.8}
+                          />
+                          <text
+                            x={x}
+                            y={18}
+                            textAnchor="middle"
+                            fill={p.color}
+                            fontSize={10}
+                            fontWeight="bold"
+                          >
+                            {maPeriod}
+                          </text>
+                        </g>
+                      );
+                    }}
+                  />
+                );
+              })}
           </ComposedChart>
         </ResponsiveContainer>
       </Box>

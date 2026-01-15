@@ -29,6 +29,7 @@ const GlassBar: React.FC<GlassBarProps> = ({
 }) => {
   return (
     <GlassBarContainer
+      isCollapsed={isCollapsed}
       drag
       dragMomentum={false}
       dragConstraints={pageRef}

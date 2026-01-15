@@ -127,7 +127,7 @@ export const calculateObvSignals = (deals: TaType[]): ObvSignal[] => {
     const support = getExtrema(closes, i, 20, "MIN");
     const obvHigh20 = getExtrema(obvValues, i, 20, "MAX");
 
-    const avgPrice = closes.slice(i - 20, i).reduce((a: number, b: number) => a + b, 0) / 20;
+    const avgPrice = closes.slice(i - 20, i).reduce((a, b) => a + b, 0) / 20;
     const boxWidth = (resistance - support) / avgPrice;
 
     // Check states

@@ -18,7 +18,13 @@ export interface EnhancedDealData {
   ma10: number | null;
   ma20: number | null;
   ma60: number | null;
+  ma120: number | null;
   ma240: number | null;
+  deduction5: number | null;
+  deduction10: number | null;
+  deduction20: number | null;
+  deduction60: number | null;
+  deduction120: number | null;
   volMa10: number | null;
   volMa20: number | null;
   bollMa: number | null;
@@ -48,6 +54,7 @@ export function calculateIndicators(
   let ma10Data = ma.init(deals[0], settings.ma10);
   let ma20Data = ma.init(deals[0], settings.ma20);
   let ma60Data = ma.init(deals[0], settings.ma60);
+  let ma120Data = ma.init(deals[0], settings.ma120);
   let ma240Data = ma.init(deals[0], settings.ma240);
   let bollData = boll.init(deals[0]);
   let kdData = kd.init(deals[0], settings.kd);
@@ -61,6 +68,7 @@ export function calculateIndicators(
       ma10Data = ma.next(deal, ma10Data, settings.ma10);
       ma20Data = ma.next(deal, ma20Data, settings.ma20);
       ma60Data = ma.next(deal, ma60Data, settings.ma60);
+      ma120Data = ma.next(deal, ma120Data, settings.ma120);
       ma240Data = ma.next(deal, ma240Data, settings.ma240);
       bollData = boll.next(deal, bollData, settings.boll);
       kdData = kd.next(deal, kdData, settings.kd);
@@ -73,7 +81,37 @@ export function calculateIndicators(
     const ma10 = ma10Data.ma ? ma10Data.ma : null;
     const ma20 = ma20Data.ma ? ma20Data.ma : null;
     const ma60 = ma60Data.ma ? ma60Data.ma : null;
+    const ma120 = ma120Data.ma ? ma120Data.ma : null;
     const ma240 = ma240Data.ma ? ma240Data.ma : null;
+
+    const deduction5 =
+      ma5Data.dataset && ma5Data.dataset.length >= settings.ma5
+        ? ma5Data.dataset[0].t
+        : null;
+    const deduction10 =
+      ma10Data.dataset && ma10Data.dataset.length >= settings.ma10
+        ? ma10Data.dataset[0].t
+        : null;
+    const deduction20 =
+      ma20Data.dataset && ma20Data.dataset.length >= settings.ma20
+        ? ma20Data.dataset[0].t
+        : null;
+    const deduction60 =
+      ma60Data.dataset && ma60Data.dataset.length >= settings.ma60
+        ? ma60Data.dataset[0].t
+        : null;
+    const deduction120 =
+      ma120Data.dataset && ma120Data.dataset.length >= settings.ma120
+        ? ma120Data.dataset[0].t
+        : null;
+    const deduction240 =
+      ma240Data.dataset && ma240Data.dataset.length >= settings.ma240
+        ? ma240Data.dataset[0].t
+        : null;
+    const deductionBoll =
+      bollData.dataset && bollData.dataset.length >= settings.boll
+        ? bollData.dataset[0].t
+        : null;
 
     const bollMa = bollData.bollMa ? bollData.bollMa : null;
     const bollUb = bollData.bollUb ? bollData.bollUb : null;
@@ -113,7 +151,15 @@ export function calculateIndicators(
       ma10,
       ma20,
       ma60,
+      ma120,
       ma240,
+      deduction5,
+      deduction10,
+      deduction20,
+      deduction60,
+      deduction120,
+      deduction240,
+      deductionBoll,
       volMa10,
       volMa20,
       bollMa,

@@ -1,7 +1,9 @@
 import { Box, Button, IconButton, styled } from "@mui/material";
 import { motion } from "framer-motion";
 
-export const GlassBarContainer = styled(motion.div)(({ theme }) => ({
+export const GlassBarContainer = styled(motion.div, {
+  shouldForwardProp: (prop) => prop !== "isCollapsed",
+})<{ isCollapsed?: boolean }>(({ theme, isCollapsed }) => ({
   position: "absolute",
   left: theme.spacing(0),
   top: "20%",
@@ -9,13 +11,13 @@ export const GlassBarContainer = styled(motion.div)(({ theme }) => ({
   background: "rgba(30, 30, 40, 0.6)",
   backdropFilter: "blur(12px)",
   WebkitBackdropFilter: "blur(12px)",
-  borderRadius: "16px",
+  borderRadius: isCollapsed ? "12px" : "16px",
   border: "1px solid rgba(255, 255, 255, 0.08)",
   boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.3)",
-  padding: theme.spacing(1.5),
+  padding: isCollapsed ? theme.spacing(0.7) : theme.spacing(1.5),
   display: "flex",
   flexDirection: "column",
-  gap: theme.spacing(1),
+  gap: isCollapsed ? theme.spacing(0.5) : theme.spacing(1),
   zIndex: 10,
 }));
 
