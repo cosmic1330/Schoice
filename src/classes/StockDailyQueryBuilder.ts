@@ -51,9 +51,9 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
     延遲線: { key: "chikou", group: "_day_ago_sk" },
     正向動能: { key: "di_plus", group: "_day_ago_sk" },
     負向動能: { key: "di_minus", group: "_day_ago_sk" },
-    ADX: { key: "adx", group: "_day_ago_sk" },
-    CMF: { key: "cmf", group: "_day_ago_sk" },
-    CMF_EMA5: { key: "cmf_ema5", group: "_day_ago_sk" },
+    adx: { key: "adx", group: "_day_ago_sk" },
+    cmf: { key: "cmf", group: "_day_ago_sk" },
+    cmf_ema5: { key: "cmf_ema5", group: "_day_ago_sk" },
   };
 
   protected othersMapping: Record<string, QueryBuilderMappingItem> = {

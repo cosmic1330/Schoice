@@ -422,7 +422,7 @@ export default class SqliteDataManager {
             di_minus: dmi_data.mDi,
             adx: dmi_data.adx,
             cmf: cmf_data.cmf,
-            cmf_ema5: cmf_data.cmf,
+            cmf_ema5: cmf_data.ema,
           });
         }
       }

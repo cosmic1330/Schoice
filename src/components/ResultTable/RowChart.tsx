@@ -9,7 +9,6 @@ import DailyObvLineChart from "./Charts/DailyObvLineChart";
 import DailyOscLineChart from "./Charts/DailyOscLineChart";
 import DailyRsiLineChart from "./Charts/DailyRsiLineChart";
 import HourlyBollLineChart from "./Charts/HourlyBollLineChart";
-import HourlyCmfLineChart from "./Charts/HourlyCmfLineChart";
 import HourlyDmiLineChart from "./Charts/HourlyDmiLineChart";
 import HourlyKdLineChart from "./Charts/HourlyKdLineChart";
 import HourlyObvLineChart from "./Charts/HourlyObvLineChart";
@@ -22,6 +21,7 @@ import WeeklyKdLineChart from "./Charts/WeeklyKdLineChart";
 import WeeklyObvLineChart from "./Charts/WeeklyObvLineChart";
 import WeeklyOscLineChart from "./Charts/WeeklyOscLineChart";
 import WeeklyRsiLineChart from "./Charts/WeeklyRsiLineChart";
+import HourlyCmfLineChart from "./Charts/HourlyCmfLineChart";
 
 const RowChart = React.memo(({ row, t }: { row: any; t: string }) => {
   const { chartType } = useSchoiceStore();

@@ -51,9 +51,9 @@ export class StockWeeklyQueryBuilder extends BaseQueryBuilder {
     延遲線: { key: "chikou", group: "_week_ago_sk" },
     正向動能: { key: "di_plus", group: "_week_ago_sk" },
     負向動能: { key: "di_minus", group: "_week_ago_sk" },
-    ADX: { key: "adx", group: "_week_ago_sk" },
-    CMF: { key: "cmf", group: "_week_ago_sk" },
-    CMF_EMA5: { key: "cmf_ema5", group: "_week_ago_sk" },
+    adx: { key: "adx", group: "_week_ago_sk" },
+    cmf: { key: "cmf", group: "_week_ago_sk" },
+    cmf_ema5: { key: "cmf_ema5", group: "_week_ago_sk" },
   };
 
   protected getTimeOptions(): readonly string[] {
