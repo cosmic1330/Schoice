@@ -17,9 +17,9 @@ const DailyCmfLineChart = ({
   useEffect(() => {
     if (!stock_id) return;
     const sqlQuery = `SELECT daily_skills.t, ${CmfIndicatorColor.map(
-      (item) => item.key
+      (item) => item.key,
     ).join(
-      ","
+      ",",
     )} FROM daily_skills JOIN daily_deal ON daily_skills.t = daily_deal.t AND daily_skills.stock_id = daily_deal.stock_id WHERE daily_skills.stock_id = '${stock_id}' AND daily_skills.t <=  '${t}' ORDER BY daily_skills.t DESC LIMIT ${daily_count}`;
 
     if (!db) return;
@@ -33,7 +33,7 @@ const DailyCmfLineChart = ({
     <Tooltip title={<ChartTooltip value={CmfIndicatorColor} />} arrow>
       <Box>
         <LineChart data={data} width={80} height={60}>
-          <YAxis domain={["dataMin", "dataMax"]} hide yAxisId="cmf" />
+          <YAxis domain={[-0.5, 0.5]} hide yAxisId="cmf" />
           <ReferenceLine
             y={0}
             stroke="#aca7a6"

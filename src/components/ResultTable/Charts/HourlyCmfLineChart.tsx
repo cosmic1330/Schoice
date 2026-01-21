@@ -17,9 +17,9 @@ const HourlyCmfLineChart = ({
   useEffect(() => {
     if (!stock_id) return;
     const sqlQuery = `SELECT hourly_skills.ts, ${CmfIndicatorColor.map(
-      (item) => item.key
+      (item) => item.key,
     ).join(
-      ","
+      ",",
     )} FROM hourly_skills JOIN hourly_deal ON hourly_skills.ts = hourly_deal.ts AND hourly_skills.stock_id = hourly_deal.stock_id WHERE hourly_skills.stock_id = '${stock_id}' AND hourly_skills.ts <=  '${t} 14:00:00' ORDER BY hourly_skills.ts DESC LIMIT ${hourly_count}`;
 
     if (!db) return;
@@ -33,7 +33,7 @@ const HourlyCmfLineChart = ({
     <Tooltip title={<ChartTooltip value={CmfIndicatorColor} />} arrow>
       <Box>
         <LineChart data={data} width={80} height={60}>
-          <YAxis domain={["dataMin", "dataMax"]} hide yAxisId="cmf" />
+          <YAxis domain={[-0.5, 0.5]} hide yAxisId="cmf" />
           <ReferenceLine
             y={0}
             stroke="#aca7a6"
