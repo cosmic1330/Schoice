@@ -64,6 +64,7 @@ export class StockHourlyQueryBuilder extends BaseQueryBuilder {
     負向動能: { key: "di_minus", group: "_hour_ago_sk" },
     ADX: { key: "adx", group: "_hour_ago_sk" },
     CMF: { key: "cmf", group: "_hour_ago_sk" },
+    CMF_EMA5: { key: "cmf_ema5", group: "_hour_ago_sk" },
   };
 
   protected getSpecificOptions(): Record<string, readonly string[]> {

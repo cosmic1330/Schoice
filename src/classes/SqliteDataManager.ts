@@ -187,7 +187,7 @@ export default class SqliteDataManager {
           mfi_data = mfi.next(value, mfi_data, 14);
           ichimoku_data = ichimoku.next(value, ichimoku_data);
           dmi_data = dmi.next(value, dmi_data, 14);
-          cmf_data = cmf.next(value, cmf_data);
+          cmf_data = cmf.next(value, cmf_data, 21, 5);
         }
 
         if (sets.lose_deal_set.has(value.t)) {
@@ -251,6 +251,7 @@ export default class SqliteDataManager {
             di_minus: dmi_data.mDi,
             adx: dmi_data.adx,
             cmf: cmf_data.cmf,
+            cmf_ema5: cmf_data.ema,
           });
         }
       }
@@ -357,7 +358,7 @@ export default class SqliteDataManager {
           mfi_data = mfi.next(value, mfi_data, 14);
           ichimoku_data = ichimoku.next(value, ichimoku_data);
           dmi_data = dmi.next(value, dmi_data, 14);
-          cmf_data = cmf.next(value, cmf_data);
+          cmf_data = cmf.next(value, cmf_data, 21, 5);
         }
 
         if (sets.lose_deal_set.has(t)) {
@@ -421,6 +422,7 @@ export default class SqliteDataManager {
             di_minus: dmi_data.mDi,
             adx: dmi_data.adx,
             cmf: cmf_data.cmf,
+            cmf_ema5: cmf_data.cmf,
           });
         }
       }
@@ -529,11 +531,12 @@ export default class SqliteDataManager {
           di_plus,
           di_minus,
           adx,
-          cmf
+          cmf,
+          cmf_ema5
           ) VALUES ${skills
             .map(
               (skill) =>
-                `('${skill.stock_id}', '${skill.t}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou}, ${skill.di_plus}, ${skill.di_minus}, ${skill.adx}, ${skill.cmf})`
+                `('${skill.stock_id}', '${skill.t}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou}, ${skill.di_plus}, ${skill.di_minus}, ${skill.adx}, ${skill.cmf}, ${skill.cmf_ema5})`
             )
             .join(", ")}`;
       await this.db.execute(sql);
@@ -615,11 +618,12 @@ export default class SqliteDataManager {
           di_plus,
           di_minus,
           adx,
-          cmf
+          cmf,
+          cmf_ema5
           ) VALUES ${skills
             .map(
               (skill) =>
-                `('${skill.stock_id}', '${skill.ts}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou}, ${skill.di_plus}, ${skill.di_minus}, ${skill.adx}, ${skill.cmf})`
+                `('${skill.stock_id}', '${skill.ts}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou}, ${skill.di_plus}, ${skill.di_minus}, ${skill.adx}, ${skill.cmf}, ${skill.cmf_ema5})`
             )
             .join(", ")}`;
       await this.db.execute(sql);

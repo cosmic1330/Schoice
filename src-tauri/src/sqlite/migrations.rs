@@ -398,5 +398,18 @@ pub fn value() -> Vec<Migration> {
             ",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 8,
+            description: "add_cmf_ema5_column_to_skills_tables",
+            sql: "
+                ALTER TABLE daily_skills
+                    ADD COLUMN cmf_ema5 REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN cmf_ema5 REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN cmf_ema5 REAL;
+            ",
+            kind: MigrationKind::Up,
+        },
     ]
 }

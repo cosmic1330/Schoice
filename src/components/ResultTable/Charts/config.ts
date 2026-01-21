@@ -110,4 +110,8 @@ export const CmfIndicatorColor: IndicatorColorType[] = [
     key: "cmf",
     color: "#82ca9d",
   },
+  {
+    key: "cmf_ema5",
+    color: "#ff7300",
+  },
 ];

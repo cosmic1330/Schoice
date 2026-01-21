@@ -115,6 +115,7 @@ export default function useFormatSkillData(data: TaListType) {
       di_minus: dmi_data.mDi,
       adx: dmi_data.adx,
       cmf: cmf_data.cmf,
+      cmf_ema5: cmf_data.ema,
     });
 
     for (let i = 1; i < data.length; i++) {
@@ -142,7 +143,7 @@ export default function useFormatSkillData(data: TaListType) {
       mfi_data = mfi.next(value, mfi_data, 14);
       ichimoku_data = ichimoku.next(value, ichimoku_data);
       dmi_data = dmi.next(value, dmi_data, 14);
-      cmf_data = cmf.next(value, cmf_data);
+      cmf_data = cmf.next(value, cmf_data, 21, 5);
 
       deals.push({
         ...value,
@@ -191,6 +192,7 @@ export default function useFormatSkillData(data: TaListType) {
         di_minus: dmi_data.mDi,
         adx: dmi_data.adx,
         cmf: cmf_data.cmf,
+        cmf_ema5: cmf_data.ema,
       });
     }
     return deals;

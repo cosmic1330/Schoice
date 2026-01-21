@@ -53,6 +53,7 @@ export class StockWeeklyQueryBuilder extends BaseQueryBuilder {
     負向動能: { key: "di_minus", group: "_week_ago_sk" },
     ADX: { key: "adx", group: "_week_ago_sk" },
     CMF: { key: "cmf", group: "_week_ago_sk" },
+    CMF_EMA5: { key: "cmf_ema5", group: "_week_ago_sk" },
   };
 
   protected getTimeOptions(): readonly string[] {
