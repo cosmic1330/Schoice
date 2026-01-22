@@ -43,7 +43,7 @@ export default function Result({ select }: { select: SelectType }) {
           query(
             `SELECT * FROM stock WHERE stock_id IN (${res
               .map((r) => `'${r.stock_id}'`)
-              .join(",")})`
+              .join(",")}) Order By stock_id ASC`
           ).then((data: StockTableType[] | null) => {
             if (data && data.length > 0) setResult(data);
           });
