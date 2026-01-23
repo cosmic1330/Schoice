@@ -19,15 +19,15 @@ import { ActionButtonType } from "./types";
 
 // 使用 lazy 延遲載入較重的 chart 元件
 const HourlyUltraTinyLineChart = lazy(
-  () => import("./Charts/HourlyUltraTinyLineChart")
+  () => import("./Charts/HourlyUltraTinyLineChart"),
 );
 const WeeklyUltraTinyLineChart = lazy(
-  () => import("./Charts/WeeklyUltraTinyLineChart")
+  () => import("./Charts/WeeklyUltraTinyLineChart"),
 );
 const RowChart = lazy(() => import("./RowChart"));
 
 const DailyUltraTinyLineChart = lazy(
-  () => import("./Charts/DailyUltraTinyLineChart")
+  () => import("./Charts/DailyUltraTinyLineChart"),
 );
 
 import { useTranslation } from "react-i18next";
@@ -55,8 +55,11 @@ export default memo(function ResultTableRow({
     group: row.market_type,
   });
   const { user } = useUser();
-  const { addToWatchList, removeFromWatchList } = useCloudStore();
-  const { todayDate } = useSchoiceStore();
+  const addToWatchList = useCloudStore((state) => state.addToWatchList);
+  const removeFromWatchList = useCloudStore(
+    (state) => state.removeFromWatchList,
+  );
+  const todayDate = useSchoiceStore((state) => state.todayDate);
   const [addLoading, setAddLoading] = useState(false);
   const [removeLoading, setRemoveLoading] = useState(false);
 
@@ -93,7 +96,7 @@ export default memo(function ResultTableRow({
     <Fragment>
       <TableCell>{index + 1}.</TableCell>
       <TableCell>{dates[todayDate]}</TableCell>
-      <TableCell> 
+      <TableCell>
         <Tooltip
           placement="top-start"
           title={
@@ -192,7 +195,7 @@ export default memo(function ResultTableRow({
             open(
               row.market_type === "上市"
                 ? `https://tw.tradingview.com/chart?symbol=TWSE%3A${row.stock_id}`
-                : `https://tw.tradingview.com/chart?symbol=TPEX%3A${row.stock_id}`
+                : `https://tw.tradingview.com/chart?symbol=TPEX%3A${row.stock_id}`,
             )
           }
         >
@@ -205,7 +208,7 @@ export default memo(function ResultTableRow({
         <IconButton
           onClick={() =>
             open(
-              `https://pchome.megatime.com.tw/stock/sto0/ock1/sid${row.stock_id}.html`
+              `https://pchome.megatime.com.tw/stock/sto0/ock1/sid${row.stock_id}.html`,
             )
           }
         >

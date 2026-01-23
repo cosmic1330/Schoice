@@ -7,7 +7,7 @@ import {
   alpha,
   styled,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import ResultTable from "../../../components/ResultTable/ResultTable";
 import { ActionButtonType } from "../../../components/ResultTable/types";
@@ -44,8 +44,12 @@ const GlassCard = styled(Paper)(({ theme }) => ({
 export default function Favorite() {
   const { t } = useTranslation();
   const query = useDatabaseQuery();
-  const { watchStocks } = useCloudStore();
+  const watchStocks = useCloudStore((state) => state.watchStocks);
   const [stocks, setStocks] = useState<StockTableType[]>([]);
+
+  const options = useMemo(() => {
+    return new Map(watchStocks.map((data) => [data.stock_id, data]));
+  }, [watchStocks]);
 
   useEffect(() => {
     if (watchStocks.length === 0) {
@@ -55,7 +59,7 @@ export default function Favorite() {
     query(
       `SELECT * FROM stock WHERE stock_id IN (${watchStocks
         .map((data) => `'${data.stock_id}'`)
-        .join(",")})`
+        .join(",")})`,
     ).then((data: StockTableType[] | null) => {
       const dbStocks = data || [];
       const dbStockMap = new Map(dbStocks.map((s) => [s.stock_id, s]));
@@ -125,7 +129,7 @@ export default function Favorite() {
               <ResultTable
                 result={stocks}
                 type={ActionButtonType.Decrease}
-                options={new Map(watchStocks.map((data) => [data.stock_id, data]))}
+                options={options}
               />
             </GlassCard>
           </Grid>

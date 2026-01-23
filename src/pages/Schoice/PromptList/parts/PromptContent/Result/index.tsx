@@ -11,8 +11,10 @@ import { SelectType, StockTableType } from "../../../../../../types";
 export default function Result({ select }: { select: SelectType }) {
   const { getPromptSqlScripts, getCombinedSqlScript } = useFindStocksByPrompt();
   const { dates } = useContext(DatabaseContext);
-  const { bulls, bears } = useCloudStore();
-  const { todayDate, filterStocks } = useSchoiceStore();
+  const bulls = useCloudStore((state) => state.bulls);
+  const bears = useCloudStore((state) => state.bears);
+  const todayDate = useSchoiceStore((state) => state.todayDate);
+  const filterStocks = useSchoiceStore((state) => state.filterStocks);
   const [result, setResult] = useState<StockTableType[]>([]);
   const query = useDatabaseQuery();
 
@@ -24,7 +26,7 @@ export default function Result({ select }: { select: SelectType }) {
         : bears[select.prompt_id];
     const sqls = await getPromptSqlScripts(
       item,
-      filterStocks?.map((item) => item.stock_id) || undefined
+      filterStocks?.map((item) => item.stock_id) || undefined,
     );
     if (sqls.length === 0) return;
 
@@ -43,7 +45,7 @@ export default function Result({ select }: { select: SelectType }) {
           query(
             `SELECT * FROM stock WHERE stock_id IN (${res
               .map((r) => `'${r.stock_id}'`)
-              .join(",")}) Order By stock_id ASC`
+              .join(",")}) Order By stock_id ASC`,
           ).then((data: StockTableType[] | null) => {
             if (data && data.length > 0) setResult(data);
           });
@@ -73,7 +75,7 @@ export default function Result({ select }: { select: SelectType }) {
         strategyScript={JSON.stringify(
           select.type === "bull"
             ? bulls[select.prompt_id]?.conditions
-            : bears[select.prompt_id]?.conditions
+            : bears[select.prompt_id]?.conditions,
         )}
       />
     </Box>
