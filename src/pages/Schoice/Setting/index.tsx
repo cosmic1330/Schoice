@@ -3,6 +3,7 @@ import CheckUpdate from "./CheckUpdate";
 import DatabaseSettings from "./DatabaseSettings";
 import ExampleSelector from "./ExampleSelector";
 import OtherSettings from "./OtherSettings";
+import StockMenuSettings from "./StockMenuSettings";
 import SystemStatus from "./SystemStatus";
 
 export default function Setting() {
@@ -22,9 +23,9 @@ export default function Setting() {
         </Typography>
         <Grid container spacing={2}>
           <DatabaseSettings />
-          {/* <DatabaseRepair />
-        <DatabaseDeletion />
-        <CacheManagement /> */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <StockMenuSettings />
+          </Grid>
           <OtherSettings />
           <ExampleSelector />
           <CheckUpdate />

@@ -14,6 +14,9 @@ export async function getStore() {
     if (!(await storeInstance.has("autoUpdate"))) {
       await storeInstance.set("autoUpdate", false);
     }
+    if (!(await storeInstance.has("lastMenuUpdate"))) {
+      await storeInstance.set("lastMenuUpdate", 0);
+    }
     await storeInstance.save();
   }
   return storeInstance;

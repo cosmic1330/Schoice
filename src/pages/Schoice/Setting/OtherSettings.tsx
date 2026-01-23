@@ -7,8 +7,8 @@ import {
   Switch,
   Typography,
 } from "@mui/material";
-import useSchoiceStore from "../../../store/Schoice.store";
 import LanguageSwitcher from "../../../components/LanguageSwitcher";
+import useSchoiceStore from "../../../store/Schoice.store";
 
 export default function OtherSettings() {
   const { theme, changeTheme } = useSchoiceStore();
@@ -17,6 +17,7 @@ export default function OtherSettings() {
     if (theme === "light") changeTheme("dark");
     else changeTheme("light");
   };
+
   return (
     <Grid size={{ xs: 12, md: 6 }}>
       <Card sx={{ height: "100%" }}>
@@ -30,18 +31,24 @@ export default function OtherSettings() {
           <Typography variant="body2" color="text.secondary" mb={2}>
             系統選項
           </Typography>
-          <Stack spacing={1} mt={2}>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Switch
-                checked={theme === "light" ? true : false}
-                onChange={onThemeChange}
-                color="success"
-              />
-              <Typography variant="body2">切換主題</Typography>
-            </Stack>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <LanguageSwitcher />
-              <Typography variant="body2">語言切換</Typography>
+          <Stack spacing={2} mt={2}>
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+            >
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Switch
+                  checked={theme === "light"}
+                  onChange={onThemeChange}
+                  color="success"
+                />
+                <Typography variant="body2">切換主題</Typography>
+              </Stack>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <LanguageSwitcher />
+                <Typography variant="body2">語言</Typography>
+              </Stack>
             </Stack>
           </Stack>
         </CardContent>

@@ -1,5 +1,7 @@
 import {
   Boll,
+  Cmf,
+  Dmi,
   Ema,
   Ichimoku,
   Kd,
@@ -9,8 +11,6 @@ import {
   Obv,
   ObvEma,
   Rsi,
-  Dmi,
-  Cmf,
 } from "@ch20026103/anysis";
 import dateFormat, {
   Mode,
@@ -65,22 +65,22 @@ export default class SqliteDataManager {
       const num = `'${t} 14:00:00'`;
       info(`刪除 ${stock_id}: ${num} 和 ${t} 之後的資料`);
       await this.db.execute(
-        `DELETE FROM hourly_skills WHERE stock_id = '${stock_id}' AND ts > ${num};`
+        `DELETE FROM hourly_skills WHERE stock_id = '${stock_id}' AND ts > ${num};`,
       );
       await this.db.execute(
-        `DELETE FROM hourly_deal WHERE  stock_id = '${stock_id}' AND ts > ${num};`
+        `DELETE FROM hourly_deal WHERE  stock_id = '${stock_id}' AND ts > ${num};`,
       );
       await this.db.execute(
-        `DELETE FROM weekly_skills WHERE  stock_id = '${stock_id}' AND t > '${t}';`
+        `DELETE FROM weekly_skills WHERE  stock_id = '${stock_id}' AND t > '${t}';`,
       );
       await this.db.execute(
-        `DELETE FROM weekly_deal WHERE  stock_id = '${stock_id}' AND t > '${t}';`
+        `DELETE FROM weekly_deal WHERE  stock_id = '${stock_id}' AND t > '${t}';`,
       );
       await this.db.execute(
-        `DELETE FROM daily_skills WHERE  stock_id = '${stock_id}' AND t > '${t}';`
+        `DELETE FROM daily_skills WHERE  stock_id = '${stock_id}' AND t > '${t}';`,
       );
       await this.db.execute(
-        `DELETE FROM daily_deal WHERE  stock_id = '${stock_id}' AND t > '${t}';`
+        `DELETE FROM daily_deal WHERE  stock_id = '${stock_id}' AND t > '${t}';`,
       );
       return true;
     } catch (e) {
@@ -92,7 +92,7 @@ export default class SqliteDataManager {
     try {
       const result: [{ latest_date: string; record_count: number }] =
         await this.db.select(
-          "SELECT (SELECT MAX(t) FROM daily_deal) AS latest_date,COUNT(*) AS record_count FROM daily_deal WHERE t = (SELECT MAX(t) FROM daily_deal);"
+          "SELECT (SELECT MAX(t) FROM daily_deal) AS latest_date,COUNT(*) AS record_count FROM daily_deal WHERE t = (SELECT MAX(t) FROM daily_deal);",
         );
       return { date: result[0].latest_date, count: result[0].record_count };
     } catch (e) {
@@ -111,7 +111,7 @@ export default class SqliteDataManager {
     sets: {
       lose_deal_set: Set<string | number>;
       lose_skills_set: Set<string | number>;
-    }
+    },
   ) {
     try {
       if (!ta || ta.length === 0) {
@@ -261,11 +261,11 @@ export default class SqliteDataManager {
 
       await this.saveTimeSharingDealTable(deals, options.dealType, stock);
       info(
-        `save ${options.dealType} db: ${stock.stock_id} ${deals.length} records`
+        `save ${options.dealType} db: ${stock.stock_id} ${deals.length} records`,
       );
       await this.saveTimeSharingSkillsTable(skills, options.skillsType, stock);
       info(
-        `save ${options.skillsType} db: ${stock.stock_id} ${skills.length} records`
+        `save ${options.skillsType} db: ${stock.stock_id} ${skills.length} records`,
       );
 
       return true;
@@ -285,7 +285,7 @@ export default class SqliteDataManager {
     sets: {
       lose_deal_set: Set<string>;
       lose_skills_set: Set<string>;
-    }
+    },
   ) {
     try {
       if (!ta || ta.length === 0) {
@@ -427,18 +427,18 @@ export default class SqliteDataManager {
             cmf: cmf_data.cmf,
             cmf_ema5: cmf_data.ema,
             turnover_rate: stock.issued_shares
-              ? (value.v / stock.issued_shares) * 100
+              ? ((value.v * 1000) / stock.issued_shares) * 100
               : 0,
           });
         }
       }
       await this.saveDealTable(deals, options.dealType, stock);
       info(
-        `save ${options.dealType} db: ${stock.stock_id} ${deals.length} records`
+        `save ${options.dealType} db: ${stock.stock_id} ${deals.length} records`,
       );
       await this.saveSkillsTable(skills, options.skillsType, stock).then(() => {
         info(
-          `save ${options.skillsType} db: ${stock.stock_id} ${skills.length} records`
+          `save ${options.skillsType} db: ${stock.stock_id} ${skills.length} records`,
         );
       });
       return true;
@@ -459,7 +459,7 @@ export default class SqliteDataManager {
           stock.industry_group,
           stock.market_type,
           stock.issued_shares || null,
-        ]
+        ],
       );
       return true;
     } catch (e) {
@@ -470,13 +470,13 @@ export default class SqliteDataManager {
   async saveDealTable(
     deals: DealTableType[],
     table: DealTableOptions,
-    stock: StockTableType
+    stock: StockTableType,
   ) {
     try {
       const sql = `INSERT INTO ${table} (stock_id, t, c, o, h, l, v) VALUES ${deals
         .map(
           (deal) =>
-            `('${deal.stock_id}', '${deal.t}', ${deal.c}, ${deal.o}, ${deal.h}, ${deal.l}, ${deal.v})`
+            `('${deal.stock_id}', '${deal.t}', ${deal.c}, ${deal.o}, ${deal.h}, ${deal.l}, ${deal.v})`,
         )
         .join(", ")}`;
       await this.db.execute(sql);
@@ -489,7 +489,7 @@ export default class SqliteDataManager {
   async saveSkillsTable(
     skills: SkillsTableType[],
     table: SkillsTableOptions,
-    stock: StockTableType
+    stock: StockTableType,
   ) {
     try {
       const sql = `INSERT INTO ${table} (stock_id,
@@ -544,7 +544,7 @@ export default class SqliteDataManager {
           ) VALUES ${skills
             .map(
               (skill) =>
-                `('${skill.stock_id}', '${skill.t}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou}, ${skill.di_plus}, ${skill.di_minus}, ${skill.adx}, ${skill.cmf}, ${skill.cmf_ema5}, ${skill.turnover_rate || null})`
+                `('${skill.stock_id}', '${skill.t}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou}, ${skill.di_plus}, ${skill.di_minus}, ${skill.adx}, ${skill.cmf}, ${skill.cmf_ema5}, ${skill.turnover_rate || null})`,
             )
             .join(", ")}`;
       await this.db.execute(sql);
@@ -558,13 +558,13 @@ export default class SqliteDataManager {
   async saveTimeSharingDealTable(
     deal: TimeSharingDealTableType[],
     table: TimeSharingDealTableOptions,
-    stock: StockTableType
+    stock: StockTableType,
   ) {
     try {
       const sql = `INSERT INTO ${table} (stock_id, ts, c, o, h, l, v) VALUES ${deal
         .map(
           (deal) =>
-            `('${deal.stock_id}', '${deal.ts}', ${deal.c}, ${deal.o}, ${deal.h}, ${deal.l}, ${deal.v})`
+            `('${deal.stock_id}', '${deal.ts}', ${deal.c}, ${deal.o}, ${deal.h}, ${deal.l}, ${deal.v})`,
         )
         .join(", ")}`;
       await this.db.execute(sql);
@@ -577,7 +577,7 @@ export default class SqliteDataManager {
   async saveTimeSharingSkillsTable(
     skills: TimeSharingSkillsTableType[],
     table: TimeSharingSkillsTableOptions,
-    stock: StockTableType
+    stock: StockTableType,
   ) {
     try {
       const sql = `INSERT INTO ${table} (stock_id,
@@ -632,7 +632,7 @@ export default class SqliteDataManager {
           ) VALUES ${skills
             .map(
               (skill) =>
-                `('${skill.stock_id}', '${skill.ts}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou}, ${skill.di_plus}, ${skill.di_minus}, ${skill.adx}, ${skill.cmf}, ${skill.cmf_ema5}, ${skill.turnover_rate || null})`
+                `('${skill.stock_id}', '${skill.ts}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou}, ${skill.di_plus}, ${skill.di_minus}, ${skill.adx}, ${skill.cmf}, ${skill.cmf_ema5}, ${skill.turnover_rate || null})`,
             )
             .join(", ")}`;
       await this.db.execute(sql);
@@ -644,11 +644,11 @@ export default class SqliteDataManager {
 
   async getStockDates(
     stock: StockTableType,
-    table: SkillsTableOptions | DealTableOptions
+    table: SkillsTableOptions | DealTableOptions,
   ) {
     try {
       const result: [{ t: string }] = await this.db.select(
-        `SELECT t FROM ${table} WHERE stock_id = '${stock.stock_id}';`
+        `SELECT t FROM ${table} WHERE stock_id = '${stock.stock_id}';`,
       );
       return result;
     } catch (e) {
@@ -659,11 +659,11 @@ export default class SqliteDataManager {
 
   async getStockTimeSharing(
     stock: StockTableType,
-    table: TimeSharingDealTableOptions | TimeSharingSkillsTableOptions
+    table: TimeSharingDealTableOptions | TimeSharingSkillsTableOptions,
   ) {
     try {
       const result: [{ ts: string }] = await this.db.select(
-        `SELECT ts FROM ${table} WHERE stock_id = '${stock.stock_id}';`
+        `SELECT ts FROM ${table} WHERE stock_id = '${stock.stock_id}';`,
       );
       return result;
     } catch (e) {

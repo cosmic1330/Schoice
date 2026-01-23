@@ -96,6 +96,7 @@ function Schoice() {
         userLoading={loading}
         userReady={userReady}
         dbReady={dbReady}
+        db={db}
         onReady={handleReady}
       />
     );

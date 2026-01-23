@@ -5,6 +5,7 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
+import Database from "@tauri-apps/plugin-sql";
 import { useEffect, useState } from "react";
 import useDownloadStocks from "../../hooks/useDownloadStocks";
 import { getStore } from "../../store/Setting.store";
@@ -14,6 +15,7 @@ interface WaitingPageProps {
   userLoading: boolean;
   userReady: boolean;
   dbReady: boolean;
+  db: Database | null;
   onReady: () => void;
 }
 
@@ -37,18 +39,28 @@ const WaitingPage = ({
 
     // 檢查 menu 資料
     getStore().then((store) => {
-      store.get("menu").then((menu) => {
-        const menuList = menu as StockTableType[];
-        if (!menuList || menuList.length === 0) {
-          console.warn("Menu is empty, please update your menu.");
-          handleDownloadMenu().then(() => {
+      Promise.all([store.get("menu"), store.get("lastMenuUpdate")]).then(
+        ([menu, lastUpdate]) => {
+          const menuList = menu as StockTableType[];
+          const lastUpdateTime = (lastUpdate as number) || 0;
+          const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+          const isExpired = Date.now() - lastUpdateTime > sevenDaysInMs;
+
+          if (!menuList || menuList.length === 0 || isExpired) {
+            console.warn(
+              !menuList || menuList.length === 0
+                ? "Menu is empty, please update your menu."
+                : "Menu is expired, auto updating...",
+            );
+            handleDownloadMenu().then(() => {
+              setMenuReady(true);
+              console.log("Menu 資料更新完成");
+            });
+          } else {
             setMenuReady(true);
-            console.log("Menu 資料下載完成");
-          });
-        } else {
-          setMenuReady(true);
-        }
-      });
+          }
+        },
+      );
     });
 
     // 更新進度條

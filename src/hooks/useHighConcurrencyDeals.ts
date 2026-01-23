@@ -1,6 +1,5 @@
 import { dateFormat } from "@ch20026103/anysis";
 import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
-import { fetchWithLog as fetch } from "../utils/logFetch";
 import { error, info } from "@tauri-apps/plugin-log";
 import pLimit from "p-limit";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -9,6 +8,7 @@ import SqliteDataManager from "../classes/SqliteDataManager";
 import { DatabaseContext } from "../context/DatabaseContext";
 import useSchoiceStore from "../store/Schoice.store";
 import { getStore } from "../store/Setting.store";
+import { fetchStockProfile } from "../tools/stockScraper";
 import {
   DealTableOptions,
   SkillsTableOptions,
@@ -19,12 +19,13 @@ import {
   UrlTaPerdOptions,
   UrlType,
 } from "../types";
-import  {
+import {
   analyzeIndicatorsData,
   IndicatorsDateTimeType,
 } from "../utils/analyzeIndicatorsData";
 import checkTimeRange from "../utils/checkTimeRange";
 import generateDealDataDownloadUrl from "../utils/generateDealDataDownloadUrl";
+import { fetchWithLog as fetch } from "../utils/logFetch";
 
 export enum Status {
   Download = "Download",
@@ -60,7 +61,7 @@ export default function useHighConcurrencyDeals() {
     async (
       signal: AbortSignal,
       stock: StockTableType,
-      perd: UrlTaPerdOptions
+      perd: UrlTaPerdOptions,
     ): Promise<TaListType> => {
       return withRetry(async () => {
         try {
@@ -77,11 +78,11 @@ export default function useHighConcurrencyDeals() {
                 "User-Agent":
                   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36",
               },
-            }
+            },
           );
           if (!response.ok) {
             throw new Error(
-              `getIndicatorFetch: ${perd} error! status: ${response.status}`
+              `getIndicatorFetch: ${perd} error! status: ${response.status}`,
             );
           }
           const text = await response.text();
@@ -89,7 +90,7 @@ export default function useHighConcurrencyDeals() {
             text,
             perd === UrlTaPerdOptions.Hour
               ? IndicatorsDateTimeType.DateTime
-              : IndicatorsDateTimeType.Date
+              : IndicatorsDateTimeType.Date,
           );
           if (!taData || taData.length === 0) {
             throw new Error(`getIndicatorFetch: ${perd} no data!`);
@@ -104,7 +105,7 @@ export default function useHighConcurrencyDeals() {
         }
       });
     },
-    []
+    [],
   );
 
   const stop = useCallback(() => {
@@ -147,7 +148,7 @@ export default function useHighConcurrencyDeals() {
     // 取得設定
     const reverse = localStorage.getItem("schoice:fetch:reverse");
     const previousDownloaded = localStorage.getItem(
-      "schoice:update:downloaded"
+      "schoice:update:downloaded",
     );
     // date[0] 為現在日期
     if (
@@ -156,7 +157,7 @@ export default function useHighConcurrencyDeals() {
     ) {
       info(`Previous downloaded stock ID: ${previousDownloaded}`);
       const index = menu.findIndex(
-        (stock) => stock.stock_id === previousDownloaded
+        (stock) => stock.stock_id === previousDownloaded,
       );
       if (reverse === "false") {
         menu.splice(0, index + 1);
@@ -181,7 +182,7 @@ export default function useHighConcurrencyDeals() {
       "run start, workMenu length:",
       workMenu.length,
       "previousDownloaded:",
-      previousDownloaded
+      previousDownloaded,
     );
 
     for (let i = 0; i < workMenu.length; i++) {
@@ -195,12 +196,12 @@ export default function useHighConcurrencyDeals() {
 
       // 上次是在盤中請求則刪除前筆資料
       const preFetchTime = localStorage.getItem(
-        `schoice:fetch:time:${stock.stock_id}`
+        `schoice:fetch:time:${stock.stock_id}`,
       );
       const isInTime = checkTimeRange(preFetchTime);
       if (isInTime || !preFetchTime) {
         info(
-          `Delete latest daily deal for stock ${stock.stock_id} ${stock.stock_name}: ${dates[1]}`
+          `Delete latest daily deal for stock ${stock.stock_id} ${stock.stock_name}: ${dates[1]}`,
         );
         await sqliteDataManager.deleteLatestDailyDeal({
           stock_id: stock.stock_id,
@@ -224,7 +225,7 @@ export default function useHighConcurrencyDeals() {
       // 隨機等待
       const delay = Math.floor(Math.random() * (3000 - 1000 + 1)) + 1000;
       console.log(
-        `等待 ${delay}ms 後請求 ${stock.stock_id} ${stock.stock_name}...`
+        `等待 ${delay}ms 後請求 ${stock.stock_id} ${stock.stock_name}...`,
       );
       await new Promise((resolve) => setTimeout(resolve, delay));
 
@@ -235,10 +236,11 @@ export default function useHighConcurrencyDeals() {
 
       // case 1-4: 寫入交易資料與基本面資料
       try {
-        const [daily, weekly, hourly] = await Promise.allSettled([
+        const [daily, weekly, hourly, profile] = await Promise.allSettled([
           limit(() => getIndicatorFetch(signal, stock, UrlTaPerdOptions.Day)),
           limit(() => getIndicatorFetch(signal, stock, UrlTaPerdOptions.Week)),
           limit(() => getIndicatorFetch(signal, stock, UrlTaPerdOptions.Hour)),
+          limit(() => fetchStockProfile(stock.stock_id)),
         ]);
         if (
           daily.status === "rejected" &&
@@ -248,13 +250,29 @@ export default function useHighConcurrencyDeals() {
           throw new Error("All fetch failed");
         }
 
+        // --- Yahoo Profile Sync ---
+        if (profile.status === "fulfilled" && profile.value) {
+          if (profile.value.issued_shares) {
+            stock.issued_shares = profile.value.issued_shares;
+            // Update stock table if profile was fetched
+            try {
+              await sqliteDataManager.saveStockTable(stock);
+              info(
+                `Updated issued_shares for ${stock.stock_id} from Yahoo: ${stock.issued_shares}`,
+              );
+            } catch (err) {
+              error(`Error updating stock table with profile: ${err}`);
+            }
+          }
+        }
+
         // 紀錄請求時間
         const taiwanTime = new Date().toLocaleString("en-US", {
           timeZone: "Asia/Taipei",
         });
         localStorage.setItem(
           `schoice:fetch:time:${stock.stock_id}`,
-          taiwanTime
+          taiwanTime,
         );
 
         // daily
@@ -262,27 +280,29 @@ export default function useHighConcurrencyDeals() {
           const dailyData = daily.value as TaListType;
 
           const daily_date = dailyData.map((item) =>
-            dateFormat(item.t, Mode.NumberToString)
+            dateFormat(item.t, Mode.NumberToString),
           );
           const sqlite_daily_deal = await sqliteDataManager.getStockDates(
             stock,
-            DealTableOptions.DailyDeal
+            DealTableOptions.DailyDeal,
           );
           const sqlite_daily_deal_date_set = new Set(
-            sqlite_daily_deal.map((item) => item.t)
+            sqlite_daily_deal.map((item) => item.t),
           );
           const sqlite_daily_skills = await sqliteDataManager.getStockDates(
             stock,
-            SkillsTableOptions.DailySkills
+            SkillsTableOptions.DailySkills,
           );
           const sqlite_daily_skills_date_set = new Set(
-            sqlite_daily_skills.map((item) => item.t)
+            sqlite_daily_skills.map((item) => item.t),
           );
           const lose_daily_deal_set = new Set(
-            daily_date.filter((item) => !sqlite_daily_deal_date_set.has(item))
+            daily_date.filter((item) => !sqlite_daily_deal_date_set.has(item)),
           );
           const lose_daily_skills_set = new Set(
-            daily_date.filter((item) => !sqlite_daily_skills_date_set.has(item))
+            daily_date.filter(
+              (item) => !sqlite_daily_skills_date_set.has(item),
+            ),
           );
 
           if (lose_daily_deal_set.size > 0 || lose_daily_skills_set.size > 0) {
@@ -296,7 +316,7 @@ export default function useHighConcurrencyDeals() {
               {
                 lose_deal_set: lose_daily_deal_set,
                 lose_skills_set: lose_daily_skills_set,
-              }
+              },
             );
           }
         }
@@ -305,29 +325,31 @@ export default function useHighConcurrencyDeals() {
         if (weekly.status === "fulfilled") {
           const weeklyData = weekly.value as TaListType;
           const weekly_date = weeklyData.map((item) =>
-            dateFormat(item.t, Mode.NumberToString)
+            dateFormat(item.t, Mode.NumberToString),
           );
           const sqlite_weekly_deal = await sqliteDataManager.getStockDates(
             stock,
-            DealTableOptions.WeeklyDeal
+            DealTableOptions.WeeklyDeal,
           );
           const sqlite_weekly_deal_date_set = new Set(
-            sqlite_weekly_deal.map((item) => item.t)
+            sqlite_weekly_deal.map((item) => item.t),
           );
           const sqlite_weekly_skills = await sqliteDataManager.getStockDates(
             stock,
-            SkillsTableOptions.WeeklySkills
+            SkillsTableOptions.WeeklySkills,
           );
           const sqlite_weekly_skills_date_set = new Set(
-            sqlite_weekly_skills.map((item) => item.t)
+            sqlite_weekly_skills.map((item) => item.t),
           );
           const lose_weekly_deal_set = new Set(
-            weekly_date.filter((item) => !sqlite_weekly_deal_date_set.has(item))
+            weekly_date.filter(
+              (item) => !sqlite_weekly_deal_date_set.has(item),
+            ),
           );
           const lose_weekly_skills_set = new Set(
             weekly_date.filter(
-              (item) => !sqlite_weekly_skills_date_set.has(item)
-            )
+              (item) => !sqlite_weekly_skills_date_set.has(item),
+            ),
           );
 
           if (
@@ -344,7 +366,7 @@ export default function useHighConcurrencyDeals() {
               {
                 lose_deal_set: lose_weekly_deal_set,
                 lose_skills_set: lose_weekly_skills_set,
-              }
+              },
             );
           }
         }
@@ -355,26 +377,28 @@ export default function useHighConcurrencyDeals() {
           const sqlite_hourly_deal =
             await sqliteDataManager.getStockTimeSharing(
               stock,
-              TimeSharingDealTableOptions.HourlyDeal
+              TimeSharingDealTableOptions.HourlyDeal,
             );
           const sqlite_hourly_deal_date_set = new Set(
-            sqlite_hourly_deal.map((item) => item.ts)
+            sqlite_hourly_deal.map((item) => item.ts),
           );
           const sqlite_hourly_skills =
             await sqliteDataManager.getStockTimeSharing(
               stock,
-              TimeSharingSkillsTableOptions.HourlySkills
+              TimeSharingSkillsTableOptions.HourlySkills,
             );
           const sqlite_hourly_skills_date_set = new Set(
-            sqlite_hourly_skills.map((item) => item.ts)
+            sqlite_hourly_skills.map((item) => item.ts),
           );
           const lose_hourly_deal_set = new Set(
-            hourly_date.filter((item) => !sqlite_hourly_deal_date_set.has(`${item}`))
+            hourly_date.filter(
+              (item) => !sqlite_hourly_deal_date_set.has(`${item}`),
+            ),
           );
           const lose_hourly_skills_set = new Set(
             hourly_date.filter(
-              (item) => !sqlite_hourly_skills_date_set.has(`${item}`)
-            )
+              (item) => !sqlite_hourly_skills_date_set.has(`${item}`),
+            ),
           );
           if (
             lose_hourly_deal_set.size > 0 ||
@@ -390,13 +414,13 @@ export default function useHighConcurrencyDeals() {
               {
                 lose_deal_set: lose_hourly_deal_set,
                 lose_skills_set: lose_hourly_skills_set,
-              }
+              },
             );
           }
         }
       } catch (e) {
         error(
-          `Error fetching data for stock ${stock.stock_id} ${stock.stock_name}: ${e}`
+          `Error fetching data for stock ${stock.stock_id} ${stock.stock_name}: ${e}`,
         );
       }
       changeUpdateProgress(i + 1);
