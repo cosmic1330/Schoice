@@ -50,15 +50,15 @@ const PeriodMenu: React.FC<PeriodMenuProps> = ({
           {perd === UrlTaPerdOptions.Hour
             ? "小時"
             : perd === UrlTaPerdOptions.Week
-            ? "週線"
-            : "日線"}
+              ? "週線"
+              : "日線"}
         </Typography>
         <MenuPopup className="period-list">
           <MenuContent>
             {options.map((opt) => (
               <ControlButton
                 key={opt.value}
-                active={perd === opt.value}
+                isSelected={perd === opt.value}
                 onClick={() => handleSetPerd(opt.value)}
                 sx={{
                   justifyContent: "flex-start",
@@ -88,7 +88,7 @@ const PeriodMenu: React.FC<PeriodMenuProps> = ({
       {options.map((opt) => (
         <ControlButton
           key={opt.value}
-          active={perd === opt.value}
+          isSelected={perd === opt.value}
           onClick={() => handleSetPerd(opt.value)}
         >
           {opt.label}

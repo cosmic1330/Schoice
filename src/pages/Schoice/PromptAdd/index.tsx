@@ -238,13 +238,12 @@ export default function PromptAdd() {
                 交易策略清單
               </ConfigHeader>
               <Box sx={{ flex: 1, overflowY: "auto", mb: 2 }}>
-                {promptCategories.map(({ type, title, builder }) => (
+                {promptCategories.map(({ type, title }) => (
                   <PromptList
                     key={type}
                     title={title}
                     prompts={prompts[type]}
                     onRemove={(index) => handleRemove(type, index)}
-                    builder={builder}
                   />
                 ))}
               </Box>

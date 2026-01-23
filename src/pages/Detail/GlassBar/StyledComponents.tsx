@@ -22,14 +22,14 @@ export const GlassBarContainer = styled(motion.div, {
 }));
 
 export const ControlButton = styled(Button, {
-  shouldForwardProp: (prop) => prop !== "active",
-})<{ active?: boolean }>(({ active }) => ({
+  shouldForwardProp: (prop) => prop !== "isSelected",
+})<{ isSelected?: boolean }>(({ isSelected }) => ({
   minWidth: "auto",
   padding: "6px 12px",
   borderRadius: "8px",
-  color: active ? "#fff" : "rgba(255, 255, 255, 0.6)",
-  backgroundColor: active ? "rgba(255, 255, 255, 0.15)" : "transparent",
-  border: active
+  color: isSelected ? "#fff" : "rgba(255, 255, 255, 0.6)",
+  backgroundColor: isSelected ? "rgba(255, 255, 255, 0.15)" : "transparent",
+  border: isSelected
     ? "1px solid rgba(255, 255, 255, 0.1)"
     : "1px solid transparent",
   fontSize: "0.75rem",

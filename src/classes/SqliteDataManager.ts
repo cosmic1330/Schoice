@@ -39,7 +39,6 @@ export default class SqliteDataManager {
 
   async clearTable() {
     try {
-      await this.db.execute("DELETE FROM fundamental;");
       await this.db.execute("DELETE FROM hourly_skills;");
       await this.db.execute("DELETE FROM hourly_deal;");
       await this.db.execute("DELETE FROM weekly_skills;");

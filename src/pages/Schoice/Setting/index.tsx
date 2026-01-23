@@ -1,5 +1,6 @@
 import { Box, Container, Grid, Typography } from "@mui/material";
 import CheckUpdate from "./CheckUpdate";
+import DatabaseInitialization from "./DatabaseInitialization";
 import DatabaseSettings from "./DatabaseSettings";
 import ExampleSelector from "./ExampleSelector";
 import OtherSettings from "./OtherSettings";
@@ -23,6 +24,7 @@ export default function Setting() {
         </Typography>
         <Grid container spacing={2}>
           <DatabaseSettings />
+          <DatabaseInitialization />
           <Grid size={{ xs: 12, md: 6 }}>
             <StockMenuSettings />
           </Grid>

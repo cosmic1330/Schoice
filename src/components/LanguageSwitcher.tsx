@@ -18,19 +18,19 @@ const LangButton = styled(Box)(({ theme }) => ({
 }));
 
 const LangTag = styled(Box, {
-  shouldForwardProp: (prop) => prop !== "active",
-})<{ active?: boolean }>(({ theme, active }) => ({
+  shouldForwardProp: (prop) => prop !== "isSelected",
+})<{ isSelected?: boolean }>(({ theme, isSelected }) => ({
   fontSize: "0.7rem",
-  fontWeight: active ? "bold" : "normal",
+  fontWeight: isSelected ? "bold" : "normal",
   padding: "2px 6px",
   borderRadius: "6px",
-  color: active
+  color: isSelected
     ? theme.palette.primary.contrastText
     : alpha(theme.palette.text.primary, 0.5),
-  background: active ? theme.palette.primary.main : "transparent",
+  background: isSelected ? theme.palette.primary.main : "transparent",
   fontFamily: "monospace",
   transition: "all 0.2s",
-  boxShadow: active
+  boxShadow: isSelected
     ? `0 2px 8px ${alpha(theme.palette.primary.main, 0.4)}`
     : "none",
 }));
@@ -47,8 +47,8 @@ export default function LanguageSwitcher() {
 
   return (
     <LangButton onClick={handleLanguageChange}>
-      <LangTag active={isEn}>EN</LangTag>
-      <LangTag active={!isEn}>繁</LangTag>
+      <LangTag isSelected={isEn}>EN</LangTag>
+      <LangTag isSelected={!isEn}>繁</LangTag>
     </LangButton>
   );
 }

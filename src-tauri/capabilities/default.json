@@ -12,6 +12,8 @@
     "notification:default",
     "notification:allow-request-permission",
     "shell:default",
+    "dialog:default",
+    "dialog:allow-confirm",
     "sql:allow-execute",
     "sql:allow-load",
     "sql:allow-select",

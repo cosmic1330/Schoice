@@ -20,7 +20,9 @@ import useCloudStore from "../../../../store/Cloud.store";
 import useSchoiceStore from "../../../../store/Schoice.store";
 import { PromptType } from "../../../../types";
 
-const ItemCard = styled(MuiStack)<{ active: boolean }>(({ theme, active }) => ({
+const ItemCard = styled(MuiStack, {
+  shouldForwardProp: (prop) => prop !== "isSelected",
+})<{ isSelected: boolean }>(({ theme, isSelected }) => ({
   flexDirection: "row",
   alignItems: "center",
   padding: theme.spacing(1.5, 2),
@@ -30,23 +32,23 @@ const ItemCard = styled(MuiStack)<{ active: boolean }>(({ theme, active }) => ({
   // Chamfered corners for sci-fi HUD look
   clipPath:
     "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)",
-  backgroundColor: active
+  backgroundColor: isSelected
     ? alpha(theme.palette.primary.main, 0.1)
     : alpha(theme.palette.background.paper, 0.05),
-  borderLeft: active
+  borderLeft: isSelected
     ? `4px solid ${theme.palette.primary.main}`
     : `4px solid ${alpha(theme.palette.divider, 0.1)}`,
   transition: "all 0.1s ease-out", // Sharp, mechanical transition
 
   // Scanline/Grid texture overlay
-  backgroundImage: active
+  backgroundImage: isSelected
     ? `linear-gradient(90deg, ${alpha(
         theme.palette.primary.main,
-        0.05
+        0.05,
       )} 1px, transparent 1px),
        linear-gradient(${alpha(
          theme.palette.primary.main,
-         0.05
+         0.05,
        )} 1px, transparent 1px)`
     : "none",
   backgroundSize: "20px 20px",
@@ -62,7 +64,7 @@ const ItemCard = styled(MuiStack)<{ active: boolean }>(({ theme, active }) => ({
   },
 
   // Corner markers for active state
-  "&::after": active
+  "&::after": isSelected
     ? {
         content: '""',
         position: "absolute",
@@ -76,20 +78,20 @@ const ItemCard = styled(MuiStack)<{ active: boolean }>(({ theme, active }) => ({
     : {},
 }));
 
-const IndexNumber = styled(Typography)<{ active: boolean }>(
-  ({ theme, active }) => ({
-    fontFamily: "monospace",
-    fontSize: "1.5rem",
-    fontWeight: 900,
-    color: active
-      ? alpha(theme.palette.primary.main, 0.2)
-      : alpha(theme.palette.text.disabled, 0.1),
-    lineHeight: 1,
-    marginRight: theme.spacing(2),
-    userSelect: "none",
-    letterSpacing: "-0.05em",
-  })
-);
+const IndexNumber = styled(Typography, {
+  shouldForwardProp: (prop) => prop !== "isSelected",
+})<{ isSelected: boolean }>(({ theme, isSelected }) => ({
+  fontFamily: "monospace",
+  fontSize: "1.5rem",
+  fontWeight: 900,
+  color: isSelected
+    ? alpha(theme.palette.primary.main, 0.2)
+    : alpha(theme.palette.text.disabled, 0.1),
+  lineHeight: 1,
+  marginRight: theme.spacing(2),
+  userSelect: "none",
+  letterSpacing: "-0.05em",
+}));
 
 const Chip = styled(Box)(({ theme }) => ({
   display: "inline-flex",
@@ -144,8 +146,8 @@ export default function ListItem({
   };
 
   return (
-    <ItemCard active={isActive} onClick={handleSelect} spacing={2}>
-      <IndexNumber active={isActive}>
+    <ItemCard isSelected={isActive} onClick={handleSelect} spacing={2}>
+      <IndexNumber isSelected={isActive}>
         {index < 10 ? `0${index}` : index}
       </IndexNumber>
 

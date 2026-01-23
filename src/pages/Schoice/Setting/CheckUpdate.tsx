@@ -26,6 +26,7 @@ import {
   Switch,
   Typography,
 } from "@mui/material";
+import { getVersion } from "@tauri-apps/api/app";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check } from "@tauri-apps/plugin-updater";
 import React, { useEffect, useState } from "react";
@@ -62,6 +63,12 @@ const CheckUpdate: React.FC = () => {
     }
     const value = await store.get("autoUpdate");
     setAutoUpdate(!!value);
+
+    const version = await getVersion();
+    setUpdateState((prev) => ({
+      ...prev,
+      currentVersion: version,
+    }));
 
     const lastChecked = localStorage.getItem("lastChecked");
     if (lastChecked) {
@@ -144,17 +151,20 @@ const CheckUpdate: React.FC = () => {
       const update = await check();
 
       if (update) {
+        let downloaded = 0;
         await update.downloadAndInstall((event) => {
           if (
             event.event === "Progress" &&
             "chunkLength" in event.data &&
             "contentLength" in event.data &&
-            typeof event.data.chunkLength === "number" &&
-            typeof event.data.contentLength === "number"
+            typeof event.data.chunkLength === "number"
           ) {
-            const progress = Math.round(
-              (event.data.chunkLength / (event.data.contentLength || 1)) * 100
-            );
+            downloaded += event.data.chunkLength;
+            const contentLength =
+              typeof event.data.contentLength === "number"
+                ? event.data.contentLength
+                : 1;
+            const progress = Math.round((downloaded / contentLength) * 100);
             setUpdateState((prev) => ({
               ...prev,
               downloadProgress: progress,
