@@ -252,6 +252,9 @@ export default class SqliteDataManager {
             adx: dmi_data.adx,
             cmf: cmf_data.cmf,
             cmf_ema5: cmf_data.ema,
+            turnover_rate: stock.issued_shares
+              ? ((value.v * 1000) / stock.issued_shares) * 100
+              : 0,
           });
         }
       }
@@ -423,6 +426,9 @@ export default class SqliteDataManager {
             adx: dmi_data.adx,
             cmf: cmf_data.cmf,
             cmf_ema5: cmf_data.ema,
+            turnover_rate: stock.issued_shares
+              ? (value.v / stock.issued_shares) * 100
+              : 0,
           });
         }
       }
@@ -446,12 +452,13 @@ export default class SqliteDataManager {
   async saveStockTable(stock: StockTableType) {
     try {
       await this.db.execute(
-        "INSERT OR REPLACE INTO stock (stock_id, stock_name, industry_group, market_type) VALUES ($1, $2, $3, $4)",
+        "INSERT OR REPLACE INTO stock (stock_id, stock_name, industry_group, market_type, issued_shares) VALUES ($1, $2, $3, $4, $5)",
         [
           stock.stock_id,
           stock.stock_name,
           stock.industry_group,
           stock.market_type,
+          stock.issued_shares || null,
         ]
       );
       return true;
@@ -532,11 +539,12 @@ export default class SqliteDataManager {
           di_minus,
           adx,
           cmf,
-          cmf_ema5
+          cmf_ema5,
+          turnover_rate
           ) VALUES ${skills
             .map(
               (skill) =>
-                `('${skill.stock_id}', '${skill.t}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou}, ${skill.di_plus}, ${skill.di_minus}, ${skill.adx}, ${skill.cmf}, ${skill.cmf_ema5})`
+                `('${skill.stock_id}', '${skill.t}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou}, ${skill.di_plus}, ${skill.di_minus}, ${skill.adx}, ${skill.cmf}, ${skill.cmf_ema5}, ${skill.turnover_rate || null})`
             )
             .join(", ")}`;
       await this.db.execute(sql);
@@ -619,11 +627,12 @@ export default class SqliteDataManager {
           di_minus,
           adx,
           cmf,
-          cmf_ema5
+          cmf_ema5,
+          turnover_rate
           ) VALUES ${skills
             .map(
               (skill) =>
-                `('${skill.stock_id}', '${skill.ts}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou}, ${skill.di_plus}, ${skill.di_minus}, ${skill.adx}, ${skill.cmf}, ${skill.cmf_ema5})`
+                `('${skill.stock_id}', '${skill.ts}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou}, ${skill.di_plus}, ${skill.di_minus}, ${skill.adx}, ${skill.cmf}, ${skill.cmf_ema5}, ${skill.turnover_rate || null})`
             )
             .join(", ")}`;
       await this.db.execute(sql);

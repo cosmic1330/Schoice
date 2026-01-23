@@ -64,6 +64,7 @@ export type StockTableType = {
   stock_name: string;
   industry_group: string;
   market_type: string;
+  issued_shares?: number;
   options?: Map<string, WatchStockItem>;
 };
 
@@ -237,6 +238,7 @@ export type SkillsTableType = {
   adx: number;
   cmf: number;
   cmf_ema5: number;
+  turnover_rate?: number;
 };
 
 export type TickDealsType = {
@@ -308,6 +310,7 @@ export type TimeSharingSkillsTableType = {
   adx: number;
   cmf: number;
   cmf_ema5: number;
+  turnover_rate?: number;
 };
 
 /****

@@ -6,7 +6,9 @@ import { getStore } from "../store/Setting.store";
 import { tauriFetcher, TauriFetcherType } from "../tools/http";
 import { StockTableType } from "../types";
 
-enum QueryStockType {
+import { supabase } from "../tools/supabase";
+
+export enum QueryStockType {
   TWSE = 2,
   OTC = 4,
 }
@@ -61,10 +63,31 @@ export default function useDownloadStocks() {
       setDisable(true);
       const TWSE_data = await queryStocks(QueryStockType.TWSE);
       const OTC_data = await queryStocks(QueryStockType.OTC);
-      TWSE_data.push(...OTC_data);
-      info(`Total stocks fetched: ${TWSE_data.length}`);
+      const allScrapedStocks = [...TWSE_data, ...OTC_data];
+      info(`Total stocks fetched from exchange: ${allScrapedStocks.length}`);
+
+      // Fetch issued_shares from Supabase
+      const { data: supabaseStocks, error: supabaseError } = await supabase
+        .from("stock")
+        .select("stock_id, issued_shares");
+
+      if (supabaseError) {
+        error(`Error fetching issued_shares from Supabase: ${supabaseError.message}`);
+      } else {
+        const issuedSharesMap = new Map(
+          supabaseStocks?.map((s) => [s.stock_id, s.issued_shares])
+        );
+
+        allScrapedStocks.forEach((stock) => {
+          if (issuedSharesMap.has(stock.stock_id)) {
+            stock.issued_shares = issuedSharesMap.get(stock.stock_id);
+          }
+        });
+        info("Merged issued_shares from Supabase");
+      }
+
       const store = await getStore();
-      await store.set("menu", TWSE_data);
+      await store.set("menu", allScrapedStocks);
       await store.save();
       setDisable(false);
       sendNotification({ title: "Menu", body: "Update Success!" });

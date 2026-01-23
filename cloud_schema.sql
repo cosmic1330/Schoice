@@ -3,7 +3,8 @@ CREATE TABLE stock (
     stock_id TEXT PRIMARY KEY,
     stock_name TEXT,
     industry_group TEXT,
-    market_type TEXT
+    market_type TEXT,
+    issued_shares BIGINT
 );
 
 CREATE TABLE daily_deal (
@@ -66,6 +67,7 @@ CREATE TABLE daily_skills (
     adx DOUBLE PRECISION,
     cmf DOUBLE PRECISION,
     cmf_ema5 DOUBLE PRECISION,
+    turnover_rate DOUBLE PRECISION,
     PRIMARY KEY (stock_id, t)
 );
 
@@ -129,6 +131,7 @@ CREATE TABLE weekly_skills (
     adx DOUBLE PRECISION,
     cmf DOUBLE PRECISION,
     cmf_ema5 DOUBLE PRECISION,
+    turnover_rate DOUBLE PRECISION,
     PRIMARY KEY (stock_id, t)
 );
 
@@ -192,6 +195,7 @@ CREATE TABLE hourly_skills (
     adx DOUBLE PRECISION,
     cmf DOUBLE PRECISION,
     cmf_ema5 DOUBLE PRECISION,
+    turnover_rate DOUBLE PRECISION,
     PRIMARY KEY (stock_id, ts)
 );
 

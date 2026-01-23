@@ -411,5 +411,20 @@ pub fn value() -> Vec<Migration> {
             ",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 9,
+            description: "add_issued_shares_to_stock_table",
+            sql: "
+                ALTER TABLE stock
+                    ADD COLUMN issued_shares INTEGER;
+                ALTER TABLE daily_skills
+                    ADD COLUMN turnover_rate REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN turnover_rate REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN turnover_rate REAL;
+            ",
+            kind: MigrationKind::Up,
+        },
     ]
 }
