@@ -26,7 +26,7 @@ import {
   Typography,
 } from "@mui/material";
 import { alpha, styled } from "@mui/material/styles";
-import { useCallback, useContext, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { DatabaseContext } from "../../../context/DatabaseContext";
@@ -95,7 +95,7 @@ export default function Backtest() {
         <Typography variant="h5" color="text.secondary">
           {t(
             "Pages.Schoice.Backtest.sqliteOnly",
-            "回測功能僅在 SQLite 模式下可用"
+            "回測功能僅在 SQLite 模式下可用",
           )}
         </Typography>
       </Box>
@@ -104,8 +104,14 @@ export default function Backtest() {
   const [ctx, setCtx] = useState<Context>();
   const [selectedBull, setSelectedBull] = useState<string[]>([]);
   const [selectedBear, setSelectedBear] = useState<string[]>([]);
+
+  useEffect(() => {
+    setSelectedBull((prev) => prev.filter((id) => bulls[id]));
+    setSelectedBear((prev) => prev.filter((id) => bears[id]));
+  }, [bulls, bears]);
+
   const [selectedStocks, setSelectedStocks] = useState<SelectedStocks>(
-    SelectedStocks.WatchStock
+    SelectedStocks.WatchStock,
   );
   const [status, setStatus] = useState<Status>(Status.Idle);
   const [options, setOptions] = useState<BacktestOptions>({
@@ -140,7 +146,7 @@ export default function Backtest() {
     let stocksValue = await query(
       `SELECT * FROM stock WHERE stock_id IN (${watchStocks
         .map((id) => `'${id}'`)
-        .join(",")})`
+        .join(",")})`,
     );
     if (selectedStocks === SelectedStocks.FilterStocks && filterStocks) {
       stocksValue = filterStocks;
@@ -152,7 +158,7 @@ export default function Backtest() {
 
     const genStrategyMethod = (
       select: PromptItem,
-      type: BacktestType
+      type: BacktestType,
     ): StrategyMethod => {
       return (stockId: string, date: number, inWait: boolean | undefined) =>
         get(stockId, date, inWait, {
@@ -177,10 +183,10 @@ export default function Backtest() {
         name: stock.stock_name,
       })),
       buy: selectedBull.map((key) =>
-        genStrategyMethod(bulls[key], BacktestType.Buy)
+        genStrategyMethod(bulls[key], BacktestType.Buy),
       ),
       sell: selectedBear.map((key) =>
-        genStrategyMethod(bears[key], BacktestType.Sell)
+        genStrategyMethod(bears[key], BacktestType.Sell),
       ),
       options: { ...options }, // 確保傳遞的是新的物件
     });
@@ -208,8 +214,8 @@ export default function Backtest() {
         }
         setBacktestPersent(
           Math.floor(
-            (ctx.dateSequence.historyDates.length / dates.length) * 100
-          )
+            (ctx.dateSequence.historyDates.length / dates.length) * 100,
+          ),
         );
       }
     }

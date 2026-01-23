@@ -118,7 +118,7 @@ export default function ListItem({
   promptType: PromptType;
 }) {
   const { remove } = useCloudStore();
-  const { setSelect, select } = useSchoiceStore();
+  const { setSelect, select, clearSeleted } = useSchoiceStore();
   const { user } = useUser();
   const { t } = useTranslation();
 
@@ -132,6 +132,9 @@ export default function ListItem({
 
   const handleConfirmDelete = () => {
     if (user) {
+      if (isActive) {
+        clearSeleted();
+      }
       remove(id, promptType, user.id);
     }
     setOpenConfirm(false);

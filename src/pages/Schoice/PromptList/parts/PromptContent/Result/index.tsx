@@ -24,6 +24,7 @@ export default function Result({ select }: { select: SelectType }) {
       select.type === "bull"
         ? bulls[select.prompt_id]
         : bears[select.prompt_id];
+    if (!item) return;
     const sqls = await getPromptSqlScripts(
       item,
       filterStocks?.map((item) => item.stock_id) || undefined,
@@ -54,7 +55,7 @@ export default function Result({ select }: { select: SelectType }) {
       .catch((error) => {
         console.error("Query error:", error);
       });
-  }, [dates, select, query, todayDate]);
+  }, [dates, select, query, todayDate, bulls, bears]);
 
   useEffect(() => {
     run();
