@@ -3,11 +3,11 @@ import obvTool from "../../../cls_tools/obv";
 import { TaType } from "../../../types";
 
 export type SignalType =
-  | "TRUE_BREAKOUT"
-  | "FAKE_BREAKOUT"
-  | "ACCUMULATION"
-  | "EXIT_WEAKNESS"
-  | "STOP_LOSS";
+  | "FAKE_BREAKOUT" // A. 假突破
+  | "OBV_DIVERGENCE_ENTRY" // B. OBV 底背離進場 (v2.3)
+  | "ACCUMULATION" // C. 吸籌
+  | "EXIT_WEAKNESS" // D. 轉弱
+  | "STOP_LOSS"; // D. 止損
 
 export interface ObvSignal {
   t: number;
@@ -17,13 +17,13 @@ export interface ObvSignal {
 }
 
 /**
- * Helper to find local extrema
+ * Helper to find local extrema (Exclusive of current index)
  */
 const getExtrema = (
   arr: number[],
   idx: number,
   window: number,
-  type: "MAX" | "MIN"
+  type: "MAX" | "MIN",
 ) => {
   let val = type === "MAX" ? -Infinity : Infinity;
   const start = Math.max(0, idx - window);
@@ -36,14 +36,8 @@ const getExtrema = (
 
 /**
  * Robust Higher Low check for OBV
- * Checks if the current local low is higher than the previous confirmed local low
  */
 const checkObvHigherLow = (obvValues: number[], idx: number) => {
-  // 1. Find the current local low (swing low)
-  // A swing low is obv[i] < obv[i-1] and obv[i] < obv[i+1]
-  // But since we are calculating in real-time/streaming, we use:
-  // obv[i-2] < obv[i-3] and obv[i-2] < obv[i-1]
-
   const findSwingLow = (arr: number[], endIdx: number, limit: number) => {
     for (let i = endIdx - 2; i > endIdx - limit; i--) {
       if (i < 2) break;
@@ -60,7 +54,6 @@ const checkObvHigherLow = (obvValues: number[], idx: number) => {
   const previousLow = findSwingLow(obvValues, currentLow.idx, 30);
   if (!previousLow) return false;
 
-  // Check if current swing low is higher than previous swing low
   return currentLow.val > previousLow.val;
 };
 
@@ -70,29 +63,34 @@ export const calculateObvSignals = (deals: TaType[]): ObvSignal[] => {
   // 1. Calculate Core Data
   const obvValues: number[] = [];
   const ma60Values: (number | null)[] = [];
+  const ma20Values: (number | null)[] = []; // Price 20MA
   const obvMa20Values: (number | null)[] = [];
   const volMa20Values: (number | null)[] = [];
 
   let obvState = obvTool.init(deals[0]);
   let ma60State = ma.init(deals[0], 60);
+  let ma20State = ma.init(deals[0], 20);
   let volMa20State = ma.init({ c: deals[0].v } as any, 20);
 
-  // Collect OBV, Price MA60, and Volume MA20
+  // Collect Data
   for (let i = 0; i < deals.length; i++) {
     if (i > 0) obvState = obvTool.next(deals[i], obvState);
     obvValues.push(obvState.obv);
 
+    if (i > 0) ma60State = ma.next(deals[i], ma60State, 60);
+    ma60Values.push(i >= 59 ? ma60State.ma : null);
+
+    if (i > 0) ma20State = ma.next(deals[i], ma20State, 20);
+    ma20Values.push(i >= 19 ? ma20State.ma : null);
+
     if (i > 0)
       volMa20State = ma.next({ c: deals[i].v } as any, volMa20State, 20);
     volMa20Values.push(i >= 19 ? volMa20State.ma : null);
-
-    if (i > 0) ma60State = ma.next(deals[i], ma60State, 60);
-    ma60Values.push(i >= 59 ? ma60State.ma : null);
   }
 
   // Calculate OBV MA20
   let obvMaState20 = ma.init({ c: obvValues[0] } as any, 20);
-  obvMa20Values.push(null); // idx 0 is definitely < 19
+  obvMa20Values.push(null);
   for (let i = 1; i < obvValues.length; i++) {
     obvMaState20 = ma.next({ c: obvValues[i] } as any, obvMaState20, 20);
     obvMa20Values.push(i >= 19 ? obvMaState20.ma : null);
@@ -100,46 +98,54 @@ export const calculateObvSignals = (deals: TaType[]): ObvSignal[] => {
 
   const signals: ObvSignal[] = [];
   const closes = deals.map((d) => d.c);
+  const highs = deals.map((d) => d.h);
+  const lows = deals.map((d) => d.l);
 
-  // v2.0 Strategy States
-  let isAboveResistance = false;
-  let isBelowObvMa = false;
-  let activeBreakoutLow: number | null = null;
+  // Strategy State
   let lastSignalIdx: Record<string, number> = {
-    TRUE_BREAKOUT: -100,
     FAKE_BREAKOUT: -100,
+    OBV_DIVERGENCE_ENTRY: -100,
     ACCUMULATION: -100,
     EXIT_WEAKNESS: -100,
     STOP_LOSS: -100,
   };
 
+  let activeEntryLow: number | null = null; // For Stop Loss tracking
+  let recentDivergenceCount = 0; // Countdown for divergence validity
+
   for (let i = 60; i < deals.length; i++) {
     const d = deals[i];
     const c = d.c;
     const v = d.v;
+    const l = d.l;
+    const o = d.o;
+
     const currObv = obvValues[i];
     const prevObv = obvValues[i - 1];
     const currObvMa = obvMa20Values[i];
     const currMa60 = ma60Values[i];
+    const currMa20 = ma20Values[i];
     const currVolMa = volMa20Values[i];
 
-    const resistance = getExtrema(closes, i, 20, "MAX");
-    const support = getExtrema(closes, i, 20, "MIN");
+    // Definitions
+    const resistance = getExtrema(highs, i, 20, "MAX");
+    const support = getExtrema(lows, i, 20, "MIN");
+
     const obvHigh20 = getExtrema(obvValues, i, 20, "MAX");
+    const obvLow20 = getExtrema(obvValues, i, 20, "MIN");
 
     const avgPrice = closes.slice(i - 20, i).reduce((a, b) => a + b, 0) / 20;
     const boxWidth = (resistance - support) / avgPrice;
 
-    // Check states
-    const currentlyAboveResistance = c > resistance;
-    const currentlyBelowObvMa = currObvMa !== null && currObv < currObvMa;
-    const breakoutTransition = currentlyAboveResistance && !isAboveResistance;
-    const obvTransitionDown = currentlyBelowObvMa && !isBelowObvMa;
+    // --- Signal Logic ---
 
-    let emittedSignalType: string | null = null;
+    // Filter: Invalid Zone (Professional Reminder)
+    if (boxWidth < 0.015 && currVolMa !== null && v < currVolMa * 0.5) {
+      continue;
+    }
 
     // A. Fake Breakout (Priority 1)
-    if (breakoutTransition && currObv < obvHigh20) {
+    if (c > resistance && currObv < obvHigh20) {
       if (i - lastSignalIdx.FAKE_BREAKOUT > 15) {
         signals.push({
           t: d.t,
@@ -148,89 +154,144 @@ export const calculateObvSignals = (deals: TaType[]): ObvSignal[] => {
           price: c,
         });
         lastSignalIdx.FAKE_BREAKOUT = i;
-        emittedSignalType = "FAKE_BREAKOUT";
       }
     }
 
-    // D. Stop Loss / Exit (Priority 2)
-    if (!emittedSignalType) {
-      const prevObvMa = i > 0 ? obvMa20Values[i - 1] : null;
-      const isDeadCross =
-        currObvMa !== null &&
-        prevObvMa !== null &&
-        currObv < currObvMa &&
-        prevObv >= prevObvMa;
-      const isBelowMa60 = currMa60 !== null && c < currMa60;
-      const isBelowBreakoutLow =
-        activeBreakoutLow !== null && c < activeBreakoutLow;
+    // D. Exit / Stop Loss (Priority 2)
+    const isDeadCross = currObvMa !== null && currObv < currObvMa;
 
-      if (isBelowBreakoutLow || (isBelowMa60 && isDeadCross)) {
-        if (i - lastSignalIdx.STOP_LOSS > 15) {
-          signals.push({
-            t: d.t,
-            type: "STOP_LOSS",
-            reason: "🛑 趨勢反轉 / 止損",
-            price: c,
-          });
-          lastSignalIdx.STOP_LOSS = i;
-          emittedSignalType = "STOP_LOSS";
-          activeBreakoutLow = null; // Reset
-        }
-      } else if (obvTransitionDown && currMa60 !== null && c > currMa60) {
-        if (i - lastSignalIdx.EXIT_WEAKNESS > 15) {
-          signals.push({
-            t: d.t,
-            type: "EXIT_WEAKNESS",
-            reason: "動能轉弱 (跌破OBV均線)",
-            price: c,
-          });
-          lastSignalIdx.EXIT_WEAKNESS = i;
-          emittedSignalType = "EXIT_WEAKNESS";
-        }
+    if (activeEntryLow !== null && l < activeEntryLow) {
+      // Hit stop loss
+      if (i - lastSignalIdx.STOP_LOSS > 15) {
+        signals.push({
+          t: d.t,
+          type: "STOP_LOSS",
+          reason: "🛑 止損 (跌破前低)",
+          price: c,
+        });
+        lastSignalIdx.STOP_LOSS = i;
+        activeEntryLow = null;
+      }
+    } else if (currMa60 !== null && c < currMa60 && isDeadCross) {
+      // Trend Reversal
+      if (i - lastSignalIdx.STOP_LOSS > 15) {
+        signals.push({
+          t: d.t,
+          type: "STOP_LOSS",
+          reason: "🛑 趨勢反轉 (價跌破60MA+OBV死叉)",
+          price: c,
+        });
+        lastSignalIdx.STOP_LOSS = i;
+        activeEntryLow = null;
+      }
+    } else if (
+      currMa60 !== null &&
+      c > currMa60 &&
+      isDeadCross &&
+      currObvMa &&
+      prevObv >= (obvMa20Values[i - 1] || 0)
+    ) {
+      // Weakness
+      if (i - lastSignalIdx.EXIT_WEAKNESS > 15) {
+        signals.push({
+          t: d.t,
+          type: "EXIT_WEAKNESS",
+          reason: "動能轉弱 (OBV跌破均線)",
+          price: c,
+        });
+        lastSignalIdx.EXIT_WEAKNESS = i;
       }
     }
 
-    // B. True Breakout (Priority 3)
-    if (!emittedSignalType && breakoutTransition) {
-      const isAttackVol = currVolMa !== null && v > currVolMa * 1.5;
-      const isAboveMa60 = currMa60 !== null && c > currMa60;
-      const isObvStrong =
-        currObvMa !== null && currObv > currObvMa && currObv > prevObv;
+    // Track Recent Divergence for B Logic (v2.3)
+    // 1. Price creates new low (Close < Support OR Close < PrevLow)
+    // 2. OBV > OBV_Low20 (Funds inflow)
+    // Note: markdown says "Close < Support or front low". Support IS recent low.
+    if ((c < support || c < lows[i - 1]) && currObv > obvLow20) {
+      recentDivergenceCount = 10; // Valid for 10 bars (extended window)
+    } else if (recentDivergenceCount > 0) {
+      recentDivergenceCount--;
+    }
 
-      if (isAboveMa60 && isAttackVol && isObvStrong) {
-        if (i - lastSignalIdx.TRUE_BREAKOUT > 15) {
-          signals.push({
-            t: d.t,
-            type: "TRUE_BREAKOUT",
-            reason: "Buy (真突破: 量價齊揚)",
-            price: c,
-          });
-          lastSignalIdx.TRUE_BREAKOUT = i;
-          emittedSignalType = "TRUE_BREAKOUT";
-          activeBreakoutLow = d.l * 0.99; // Set trailing stop at breakout bar low
+    // B. OBV Divergence Entry (Priority 3) - v2.3 Refined
+    /*
+      Condition 1: OBV Divergence Core
+        - Recent divergence (tracked above)
+        - OBV > OBV_MA AND Slope > 0 (3-5 bars)
+      Condition 2: Price Filter
+        - Close > 20MA
+        - Box Width < 3% (or 6% for Daily) - Keeping 6% for safety based on previous fix
+      Condition 3: Volume Filter
+        - AvgVol(3) > VolMA * 1.2
+      Condition 4: Trend Confirmation (New)
+        - OBV > OBV_High20 OR OBV Higher Low
+        - No Long Lower Shadow: Body > Lower Shadow * 0.5
+    */
+
+    // Volume Check
+    const volAvg3 = (deals[i].v + deals[i - 1].v + deals[i - 2].v) / 3;
+    const isVolActive = currVolMa !== null && volAvg3 > currVolMa * 1.2;
+
+    // Price Filter
+    const isPriceFilterMet = currMa20 !== null && c > currMa20;
+    // Keeping 0.06 to remain compatible with Daily charts based on prior robust fix
+    // Relax logic: If we have valid divergence context, ignore box width
+    const isContextMet = boxWidth < 0.06 || recentDivergenceCount > 0;
+
+    // OBV Continuous Up Check (3 bars positive slope)
+    const obvSlopePositive =
+      currObv > prevObv &&
+      prevObv > obvValues[i - 2] &&
+      obvValues[i - 2] > obvValues[i - 3];
+    const isObvContinuousUp =
+      currObvMa !== null && currObv > currObvMa && obvSlopePositive;
+
+    if (isPriceFilterMet && isContextMet && isVolActive) {
+      // Must have divergence recent AND continuous up
+      if (recentDivergenceCount > 0 && isObvContinuousUp) {
+        // Condition 4: Trend Confirmation
+        const obvBreakout = currObv > obvHigh20;
+        const obvHigherLow = checkObvHigherLow(obvValues, i);
+
+        // Candle Shape Check: No long lower shadow (Body > LowerShadow * 0.5)
+        // Lower Shadow = Min(O, C) - L
+        // Body = Abs(O - C)
+        const lowerShadow = Math.min(o, c) - l;
+        const body = Math.abs(o - c);
+        // If Lower Shadow is tiny, division might be large, but basic check Body > 0.5*Shadow catches "long shadow"
+        const isSolidCandle = body > lowerShadow * 0.5;
+
+        if ((obvBreakout || obvHigherLow) && isSolidCandle) {
+          if (i - lastSignalIdx.OBV_DIVERGENCE_ENTRY > 15) {
+            signals.push({
+              t: d.t,
+              type: "OBV_DIVERGENCE_ENTRY",
+              reason: "🚀 Buy (OBV 底背離 + 趨勢確認)",
+              price: c,
+            });
+            lastSignalIdx.OBV_DIVERGENCE_ENTRY = i;
+            activeEntryLow = l;
+          }
         }
       }
     }
 
     // C. Accumulation (Priority 4)
-    if (!emittedSignalType && boxWidth < 0.02 && c < resistance) {
-      if (checkObvHigherLow(obvValues, i)) {
-        if (i - lastSignalIdx.ACCUMULATION > 25) {
-          signals.push({
-            t: d.t,
-            type: "ACCUMULATION",
-            reason: "吸籌中 (底底高)",
-            price: c,
-          });
-          lastSignalIdx.ACCUMULATION = i;
-          emittedSignalType = "ACCUMULATION";
+    if (boxWidth < 0.06 && c < resistance) {
+      if (currObvMa !== null && currObv > currObvMa) {
+        if (checkObvHigherLow(obvValues, i)) {
+          if (i - lastSignalIdx.ACCUMULATION > 25) {
+            signals.push({
+              t: d.t,
+              type: "ACCUMULATION",
+              reason: "⚡ 吸籌佈局 (OBV底底高)",
+              price: c,
+            });
+            lastSignalIdx.ACCUMULATION = i;
+          }
         }
       }
     }
-
-    // Update States
-    isAboveResistance = currentlyAboveResistance;
-    isBelowObvMa = currentlyBelowObvMa;
   }
 
   return signals;

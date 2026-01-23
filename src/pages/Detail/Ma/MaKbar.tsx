@@ -353,7 +353,7 @@ export default function MaKbar({
       lastSignal.type === "buy" &&
       enhancedChartData.length -
         enhancedChartData.indexOf(
-          enhancedChartData.find((d) => d.t === lastSignal.t) as any
+          enhancedChartData.find((d) => d.t === lastSignal.t) as any,
         ) <
         5;
 
@@ -435,8 +435,8 @@ export default function MaKbar({
             status: isPowerBullish
               ? "pass"
               : isPowerBearish
-              ? "fail"
-              : "manual",
+                ? "fail"
+                : "manual",
           },
         ],
       },
@@ -571,16 +571,24 @@ export default function MaKbar({
               }}
             >
               {currentGaps.map((g) => (
-                <p
-                  key={g.date}
-                  style={{
-                    color: g.type === "up" ? "#ff5252" : "#69f0ae",
-                    margin: 0,
-                  }}
-                >
-                  {g.type === "up" ? "支撐缺口" : "壓力缺口"}{" "}
-                  {g.size.toFixed(2)} ({g.sizePercent.toFixed(1)}%)
-                </p>
+                <div key={g.date} style={{ marginTop: 4 }}>
+                  <p
+                    style={{
+                      color: g.type === "up" ? "#ff5252" : "#69f0ae",
+                      margin: 0,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {g.type === "up" ? "支撐缺口" : "壓力缺口"} (
+                    {g.size.toFixed(2)}, {g.sizePercent.toFixed(1)}%)
+                  </p>
+                  <p style={{ color: "#eee", margin: 0 }}>
+                    缺口上緣: {g.high.toFixed(2)}
+                  </p>
+                  <p style={{ color: "#eee", margin: 0 }}>
+                    缺口下緣: {g.low.toFixed(2)}
+                  </p>
+                </div>
               ))}
             </div>
           )}
@@ -668,8 +676,8 @@ export default function MaKbar({
                     check.status === "pass"
                       ? "success"
                       : check.status === "fail"
-                      ? "error"
-                      : "default"
+                        ? "error"
+                        : "default"
                   }
                   size="small"
                 />
@@ -720,7 +728,7 @@ export default function MaKbar({
                     .filter((m) =>
                       activeStep === 3
                         ? ["ma5", "ma10", "ma20"].includes(m.key)
-                        : true
+                        : true,
                     )
                     .map((m) => (
                       <Chip

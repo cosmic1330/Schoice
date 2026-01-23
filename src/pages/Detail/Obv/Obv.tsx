@@ -36,19 +36,18 @@ import obvTool from "../../../cls_tools/obv";
 import rsi from "../../../cls_tools/rsi";
 import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
 import { DealsContext } from "../../../context/DealsContext";
-import { calculateObvSignals } from "./obvStrategy";
 import ChartTooltip from "../Tooltip/ChartTooltip";
+import { calculateObvSignals } from "./obvStrategy";
 
 // Types
-interface ObvChartData
-  extends Partial<{
-    t: number | string;
-    o: number | null;
-    h: number | null;
-    l: number | null;
-    c: number | null;
-    v: number | null;
-  }> {
+interface ObvChartData extends Partial<{
+  t: number | string;
+  o: number | null;
+  h: number | null;
+  l: number | null;
+  c: number | null;
+  v: number | null;
+}> {
   // Price Indicators
   ma60: number | null;
   ma20: number | null; // Keep for reference
@@ -61,7 +60,7 @@ interface ObvChartData
   macdOsc: number | null;
   macdDif: number | null;
   // Signals
-  trueBreakout?: number | null;
+  obvDivergenceEntry?: number | null;
   fakeBreakout?: number | null;
   accumulation?: number | null;
   exitWeakness?: number | null;
@@ -83,7 +82,6 @@ interface AnalysisStep {
   description: string;
   checks: StepCheck[];
 }
-
 
 export default function Obv({
   visibleCount,
@@ -250,7 +248,8 @@ export default function Obv({
         rsi: i >= 13 ? rsiState.rsi : null,
         macdOsc: macdState.osc,
         macdDif: (macdState as any).dif || null,
-        trueBreakout: signal?.type === "TRUE_BREAKOUT" ? d.h * 1.02 : null,
+        obvDivergenceEntry:
+          signal?.type === "OBV_DIVERGENCE_ENTRY" ? d.l * 0.99 : null,
         fakeBreakout: signal?.type === "FAKE_BREAKOUT" ? d.h * 1.02 : null,
         accumulation: signal?.type === "ACCUMULATION" ? d.l * 0.98 : null,
         exitWeakness: signal?.type === "EXIT_WEAKNESS" ? d.l * 0.98 : null,
@@ -261,7 +260,7 @@ export default function Obv({
 
     return allData.slice(
       -(visibleCount + rightOffset),
-      rightOffset === 0 ? undefined : -rightOffset
+      rightOffset === 0 ? undefined : -rightOffset,
     );
   }, [fullDeals, signals, visibleCount, rightOffset]);
 
@@ -533,8 +532,8 @@ export default function Obv({
                     check.status === "pass"
                       ? "success"
                       : check.status === "fail"
-                      ? "error"
-                      : "default"
+                        ? "error"
+                        : "default"
                   }
                   size="small"
                 />
@@ -587,6 +586,7 @@ export default function Obv({
               opacity={0}
               dot={false}
               legendType="none"
+              name="高"
             />
             <Line
               dataKey="c"
@@ -594,6 +594,7 @@ export default function Obv({
               opacity={0}
               dot={false}
               legendType="none"
+              name="收"
             />
             <Line
               dataKey="l"
@@ -601,6 +602,7 @@ export default function Obv({
               opacity={0}
               dot={false}
               legendType="none"
+              name="低"
             />
             <Line
               dataKey="o"
@@ -608,6 +610,7 @@ export default function Obv({
               opacity={0}
               dot={false}
               legendType="none"
+              name="開"
             />
 
             {/* Price Indicators */}
@@ -653,16 +656,15 @@ export default function Obv({
             />
             {/* Signal Markers */}
             {chartData.map((d) => {
-              const breakout = d.trueBreakout !== null;
+              const entry = d.obvDivergenceEntry !== null;
               const fakeBreak = d.fakeBreakout !== null;
               const accum = d.accumulation !== null;
               const weak = d.exitWeakness !== null;
               const stop = d.stopLoss !== null;
 
-              if (!breakout && !fakeBreak && !accum && !weak && !stop)
-                return null;
+              if (!entry && !fakeBreak && !accum && !weak && !stop) return null;
 
-              const isEntry = breakout || accum;
+              const isEntry = entry || accum;
               const signalPrice = isEntry ? d.l! : d.h!;
               const yPos = isEntry ? signalPrice * 0.98 : signalPrice * 1.02;
 
@@ -670,10 +672,10 @@ export default function Obv({
               let color = "";
               let label = "";
 
-              if (breakout) {
-                icon = "▲";
+              if (entry) {
+                icon = "🚀";
                 color = "#FFD700"; // Gold
-                label = "Buy";
+                label = "DivEnt";
               } else if (fakeBreak) {
                 icon = "▼";
                 color = "#f44336"; // Red

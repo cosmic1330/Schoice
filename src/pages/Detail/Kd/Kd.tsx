@@ -157,7 +157,7 @@ export default function Kd({
   const chartData = useMemo((): KdChartData[] => {
     return calculateIndicators(deals, settings).slice(
       -(visibleCount + rightOffset),
-      rightOffset === 0 ? undefined : -rightOffset
+      rightOffset === 0 ? undefined : -rightOffset,
     ) as KdChartData[];
   }, [deals, settings, visibleCount, rightOffset]);
 
@@ -220,11 +220,11 @@ export default function Kd({
     // Check for recent bullish divergence (last 3 candles)
     const recentBullishDiv = signals.some(
       (s) =>
-        s.type === DivergenceSignalType.BULLISH_DIVERGENCE && s.t === current.t
+        s.type === DivergenceSignalType.BULLISH_DIVERGENCE && s.t === current.t,
     );
     const recentBearishDiv = signals.some(
       (s) =>
-        s.type === DivergenceSignalType.BEARISH_DIVERGENCE && s.t === current.t
+        s.type === DivergenceSignalType.BEARISH_DIVERGENCE && s.t === current.t,
     );
 
     // III. Risk
@@ -237,9 +237,12 @@ export default function Kd({
     // 2. Trend (20)
     if (bollMaRising || price > bollMa) totalScore += 20;
     // 3. KD Position (40)
-    if (isOversold && goldCross) totalScore += 40; // Strong buy
-    else if (goldCross && price > bollMa) totalScore += 30; // Trend Buy
-    else if (recentBullishDiv) totalScore += 30; // Divergence Buy
+    if (isOversold && goldCross)
+      totalScore += 40; // Strong buy
+    else if (goldCross && price > bollMa)
+      totalScore += 30; // Trend Buy
+    else if (recentBullishDiv)
+      totalScore += 30; // Divergence Buy
     else if (kVal > dVal && kVal > prevK) totalScore += 10; // Momentum
 
     if (isOverbought || deathCross || recentBearishDiv) totalScore -= 20;
@@ -410,8 +413,8 @@ export default function Kd({
                     check.status === "pass"
                       ? "success"
                       : check.status === "fail"
-                      ? "error"
-                      : "default"
+                        ? "error"
+                        : "default"
                   }
                   size="small"
                 />
@@ -451,6 +454,7 @@ export default function Kd({
               dot={false}
               activeDot={false}
               legendType="none"
+              name="高"
             />
             <Line
               dataKey="c"
@@ -459,6 +463,7 @@ export default function Kd({
               dot={false}
               activeDot={false}
               legendType="none"
+              name="收"
             />
             <Line
               dataKey="l"
@@ -467,6 +472,7 @@ export default function Kd({
               dot={false}
               activeDot={false}
               legendType="none"
+              name="低"
             />
             <Line
               dataKey="o"
@@ -475,6 +481,7 @@ export default function Kd({
               dot={false}
               activeDot={false}
               legendType="none"
+              name="開"
             />
             <Customized component={BaseCandlestickRectangle} />
 

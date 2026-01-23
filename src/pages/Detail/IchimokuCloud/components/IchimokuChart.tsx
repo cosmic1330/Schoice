@@ -29,8 +29,8 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
   ({ data, signals, cmfEmaPeriod = 5 }, ref) => {
     // Map signals for easy lookup
     const signalMap = useMemo(
-      () => new Map(signals.map((s) => [s.t, s])),
-      [signals]
+      () => new Map(signals.map((s) => [String(s.t), s])),
+      [signals],
     );
 
     // Calculate baseline avgPrice once for thickness comparison
@@ -49,7 +49,7 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
     // Merge signals and calculate per-bar future analysis
     const mergedData = useMemo(() => {
       return data.map((d) => {
-        const sig = signalMap.get(d.t);
+        const sig = signalMap.get(String(d.t));
         const isBull =
           d.senkouA !== null && d.senkouB !== null && d.senkouA > d.senkouB;
         const isBear =
@@ -228,6 +228,7 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
               opacity={0}
               dot={false}
               legendType="none"
+              name="高"
             />
             <Line
               dataKey="c"
@@ -235,6 +236,7 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
               opacity={0}
               dot={false}
               legendType="none"
+              name="收"
             />
             <Line
               dataKey="l"
@@ -242,6 +244,7 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
               opacity={0}
               dot={false}
               legendType="none"
+              name="低"
             />
             <Line
               dataKey="o"
@@ -249,8 +252,8 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
               opacity={0}
               dot={false}
               legendType="none"
+              name="開"
             />
-
             {/* Ichimoku Lines */}
             <Line
               dataKey="tenkan"
@@ -377,7 +380,7 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
 
             {/* Signal Markers */}
             {data.map((d) => {
-              const sig = signalMap.get(d.t);
+              const sig = signalMap.get(String(d.t));
               if (!sig) return null;
 
               let color = "#FFD700";
@@ -482,9 +485,7 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
               }}
             />
             <RechartsTooltip
-              content={
-                <ChartTooltip showSignals={false} showIchimoku={false} />
-              }
+              content={<ChartTooltip showSignals={true} showIchimoku={false} />}
             />
 
             <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" />
@@ -527,7 +528,7 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
         </ResponsiveContainer>
       </Box>
     );
-  }
+  },
 );
 
 export default IchimokuChart;

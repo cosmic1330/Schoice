@@ -38,15 +38,14 @@ import { calculateIndicators } from "../../../utils/indicatorUtils";
 import ChartTooltip from "../Tooltip/ChartTooltip";
 import Fundamental from "../Tooltip/Fundamental";
 
-interface BolleanChartData
-  extends Partial<{
-    t: number | string;
-    o: number | null;
-    h: number | null;
-    l: number | null;
-    c: number | null;
-    v: number | null;
-  }> {
+interface BolleanChartData extends Partial<{
+  t: number | string;
+  o: number | null;
+  h: number | null;
+  l: number | null;
+  c: number | null;
+  v: number | null;
+}> {
   bollUb: number | null;
   bollMa: number | null;
   bollLb: number | null;
@@ -312,7 +311,7 @@ export default function Bollean({
       })
       .slice(
         -(visibleCount + rightOffset),
-        rightOffset === 0 ? undefined : -rightOffset
+        rightOffset === 0 ? undefined : -rightOffset,
       );
   }, [deals, visibleCount, rightOffset]);
 
@@ -575,8 +574,8 @@ export default function Bollean({
                     check.status === "pass"
                       ? "success"
                       : check.status === "fail"
-                      ? "error"
-                      : "default"
+                        ? "error"
+                        : "default"
                   }
                   size="small"
                 />
@@ -619,6 +618,7 @@ export default function Bollean({
               dot={false}
               activeDot={false}
               legendType="none"
+              name="高"
             />
             <Line
               dataKey="c"
@@ -627,6 +627,7 @@ export default function Bollean({
               dot={false}
               activeDot={false}
               legendType="none"
+              name="收"
             />
             <Line
               dataKey="l"
@@ -635,6 +636,7 @@ export default function Bollean({
               dot={false}
               activeDot={false}
               legendType="none"
+              name="低"
             />
             <Line
               dataKey="o"
@@ -643,6 +645,7 @@ export default function Bollean({
               dot={false}
               activeDot={false}
               legendType="none"
+              name="開"
             />
             <Customized component={BaseCandlestickRectangle} />
 

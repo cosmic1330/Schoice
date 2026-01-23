@@ -15,7 +15,7 @@ import {
 // Helper to project time forward
 const getNextTradingTime = (
   currentDate: Date,
-  perd: UrlTaPerdOptions
+  perd: UrlTaPerdOptions,
 ): Date => {
   const nextDate = new Date(currentDate);
   if (perd === UrlTaPerdOptions.Hour) {
@@ -28,14 +28,14 @@ const getNextTradingTime = (
   return nextDate;
 };
 
-const parseTradeTime = (t: number, perd: UrlTaPerdOptions): Date => {
-  const s = t.toString();
+const parseTradeTime = (t: number | string, perd: UrlTaPerdOptions): Date => {
+  const s = t.toString().replace(/[-: ]/g, ""); // Remove separators if present
   if (perd === UrlTaPerdOptions.Hour && s.length >= 10) {
     const year = parseInt(s.substring(0, 4));
     const month = parseInt(s.substring(4, 6)) - 1;
     const day = parseInt(s.substring(6, 8));
     const hour = parseInt(s.substring(8, 10));
-    const min = parseInt(s.substring(10, 12));
+    const min = parseInt(s.substring(10, 12) || "0");
     return new Date(year, month, day, hour, min);
   } else {
     // YYYYMMDD
@@ -51,7 +51,7 @@ export const useIchimokuData = (
   perd: UrlTaPerdOptions,
   visibleCount: number,
   rightOffset: number,
-  settings?: any // Accept settings
+  settings?: any, // Accept settings
 ) => {
   const { combinedData, signals, analysis } = useMemo(() => {
     if (!deals || deals.length < 52) {
@@ -170,8 +170,23 @@ export const useIchimokuData = (
         const source =
           sourceIdx < enrichedData.length ? enrichedData[sourceIdx] : null;
 
+        let nextT: number;
+        if (perd === UrlTaPerdOptions.Hour) {
+          const y = currentDate.getFullYear();
+          const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+          const day = String(currentDate.getDate()).padStart(2, "0");
+          const hour = String(currentDate.getHours()).padStart(2, "0");
+          const min = String(currentDate.getMinutes()).padStart(2, "0");
+          nextT = parseInt(`${y}${month}${day}${hour}${min}`, 10);
+        } else {
+          nextT = dateFormat(
+            currentDate.getTime(),
+            Mode.TimeStampToNumber,
+          ) as number;
+        }
+
         chartRows.push({
-          t: dateFormat(currentDate.getTime(), Mode.TimeStampToNumber), // Simplified format
+          t: nextT,
           o: null,
           h: null,
           l: null,

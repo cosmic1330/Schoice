@@ -41,11 +41,32 @@ import {
 } from "../../../utils/indicatorUtils";
 import ChartTooltip from "../Tooltip/ChartTooltip";
 
+/**
+ * Helper to find local extrema
+ */
+const getExtrema = (
+  arr: number[],
+  idx: number,
+  window: number,
+  type: "MAX" | "MIN",
+) => {
+  let val = type === "MAX" ? -Infinity : Infinity;
+  const start = Math.max(0, idx - window);
+  for (let i = start; i < idx; i++) {
+    if (type === "MAX") val = Math.max(val, arr[i]);
+    else val = Math.min(val, arr[i]);
+  }
+  return val;
+};
+
 interface MfiChartData extends Partial<EnhancedDealData> {
   buySignal?: number | null;
   exitSignal?: number | null;
   buyReason?: string;
   exitReason?: string;
+  // Accumulation
+  accumulationSignal?: number | null;
+  accumulationReason?: string;
   // MACD
   macdOsc?: number | null;
   macdDif?: number | null;
@@ -183,8 +204,10 @@ export default function Mfi({
     const fullDataWithSignals = fullDataWithMacd.map((d, i, arr) => {
       let buySignal: number | null = null;
       let exitSignal: number | null = null;
+      let accumulationSignal: number | null = null;
       let buyReason: string | undefined;
       let exitReason: string | undefined;
+      let accumulationReason: string | undefined;
 
       if (i > 0) {
         const prev = arr[i - 1];
@@ -201,15 +224,48 @@ export default function Mfi({
           exitSignal = d.h ? d.h * 1.02 : null;
           exitReason = "超買反轉";
         }
+
+        // v2.0 Accumulation Signal (吸籌確認)
+        // Conditions: MFI < 30 + Hook Up + Low Vol + (Box<3% or Support) + MACD Improving
+        if (currMfi < 30 && currMfi > prevMfi) {
+          // Data Prep
+          // Note: using simple loop for extrema might be slow if array is huge, but fine for typical chart
+          // We need access to highs/lows. arr has them.
+          const highs = arr.map((x) => x.h || 0);
+          const lows = arr.map((x) => x.l || 0);
+          const resistance = getExtrema(highs, i, 20, "MAX");
+          const support = getExtrema(lows, i, 20, "MIN");
+          const avgPrice = d.c || 1;
+          const boxWidth = (resistance - support) / avgPrice;
+
+          const isConsolidation =
+            boxWidth < 0.03 || (d.c || 0) < support * 1.02;
+          const isVolLow = (d.v || 0) < (d.volMa20 || 0) * 0.8;
+          const isMacdImproving =
+            (d.macdOsc || 0) < 0 && (d.macdOsc || 0) > (prev.macdOsc || 0);
+
+          if (isConsolidation && isVolLow && isMacdImproving) {
+            accumulationSignal = d.l ? d.l * 0.97 : null;
+            accumulationReason = "吸籌機會 (MFI底背離)";
+          }
+        }
       }
 
-      return { ...d, buySignal, exitSignal, buyReason, exitReason };
+      return {
+        ...d,
+        buySignal,
+        exitSignal,
+        accumulationSignal,
+        buyReason,
+        exitReason,
+        accumulationReason,
+      };
     });
 
     // 3. Slice for visible area
     const slicedData = fullDataWithSignals.slice(
       -(visibleCount + rightOffset),
-      rightOffset === 0 ? undefined : -rightOffset
+      rightOffset === 0 ? undefined : -rightOffset,
     );
 
     return slicedData;
@@ -263,7 +319,8 @@ export default function Mfi({
     // 2. Trend (20)
     if (bollMaRising || price > bollMa) totalScore += 20;
     // 3. MFI Position (30)
-    if (isOversold && mfiRising) totalScore += 30; // Perfect buy setup
+    if (isOversold && mfiRising)
+      totalScore += 30; // Perfect buy setup
     else if (mfiVal > 40 && mfiVal < 60 && mfiRising && price > bollMa)
       totalScore += 20; // Momentum continuation
     else if (isOverbought) totalScore -= 20; // Warning
@@ -437,8 +494,8 @@ export default function Mfi({
                     check.status === "pass"
                       ? "success"
                       : check.status === "fail"
-                      ? "error"
-                      : "default"
+                        ? "error"
+                        : "default"
                   }
                   size="small"
                 />
@@ -484,6 +541,7 @@ export default function Mfi({
               dot={false}
               activeDot={false}
               legendType="none"
+              name="高"
             />
             <Line
               dataKey="c"
@@ -492,6 +550,7 @@ export default function Mfi({
               dot={false}
               activeDot={false}
               legendType="none"
+              name="收"
             />
             <Line
               dataKey="l"
@@ -500,6 +559,7 @@ export default function Mfi({
               dot={false}
               activeDot={false}
               legendType="none"
+              name="低"
             />
             <Line
               dataKey="o"
@@ -508,6 +568,7 @@ export default function Mfi({
               dot={false}
               activeDot={false}
               legendType="none"
+              name="開"
             />
             <Customized component={BaseCandlestickRectangle} />
 
@@ -559,10 +620,26 @@ export default function Mfi({
             {chartData.map((d) => {
               const isBuy = typeof d.buySignal === "number";
               const isExit = typeof d.exitSignal === "number";
-              if (!isBuy && !isExit) return null;
+              const isAccum = typeof d.accumulationSignal === "number";
+              if (!isBuy && !isExit && !isAccum) return null;
 
-              const yPos = isBuy ? d.l! * 0.99 : d.h! * 1.01;
-              const color = isBuy ? "#f44336" : "#4caf50";
+              let yPos = 0;
+              let color = "";
+              let label = ""; // Optional visualization
+
+              if (isBuy) {
+                yPos = d.buySignal!;
+                color = "#f44336";
+                label = "Buy";
+              } else if (isExit) {
+                yPos = d.exitSignal!;
+                color = "#4caf50";
+                label = "Sell";
+              } else if (isAccum) {
+                yPos = d.accumulationSignal!;
+                color = "#2196f3"; // Blue
+                label = "Accum";
+              }
 
               return (
                 <ReferenceDot
@@ -575,29 +652,42 @@ export default function Mfi({
                     const { cx, cy } = props;
                     if (!cx || !cy) return <g />;
 
+                    let icon = "";
+                    if (isBuy) icon = "▲";
+                    else if (isExit) icon = "▼";
+                    else if (isAccum) icon = "●";
+
                     return (
                       <g>
-                        {isBuy ? (
-                          // Buy (Red)
-                          <>
-                            <path
-                              d={`M${cx - 5},${cy + 10} L${cx + 5},${
-                                cy + 10
-                              } L${cx},${cy} Z`}
-                              fill={color}
-                            />
-                          </>
-                        ) : (
-                          // Exit (Green)
-                          <>
-                            <path
-                              d={`M${cx - 5},${cy - 10} L${cx + 5},${
-                                cy - 10
-                              } L${cx},${cy} Z`}
-                              fill={color}
-                            />
-                          </>
-                        )}
+                        <circle
+                          cx={cx}
+                          cy={cy}
+                          r={12} // Slightly larger for visibility
+                          fill={color}
+                          fillOpacity={0.2}
+                        />
+                        <text
+                          x={cx}
+                          y={cy}
+                          dy={5}
+                          textAnchor="middle"
+                          fill={color}
+                          fontSize={12}
+                          fontWeight="bold"
+                        >
+                          {icon}
+                        </text>
+                        <text
+                          x={cx}
+                          y={cy}
+                          dy={20}
+                          textAnchor="middle"
+                          fill={color}
+                          fontSize={9}
+                          fontWeight="bold"
+                        >
+                          {label}
+                        </text>
                       </g>
                     );
                   }}

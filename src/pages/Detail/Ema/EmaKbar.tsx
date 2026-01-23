@@ -32,21 +32,20 @@ import {
 } from "recharts";
 import dmi from "../../../cls_tools/dmi";
 import ema from "../../../cls_tools/ema";
-import AvgCandlestickRectangle from "../../../components/RechartCustoms/AvgCandlestickRectangle";
 import ma from "../../../cls_tools/ma";
+import AvgCandlestickRectangle from "../../../components/RechartCustoms/AvgCandlestickRectangle";
 import { DealsContext } from "../../../context/DealsContext";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
 import ChartTooltip from "../Tooltip/ChartTooltip";
 
-interface AvgMaChartData
-  extends Partial<{
-    t: number | string;
-    o: number | null;
-    h: number | null;
-    l: number | null;
-    c: number | null;
-    v: number | null;
-  }> {
+interface AvgMaChartData extends Partial<{
+  t: number | string;
+  o: number | null;
+  h: number | null;
+  l: number | null;
+  c: number | null;
+  v: number | null;
+}> {
   ema5: number | null;
   ema10: number | null;
   ema60: number | null;
@@ -224,7 +223,7 @@ export default function AvgMaKbar({
 
     return finalData.slice(
       -(visibleCount + rightOffset),
-      rightOffset === 0 ? undefined : -rightOffset
+      rightOffset === 0 ? undefined : -rightOffset,
     );
   }, [deals, visibleCount, rightOffset]);
 
@@ -306,7 +305,7 @@ export default function AvgMaKbar({
               (s) =>
                 (s.type === "golden" || s.type === "death") &&
                 (s.t === current.t ||
-                  s.t === chartData[chartData.length - 2]?.t)
+                  s.t === chartData[chartData.length - 2]?.t),
             )
         : null;
     const trendUp = ema5 > ema10;
@@ -423,8 +422,8 @@ export default function AvgMaKbar({
               recentCross?.type === "golden"
                 ? "pass"
                 : recentCross?.type === "death"
-                ? "fail"
-                : "manual",
+                  ? "fail"
+                  : "manual",
           },
           {
             label: `訊號性質: ${
@@ -546,8 +545,8 @@ export default function AvgMaKbar({
                     check.status === "pass"
                       ? "success"
                       : check.status === "fail"
-                      ? "error"
-                      : "default"
+                        ? "error"
+                        : "default"
                   }
                   size="small"
                 />
@@ -588,6 +587,7 @@ export default function AvgMaKbar({
               dot={false}
               activeDot={false}
               legendType="none"
+              name="高"
             />
             <Line
               dataKey="c"
@@ -596,6 +596,7 @@ export default function AvgMaKbar({
               dot={false}
               activeDot={false}
               legendType="none"
+              name="收"
             />
             <Line
               dataKey="l"
@@ -604,6 +605,7 @@ export default function AvgMaKbar({
               dot={false}
               activeDot={false}
               legendType="none"
+              name="低"
             />
             <Line
               dataKey="o"
@@ -612,6 +614,7 @@ export default function AvgMaKbar({
               dot={false}
               activeDot={false}
               legendType="none"
+              name="開"
             />
 
             <Customized component={AvgCandlestickRectangle} />

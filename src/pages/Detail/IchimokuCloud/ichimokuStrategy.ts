@@ -37,7 +37,7 @@ export interface AnalysisResult {
 }
 
 export const calculateIchimokuSignals = (
-  data: IchimokuCombinedData[]
+  data: IchimokuCombinedData[],
 ): {
   signals: SignalResult[];
   lastAnalysis: AnalysisResult;
@@ -160,13 +160,22 @@ export const calculateIchimokuSignals = (
       // Let's make it a unique signal type that doesn't trigger "buy" state but visualizes it.
       if (isAccumulation) {
         // Check if prev was not matching to avoid spam
+        const prevPrev = data[i - 2];
+        const isPrevCmfEmaUp =
+          prev.cmfEma5 !== null &&
+          prevPrev &&
+          prevPrev.cmfEma5 !== null &&
+          prev.cmfEma5 > prevPrev.cmfEma5;
+
         const wasAccumulation =
           !(
             (prev.c || 0) >
             (prev.senkouA && prev.senkouB
               ? Math.max(prev.senkouA, prev.senkouB)
               : 0)
-          ) && (prev.cmf || -1) > -0.05;
+          ) &&
+          (prev.cmf || -1) > -0.05 &&
+          isPrevCmfEmaUp;
 
         if (!wasAccumulation) {
           signals.push({
@@ -283,7 +292,7 @@ export const calculateIchimokuSignals = (
       : 0;
   const isAboveCloud = price > cloudTop;
   const cloudThickness = Math.abs(
-    (current.senkouA || 0) - (current.senkouB || 0)
+    (current.senkouA || 0) - (current.senkouB || 0),
   );
   const isThickCloud = cloudThickness > price * 0.005;
 

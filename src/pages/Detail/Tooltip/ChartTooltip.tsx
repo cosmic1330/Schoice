@@ -132,10 +132,10 @@ const ChartTooltip = ({
                   data.futureTrend?.includes("多頭")
                     ? "#ff4d4f"
                     : data.currentStatus?.includes("看空") ||
-                      data.currentStatus?.includes("偏空") ||
-                      data.futureTrend?.includes("空頭")
-                    ? "#52c41a"
-                    : "#fff",
+                        data.currentStatus?.includes("偏空") ||
+                        data.futureTrend?.includes("空頭")
+                      ? "#52c41a"
+                      : "#fff",
                 marginBottom: 2,
               }}
             >
@@ -147,41 +147,71 @@ const ChartTooltip = ({
           </div>
         )}
 
-        {sortedPayload.map((entry: any, index: number) => {
-          // Filter out internal/invisible items or secondary signal indicators
-          if (hideKeys.includes(entry.dataKey)) return null;
-          if (entry.value === null || entry.value === undefined) return null;
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: "4px 12px",
+            borderTop: "1px solid rgba(255,255,255,0.1)",
+            paddingTop: "6px",
+          }}
+        >
+          {sortedPayload.map((entry: any, index: number) => {
+            if (hideKeys.includes(entry.dataKey)) return null;
+            if (entry.value === null || entry.value === undefined) return null;
 
-          // Ensure color is visible (not black) and valid
-          const itemColor =
-            entry.color &&
-            entry.color !== "#000" &&
-            entry.color !== "#000000" &&
-            entry.color !== "none"
-              ? entry.color
-              : "#fff";
+            const itemColor =
+              entry.color &&
+              entry.color !== "#000" &&
+              entry.color !== "#000000" &&
+              entry.color !== "none"
+                ? entry.color
+                : "#fff";
 
-          return (
-            <p
-              key={index}
-              style={{
-                color: itemColor,
-                margin: "2px 0",
-                fontSize: "0.8rem",
-                display: "flex",
-                justifyContent: "space-between",
-                minWidth: "120px",
-              }}
-            >
-              <span>{entry.name}:</span>
-              <span style={{ marginLeft: "12px", fontWeight: "bold" }}>
-                {typeof entry.value === "number"
-                  ? entry.value.toFixed(2)
-                  : entry.value}
-              </span>
-            </p>
-          );
-        })}
+            // Determine if item should take full width (e.g. cloud ranges or long labels)
+            const isFullWidth =
+              Array.isArray(entry.value) ||
+              entry.name.length > 8 ||
+              entry.dataKey.includes("Status");
+
+            return (
+              <div
+                key={index}
+                style={{
+                  gridColumn: isFullWidth ? "span 2" : "auto",
+                  color: itemColor,
+                  fontSize: "0.75rem",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  borderBottom: "1px solid rgba(255,255,255,0.03)",
+                  paddingBottom: "1px",
+                }}
+              >
+                <span
+                  style={{
+                    opacity: 0.7,
+                    marginRight: "8px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {entry.name}:
+                </span>
+                <span style={{ fontWeight: 700, fontFamily: "monospace" }}>
+                  {Array.isArray(entry.value)
+                    ? entry.value
+                        .map((v: any) =>
+                          typeof v === "number" ? v.toFixed(2) : v,
+                        )
+                        .join("-")
+                    : typeof entry.value === "number"
+                      ? entry.value.toFixed(2)
+                      : entry.value}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }
