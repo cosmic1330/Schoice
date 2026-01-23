@@ -27,17 +27,21 @@ export abstract class BaseQueryBuilder {
 
   protected convertOperator(operator: string): string {
     const operatorMapping: Record<string, string> = {
-      "小於": "<",
-      "大於": ">",
-      "等於": "=",
-      "大於等於": ">=",
-      "小於等於": "<=",
+      小於: "<",
+      大於: ">",
+      等於: "=",
+      大於等於: ">=",
+      小於等於: "<=",
     };
     return operatorMapping[operator] || "=";
   }
 
   public getMapping(): Record<string, QueryBuilderMappingItem> {
     return { ...this.mapping };
+  }
+
+  public getOthersMapping(): Record<string, QueryBuilderMappingItem> {
+    return {};
   }
 
   public abstract generateExpression(prompt: StorePrompt): string[];

@@ -54,6 +54,7 @@ export type TrashPrompt = {
 export type QueryBuilderMappingItem = {
   key: string;
   group: string;
+  unit?: string;
 };
 
 /****
@@ -394,7 +395,6 @@ export type FundamentalPrompt = {
 };
 
 export type FundamentalPrompts = FundamentalPrompt[];
-
 
 export interface StepCheck {
   label: string;

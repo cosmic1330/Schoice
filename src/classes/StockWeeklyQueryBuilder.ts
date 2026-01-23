@@ -54,6 +54,7 @@ export class StockWeeklyQueryBuilder extends BaseQueryBuilder {
     adx: { key: "adx", group: "_week_ago_sk" },
     cmf: { key: "cmf", group: "_week_ago_sk" },
     cmf_ema5: { key: "cmf_ema5", group: "_week_ago_sk" },
+    週轉率: { key: "turnover_rate", group: "_week_ago_sk", unit: "%" },
   };
 
   protected getTimeOptions(): readonly string[] {

@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  InputAdornment,
   MenuItem,
   Select,
   SelectChangeEvent,
@@ -90,7 +91,7 @@ function ExpressionGenerator({
 
   const handleTimeFrameChange = (
     _event: React.MouseEvent<HTMLElement>,
-    newTimeFrame: TimeFrame
+    newTimeFrame: TimeFrame,
   ) => {
     if (newTimeFrame !== null) {
       setTimeFrame(newTimeFrame);
@@ -147,6 +148,26 @@ function ExpressionGenerator({
   }, [currentOptions, selects.day1, selects.day2]);
 
   const operators = currentOptions.operators;
+
+  const currentUnit = useMemo(() => {
+    let builder;
+    switch (timeFrame) {
+      case "hour":
+        builder = stockHourlyQueryBuilder;
+        break;
+      case "week":
+        builder = stockWeeklyQueryBuilder;
+        break;
+      case "day":
+      default:
+        builder = stockDailyQueryBuilder;
+        break;
+    }
+    const mapping =
+      builder.getMapping()[selects.indicator1] ||
+      builder.getOthersMapping()[selects.indicator1];
+    return mapping?.unit;
+  }, [timeFrame, selects.indicator1]);
 
   return (
     <Box>
@@ -242,6 +263,19 @@ function ExpressionGenerator({
             fullWidth
             size="small"
             sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+            slotProps={
+              currentUnit
+                ? {
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          {currentUnit}
+                        </InputAdornment>
+                      ),
+                    },
+                  }
+                : undefined
+            }
           />
         ) : (
           <StyledSelect

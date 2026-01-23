@@ -2,6 +2,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { Box, IconButton, Paper, Stack, Typography } from "@mui/material";
 import { alpha, styled } from "@mui/material/styles";
 import { useTranslation } from "react-i18next";
+import { BaseQueryBuilder } from "../../classes/BaseQueryBuilder";
 import { Prompts } from "../../types";
 
 const GlassPaper = styled(Paper)(({ theme }) => ({
@@ -35,10 +36,32 @@ interface PromptListProps {
   title: string;
   prompts: Prompts;
   onRemove: (index: number) => void;
+  builder?: BaseQueryBuilder;
 }
 
-export function PromptList({ title, prompts, onRemove }: PromptListProps) {
+export function PromptList({
+  title,
+  prompts,
+  onRemove,
+  builder,
+}: PromptListProps) {
   const { t } = useTranslation();
+
+  const renderPrompt = (prompt: any) => {
+    const { day1, indicator1, operator, day2, indicator2 } = prompt;
+    let unit = "";
+    if (builder) {
+      const mapping =
+        builder.getMapping()[indicator1] ||
+        (builder as any).getOthersMapping?.()[indicator1];
+      unit = mapping?.unit || "";
+    }
+
+    const day2Value =
+      day2 === "自定義數值" ? `${indicator2}` : indicator2;
+
+    return `${day1} ${indicator1} ${operator} ${day2} ${day2Value}`;
+  };
 
   return (
     <GlassPaper elevation={0}>
@@ -91,7 +114,7 @@ export function PromptList({ title, prompts, onRemove }: PromptListProps) {
                   fontWeight={600}
                   color="text.primary"
                 >
-                  {Object.values(prompt).join(" ")}
+                  {renderPrompt(prompt)}
                 </Typography>
               </Stack>
               <IconButton

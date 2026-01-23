@@ -65,6 +65,7 @@ export class StockHourlyQueryBuilder extends BaseQueryBuilder {
     adx: { key: "adx", group: "_hour_ago_sk" },
     cmf: { key: "cmf", group: "_hour_ago_sk" },
     cmf_ema5: { key: "cmf_ema5", group: "_hour_ago_sk" },
+    週轉率: { key: "turnover_rate", group: "_hour_ago_sk", unit: "%" },
   };
 
   protected getSpecificOptions(): Record<string, readonly string[]> {

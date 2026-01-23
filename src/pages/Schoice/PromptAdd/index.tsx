@@ -17,6 +17,9 @@ import { nanoid } from "nanoid";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router";
+import { stockDailyQueryBuilder } from "../../../classes/StockDailyQueryBuilder";
+import { stockHourlyQueryBuilder } from "../../../classes/StockHourlyQueryBuilder";
+import { stockWeeklyQueryBuilder } from "../../../classes/StockWeeklyQueryBuilder";
 import ExpressionGenerator from "../../../components/Prompt/ExpressionGenerator";
 import PromptChart from "../../../components/Prompt/PromptChart";
 import { PromptList } from "../../../components/Prompt/PromptList";
@@ -66,7 +69,7 @@ export default function PromptAdd() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">(
-    "success"
+    "success",
   );
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -88,7 +91,7 @@ export default function PromptAdd() {
         name,
         prompts,
         promptType === "bull" ? PromptType.BULL : PromptType.BEAR,
-        user.id
+        user.id,
       );
       if (id)
         setSelect({
@@ -115,7 +118,7 @@ export default function PromptAdd() {
 
   const handleCloseSnackbar = (
     _event?: React.SyntheticEvent | Event,
-    reason?: string
+    reason?: string,
   ) => {
     if (reason === "clickaway") {
       return;
@@ -123,10 +126,26 @@ export default function PromptAdd() {
     setSnackbarOpen(false);
   };
 
-  const promptCategories: { type: keyof PromptValue; title: string }[] = [
-    { type: "hourly", title: t("Pages.Schoice.Prompt.hourlyConditions") },
-    { type: "daily", title: t("Pages.Schoice.Prompt.dailyConditions") },
-    { type: "weekly", title: t("Pages.Schoice.Prompt.weeklyConditions") },
+  const promptCategories: {
+    type: keyof PromptValue;
+    title: string;
+    builder: any;
+  }[] = [
+    {
+      type: "hourly",
+      title: t("Pages.Schoice.Prompt.hourlyConditions"),
+      builder: stockHourlyQueryBuilder,
+    },
+    {
+      type: "daily",
+      title: t("Pages.Schoice.Prompt.dailyConditions"),
+      builder: stockDailyQueryBuilder,
+    },
+    {
+      type: "weekly",
+      title: t("Pages.Schoice.Prompt.weeklyConditions"),
+      builder: stockWeeklyQueryBuilder,
+    },
   ];
 
   return (
@@ -219,12 +238,13 @@ export default function PromptAdd() {
                 交易策略清單
               </ConfigHeader>
               <Box sx={{ flex: 1, overflowY: "auto", mb: 2 }}>
-                {promptCategories.map(({ type, title }) => (
+                {promptCategories.map(({ type, title, builder }) => (
                   <PromptList
                     key={type}
                     title={title}
                     prompts={prompts[type]}
                     onRemove={(index) => handleRemove(type, index)}
+                    builder={builder}
                   />
                 ))}
               </Box>

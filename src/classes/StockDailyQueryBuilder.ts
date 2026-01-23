@@ -54,24 +54,29 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
     adx: { key: "adx", group: "_day_ago_sk" },
     cmf: { key: "cmf", group: "_day_ago_sk" },
     cmf_ema5: { key: "cmf_ema5", group: "_day_ago_sk" },
+    週轉率: { key: "turnover_rate", group: "_day_ago_sk", unit: "%" },
   };
 
   protected othersMapping: Record<string, QueryBuilderMappingItem> = {
     "營收近一月(累計年增率)": {
       key: "revenue_recent_m1_yoy_acc",
       group: "recent_fundamental",
+      unit: "%",
     },
     "營收近二月(累計年增率)": {
       key: "revenue_recent_m2_yoy_acc",
       group: "recent_fundamental",
+      unit: "%",
     },
     "營收近三月(累計年增率)": {
       key: "revenue_recent_m3_yoy_acc",
       group: "recent_fundamental",
+      unit: "%",
     },
     "營收近四月(累計年增率)": {
       key: "revenue_recent_m4_yoy_acc",
       group: "recent_fundamental",
+      unit: "%",
     },
   };
 
@@ -90,6 +95,10 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
 
   protected getOtherIndicators(): string[] {
     return Object.keys(this.othersMapping);
+  }
+
+  public getOthersMapping(): Record<string, QueryBuilderMappingItem> {
+    return { ...this.othersMapping };
   }
 
   private convertDayToNumber(day: string): number {

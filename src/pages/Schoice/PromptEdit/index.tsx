@@ -16,6 +16,9 @@ import { alpha, styled } from "@mui/material/styles";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
+import { stockDailyQueryBuilder } from "../../../classes/StockDailyQueryBuilder";
+import { stockHourlyQueryBuilder } from "../../../classes/StockHourlyQueryBuilder";
+import { stockWeeklyQueryBuilder } from "../../../classes/StockWeeklyQueryBuilder";
 import ExpressionGenerator from "../../../components/Prompt/ExpressionGenerator";
 import PromptChart from "../../../components/Prompt/PromptChart";
 import { PromptList } from "../../../components/Prompt/PromptList";
@@ -63,7 +66,7 @@ export default function PromptEdit() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">(
-    "success"
+    "success",
   );
   const navigate = useNavigate();
   const {
@@ -85,7 +88,7 @@ export default function PromptEdit() {
           hourly: hourlyPrompts,
         },
         select.type,
-        user.id
+        user.id,
       );
       setSelect({ prompt_id: id, type: select.type });
       navigate("/schoice");
@@ -119,7 +122,7 @@ export default function PromptEdit() {
 
   const handleCloseSnackbar = (
     _event?: React.SyntheticEvent | Event,
-    reason?: string
+    reason?: string,
   ) => {
     if (reason === "clickaway") {
       return;
@@ -217,16 +220,19 @@ export default function PromptEdit() {
                   title={t("Pages.Schoice.Prompt.hourlyConditions")}
                   prompts={hourlyPrompts}
                   onRemove={(index) => handleRemove("hourly", index)}
+                  builder={stockHourlyQueryBuilder}
                 />
                 <PromptList
                   title={t("Pages.Schoice.Prompt.dailyConditions")}
                   prompts={dailyPrompts}
                   onRemove={(index) => handleRemove("daily", index)}
+                  builder={stockDailyQueryBuilder}
                 />
                 <PromptList
                   title={t("Pages.Schoice.Prompt.weeklyConditions")}
                   prompts={weekPrompts}
                   onRemove={(index) => handleRemove("weekly", index)}
+                  builder={stockWeeklyQueryBuilder}
                 />
               </Box>
 
