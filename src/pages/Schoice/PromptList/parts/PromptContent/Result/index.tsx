@@ -1,5 +1,5 @@
 import { Box, CircularProgress, Typography } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
+import useSWR from "swr";
 import ResultTable from "../../../../../../components/ResultTable/ResultTable";
 import useDatabaseQuery from "../../../../../../hooks/useDatabaseQuery";
 import useFindStocksByPrompt from "../../../../../../hooks/useFindStocksByPrompt";
@@ -13,30 +13,28 @@ export default function Result({ select }: { select: SelectType }) {
   const bears = useCloudStore((state) => state.bears);
   const todayDate = useSchoiceStore((state) => state.todayDate);
   const filterStocks = useSchoiceStore((state) => state.filterStocks);
-  const [result, setResult] = useState<StockTableType[]>([]);
-  const [loading, setLoading] = useState(false);
   const query = useDatabaseQuery();
 
-  const run = useCallback(async () => {
-    setLoading(true);
-    setResult([]);
-    try {
+  // 使用 SWR 處理資料抓取，利用 keepPreviousData 保持畫面穩定
+  const { data: result = [], isValidating: loading } = useSWR(
+    ["search", select.prompt_id, todayDate, filterStocks?.length],
+    async () => {
       const item =
         select.type === "bull"
           ? bulls[select.prompt_id]
           : bears[select.prompt_id];
-      if (!item) return;
+      if (!item) return [];
 
       const sqls = await getPromptSqlScripts(
         item,
         filterStocks?.map((item) => item.stock_id) || undefined,
       );
-      if (sqls.length === 0) return;
+      if (sqls.length === 0) return [];
 
       const combinedSQL = getCombinedSqlScript(sqls);
       if (!combinedSQL || !combinedSQL.trim()) {
         console.log("No valid SQL generated");
-        return;
+        return [];
       }
 
       const res: { stock_id: string }[] | undefined = await query(combinedSQL);
@@ -46,65 +44,77 @@ export default function Result({ select }: { select: SelectType }) {
             .map((r) => `'${r.stock_id}'`)
             .join(",")}) Order By stock_id ASC`,
         );
-        if (data && data.length > 0) setResult(data);
+        return data || [];
       }
-    } catch (error) {
-      console.error("Query error:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [select, query, todayDate, bulls, bears, filterStocks]);
+      return [];
+    },
+    {
+      keepPreviousData: true,
+      revalidateOnFocus: false,
+    },
+  );
 
-  useEffect(() => {
-    run();
-  }, [run]);
+  const strategyName =
+    select.type === "bull"
+      ? bulls[select.prompt_id]?.name
+      : bears[select.prompt_id]?.name;
+  const strategyScript = JSON.stringify(
+    select.type === "bull"
+      ? bulls[select.prompt_id]?.conditions
+      : bears[select.prompt_id]?.conditions,
+  );
 
-  if (loading) {
-    return (
-      <Box
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="center"
-        py={8}
-        width="100%"
-      >
-        <CircularProgress size={40} sx={{ mb: 2 }} />
-        <Typography variant="body2" color="text.secondary">
-          讀取中...
-        </Typography>
-      </Box>
-    );
-  }
-
-  if (result.length === 0) {
-    return (
-      <Box py={4} width="100%" textAlign="center">
-        <Typography variant="body1" color="text.secondary">
-          沒有符合的結果
-        </Typography>
-      </Box>
-    );
-  }
+  // 當真正沒有資料且不在載入中時顯示「沒有符合的結果」
+  const noData = result.length === 0 && !loading;
 
   return (
-    <Box width="100%">
-      <Typography variant="subtitle2" sx={{ mb: 2 }}>
-        符合策略結果共 {result.length} 筆
-      </Typography>
-      <ResultTable
-        {...{ result }}
-        strategyName={
-          select.type === "bull"
-            ? bulls[select.prompt_id]?.name
-            : bears[select.prompt_id]?.name
-        }
-        strategyScript={JSON.stringify(
-          select.type === "bull"
-            ? bulls[select.prompt_id]?.conditions
-            : bears[select.prompt_id]?.conditions,
-        )}
-      />
+    <Box width="100%" position="relative" sx={{ minHeight: 200 }}>
+      {loading && (
+        <Box
+          position="absolute"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="center"
+          bgcolor="rgba(255, 255, 255, 0.5)"
+          sx={{ zIndex: 1, backdropFilter: "blur(1px)", borderRadius: 2 }}
+        >
+          <CircularProgress size={40} sx={{ mb: 2 }} />
+          <Typography variant="body2" color="text.secondary">
+            讀取中...
+          </Typography>
+        </Box>
+      )}
+
+      {noData ? (
+        <Box py={8} width="100%" textAlign="center">
+          <Typography variant="body1" color="text.secondary">
+            沒有符合的結果
+          </Typography>
+        </Box>
+      ) : (
+        <Box
+          width="100%"
+          sx={{
+            opacity: loading && result.length > 0 ? 0.7 : 1,
+            pointerEvents: loading && result.length === 0 ? "none" : "auto",
+            transition: "opacity 0.2s",
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ mb: 2 }}>
+            符合策略結果共 {result.length} 筆
+          </Typography>
+          <ResultTable
+            {...{ result }}
+            strategyName={strategyName}
+            strategyScript={strategyScript}
+          />
+        </Box>
+      )}
     </Box>
   );
 }

@@ -9,7 +9,8 @@ import useDatabaseQuery from "./useDatabaseQuery";
 
 export default function useFindStocksByPrompt() {
   const { dates } = useContext(DatabaseContext);
-  const { todayDate, filterStocks } = useSchoiceStore();
+  const todayDate = useSchoiceStore((state) => state.todayDate);
+  const filterStocks = useSchoiceStore((state) => state.filterStocks);
   const query = useDatabaseQuery();
 
   const getWeekDates = useCallback(
@@ -56,7 +57,7 @@ export default function useFindStocksByPrompt() {
         return [];
       }
     },
-    [query]
+    [query],
   );
 
   const getHourDates = useCallback(
@@ -71,15 +72,14 @@ export default function useFindStocksByPrompt() {
         ORDER BY ts DESC
         LIMIT 24;
       `;
-        const hourlyDates: { ts: string }[] | undefined = await query(
-          queryHourDate
-        );
+        const hourlyDates: { ts: string }[] | undefined =
+          await query(queryHourDate);
         return hourlyDates || [];
       } catch (error) {
         return [];
       }
     },
-    [query]
+    [query],
   );
 
   const getPromptSqlScripts = useCallback(
@@ -95,7 +95,7 @@ export default function useFindStocksByPrompt() {
       let dailySQL = "";
       if (select.conditions.daily.length > 0) {
         const customDailyConditions = select.conditions.daily.map((prompt) =>
-          stockDailyQueryBuilder.generateExpression(prompt).join(" ")
+          stockDailyQueryBuilder.generateExpression(prompt).join(" "),
         );
         const sqlDailyQuery = stockDailyQueryBuilder.generateSqlQuery({
           conditions: customDailyConditions,
@@ -108,7 +108,7 @@ export default function useFindStocksByPrompt() {
       let weeklySQL = "";
       if (select.conditions.weekly.length > 0) {
         const customWeeklyConditions = select.conditions.weekly.map((prompt) =>
-          stockWeeklyQueryBuilder.generateExpression(prompt).join(" ")
+          stockWeeklyQueryBuilder.generateExpression(prompt).join(" "),
         );
 
         const weeklyDateResults = await getWeekDates(dates[todayDate]);
@@ -125,7 +125,7 @@ export default function useFindStocksByPrompt() {
       let hourlySQL = "";
       if (select.conditions.hourly?.length > 0) {
         const customHourlyConditions = select.conditions.hourly.map((prompt) =>
-          stockHourlyQueryBuilder.generateExpression(prompt).join(" ")
+          stockHourlyQueryBuilder.generateExpression(prompt).join(" "),
         );
         const hourlyDateResults = await getHourDates(dates[todayDate]);
         if (hourlyDateResults) {
@@ -140,7 +140,7 @@ export default function useFindStocksByPrompt() {
 
       return [dailySQL, weeklySQL, hourlySQL];
     },
-    [dates, todayDate, filterStocks, getWeekDates, getHourDates]
+    [dates, todayDate, filterStocks, getWeekDates, getHourDates],
   );
 
   const getCombinedSqlScript = useCallback((sqls: string[]) => {
@@ -169,7 +169,7 @@ export default function useFindStocksByPrompt() {
         return [];
       }
     },
-    [query]
+    [query],
   );
 
   return {
