@@ -15,7 +15,7 @@ const GlassSidebar = styled(Paper)(({ theme }) => ({
   height: "100%",
   backgroundColor: alpha(
     theme.palette.mode === "light" ? theme.palette.background.paper : "#0f172a",
-    0.6
+    0.6,
   ),
   backdropFilter: "blur(20px)",
   borderRight: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
@@ -34,7 +34,7 @@ const GlassSidebar = styled(Paper)(({ theme }) => ({
     height: "100%",
     background: `linear-gradient(to bottom, transparent, ${alpha(
       theme.palette.primary.main,
-      0.3
+      0.3,
     )}, transparent)`,
   },
 }));
@@ -127,24 +127,28 @@ export default function ListArea() {
       >
         <Stack spacing={1}>
           {using === PromptType.BULL
-            ? Object.keys(bulls).map((id, index) => (
-                <ListItem
-                  key={id}
-                  index={index + 1}
-                  id={id}
-                  name={bulls[id].name}
-                  promptType={PromptType.BULL}
-                />
-              ))
-            : Object.keys(bears).map((id, index) => (
-                <ListItem
-                  key={id}
-                  index={index + 1}
-                  id={id}
-                  name={bears[id].name}
-                  promptType={PromptType.BEAR}
-                />
-              ))}
+            ? Object.entries(bulls)
+                .sort(([, a], [, b]) => (a.index || 0) - (b.index || 0))
+                .map(([id, item], index) => (
+                  <ListItem
+                    key={id}
+                    index={index + 1}
+                    id={id}
+                    name={item.name}
+                    promptType={PromptType.BULL}
+                  />
+                ))
+            : Object.entries(bears)
+                .sort(([, a], [, b]) => (a.index || 0) - (b.index || 0))
+                .map(([id, item], index) => (
+                  <ListItem
+                    key={id}
+                    index={index + 1}
+                    id={id}
+                    name={item.name}
+                    promptType={PromptType.BEAR}
+                  />
+                ))}
         </Stack>
       </Box>
 
@@ -156,7 +160,7 @@ export default function ListArea() {
           onClick={() => {
             navigate(
               "/schoice/add?promptType=" +
-                (using === PromptType.BULL ? PromptType.BULL : PromptType.BEAR)
+                (using === PromptType.BULL ? PromptType.BULL : PromptType.BEAR),
             );
           }}
         >
