@@ -65,18 +65,24 @@ export default function Favorite() {
       const dbStockMap = new Map(dbStocks.map((s) => [s.stock_id, s]));
 
       // 確保所有 watchStocks 中的 ID 都會顯示，即使資料庫查不到元資料
-      const mergedStocks = watchStocks.map((data) => {
-        return (
-          dbStockMap.get(data.stock_id) || {
-            stock_id: data.stock_id,
-            stock_name: t("Pages.Schoice.Favorite.unknownStock", {
-              id: data.stock_id,
-            }),
-            industry_group: "",
-            market_type: "",
-          }
-        );
-      });
+      // 按照加入時間新到舊排序
+      const mergedStocks = [...watchStocks]
+        .sort(
+          (a, b) =>
+            new Date(b.added_date).getTime() - new Date(a.added_date).getTime(),
+        )
+        .map((data) => {
+          return (
+            dbStockMap.get(data.stock_id) || {
+              stock_id: data.stock_id,
+              stock_name: t("Pages.Schoice.Favorite.unknownStock", {
+                id: data.stock_id,
+              }),
+              industry_group: "",
+              market_type: "",
+            }
+          );
+        });
       setStocks(mergedStocks);
     });
   }, [watchStocks, query]);
@@ -91,7 +97,7 @@ export default function Favorite() {
         msOverflowStyle: "none",
       }}
     >
-      <Container maxWidth="xl">
+      <Container maxWidth="xl" sx={{ mb: 8 }}>
         <Grid container spacing={4}>
           <Grid size={12}>
             <GlassCard elevation={0}>

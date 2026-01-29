@@ -21,14 +21,14 @@ interface CloudState {
   watchStocks: WatchStockItem[];
   setFundamentalCondition: (
     condition: FundamentalPrompts | null,
-    userId: string
+    userId: string,
   ) => void;
   removeFromWatchList: (stockId: string, userId: string) => Promise<void>;
   addToWatchList: (
     stockId: string,
     userId: string,
     strategyName?: string,
-    strategyScript?: string
+    strategyScript?: string,
   ) => Promise<void>;
   addAlarm: (alarm: PromptItem, id: string, userId: string) => Promise<void>;
   removeAlarm: (id: string, userId: string) => Promise<void>;
@@ -37,14 +37,14 @@ interface CloudState {
     name: string,
     prompts: PromptValue,
     type: PromptType,
-    userId: string
+    userId: string,
   ) => Promise<string | undefined>;
   edit: (
     id: string,
     name: string,
     prompts: PromptValue,
     type: PromptType,
-    userId: string
+    userId: string,
   ) => Promise<void>;
   remove: (id: string, type: PromptType, userId: string) => Promise<void>;
   removeFromTrash: (index: number, id: string, userId: string) => Promise<void>;
@@ -60,7 +60,7 @@ const useCloudStore = create<CloudState>((set, get) => ({
   watchStocks: [],
   setFundamentalCondition: async (
     condition: FundamentalPrompts | null,
-    userId: string
+    userId: string,
   ) => {
     if (condition === null) {
       set(() => ({ fundamentalCondition: null }));
@@ -93,7 +93,7 @@ const useCloudStore = create<CloudState>((set, get) => ({
       }
       set((state) => ({
         watchStocks: state.watchStocks?.filter(
-          (item) => item.stock_id !== stockId
+          (item) => item.stock_id !== stockId,
         ),
       }));
     } catch (err) {
@@ -104,10 +104,10 @@ const useCloudStore = create<CloudState>((set, get) => ({
     stockId: string,
     userId: string,
     strategyName?: string,
-    strategyScript?: string
+    strategyScript?: string,
   ) => {
     try {
-      const now = new Date().toISOString().split("T")[0];
+      const now = new Date().toISOString();
       const { error } = await supabase.from("watch_stock").insert({
         stock_id: stockId,
         user_id: userId,
@@ -227,7 +227,7 @@ const useCloudStore = create<CloudState>((set, get) => ({
     name: string,
     prompts: PromptValue,
     type: PromptType,
-    userId: string
+    userId: string,
   ) => {
     try {
       const id = nanoid();
@@ -287,7 +287,7 @@ const useCloudStore = create<CloudState>((set, get) => ({
     name: string,
     prompts: PromptValue,
     type: PromptType,
-    userId: string
+    userId: string,
   ) => {
     try {
       const { error } = await supabase
