@@ -203,6 +203,10 @@ export type SkillsTableType = {
   ma60_ded: number;
   ma120: number;
   ma120_ded: number;
+  ma240: number;
+  ma240_ded: number;
+  ma50: number;
+  ma50_ded: number;
   ema5: number;
   ema10: number;
   ema20: number;
@@ -275,6 +279,10 @@ export type TimeSharingSkillsTableType = {
   ma60_ded: number;
   ma120: number;
   ma120_ded: number;
+  ma240: number;
+  ma240_ded: number;
+  ma50: number;
+  ma50_ded: number;
   ema5: number;
   ema10: number;
   ema20: number;

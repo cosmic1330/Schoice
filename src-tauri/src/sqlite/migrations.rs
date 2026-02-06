@@ -426,5 +426,36 @@ pub fn value() -> Vec<Migration> {
             ",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 10,
+            description: "add_ma240_and_ma50_to_skills_tables",
+            sql: "
+                ALTER TABLE daily_skills
+                    ADD COLUMN ma240 REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN ma240_ded REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN ma50 REAL;
+                ALTER TABLE daily_skills
+                    ADD COLUMN ma50_ded REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN ma240 REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN ma240_ded REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN ma50 REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN ma50_ded REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN ma240 REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN ma240_ded REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN ma50 REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN ma50_ded REAL;
+            ",
+            kind: MigrationKind::Up,
+        },
     ]
 }
