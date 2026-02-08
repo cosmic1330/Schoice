@@ -5,6 +5,11 @@ import RestoreIcon from "@mui/icons-material/Restore";
 import {
   Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Divider,
   IconButton,
   Paper,
@@ -55,8 +60,25 @@ export default function CollapseRow({ item }: { item: TrashPrompt }) {
   const { recover, removeFromTrash } = useCloudStore();
   const { user } = useUser();
   const { t } = useTranslation();
+  const [openConfirm, setOpenConfirm] = useState(false);
 
   const isBull = item.type === PromptType.BULL;
+
+  const handleDeleteClick = (event: React.SyntheticEvent) => {
+    event.stopPropagation();
+    setOpenConfirm(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (user) {
+      removeFromTrash(item.value.index, item.id, user.id);
+    }
+    setOpenConfirm(false);
+  };
+
+  const handleCancelDelete = () => {
+    setOpenConfirm(false);
+  };
 
   return (
     <>
@@ -134,14 +156,7 @@ export default function CollapseRow({ item }: { item: TrashPrompt }) {
               <IconButton
                 color="error"
                 size="small"
-                onClick={() => {
-                  if (
-                    user &&
-                    window.confirm(t("Pages.Schoice.Trash.confirmDelete"))
-                  ) {
-                    removeFromTrash(item.value.index, item.id, user.id);
-                  }
-                }}
+                onClick={handleDeleteClick}
                 sx={{
                   bgcolor: (theme) => alpha(theme.palette.error.main, 0.05),
                   "&:hover": {
@@ -229,6 +244,26 @@ export default function CollapseRow({ item }: { item: TrashPrompt }) {
           </Collapse>
         </TableCell>
       </TableRow>
+      <Dialog
+        open={openConfirm}
+        onClose={handleCancelDelete}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <DialogTitle>{t("Pages.Schoice.Trash.title")}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t("Pages.Schoice.Trash.confirmDelete")}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete} color="inherit">
+            {t("Pages.Schoice.Header.cancel")}
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error" autoFocus>
+            {t("Pages.Schoice.Trash.remove")}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
