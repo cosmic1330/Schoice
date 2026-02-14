@@ -69,7 +69,7 @@ const transformSqlForPostgres = (sql: string): string => {
   if (processedSql.match(/SELECT\s+\*\s+FROM\s+(daily|weekly|hourly)_deal/i)) {
     processedSql = processedSql.replace(
       /SELECT\s+\*\s+FROM\s+(daily|weekly|hourly)_deal/i,
-      (match, p1) =>
+      (_, p1) =>
         `SELECT stock_id, t, v, c::FLOAT as c, o::FLOAT as o, h::FLOAT as h, l::FLOAT as l FROM ${p1.toLowerCase()}_deal`,
     );
   }
