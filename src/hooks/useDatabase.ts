@@ -4,6 +4,106 @@ import { useCallback, useEffect, useState } from "react";
 import getPostgresInstance from "../database/postgres";
 
 // Wrapper function to intercept and log database queries
+const NUMERIC_COLUMNS = [
+  "c",
+  "o",
+  "h",
+  "l",
+  "ma5",
+  "ma10",
+  "ma20",
+  "ma60",
+  "ma120",
+  "ma240",
+  "ma50",
+  "ma5_ded",
+  "ma10_ded",
+  "ma20_ded",
+  "ma60_ded",
+  "ma120_ded",
+  "ma240_ded",
+  "ma50_ded",
+  "ema5",
+  "ema10",
+  "ema20",
+  "ema60",
+  "ema120",
+  "macd",
+  "dif",
+  "osc",
+  "k",
+  "d",
+  "j",
+  "rsi5",
+  "rsi10",
+  "bollUb",
+  "bollMa",
+  "bollLb",
+  "obv",
+  "obv_ma5",
+  "obv_ma10",
+  "obv_ma20",
+  "obv_ma60",
+  "obv_ema5",
+  "obv_ema10",
+  "obv_ema20",
+  "obv_ema60",
+  "mfi",
+  "tenkan",
+  "kijun",
+  "senkouA",
+  "senkouB",
+  "chikou",
+  "di_plus",
+  "di_minus",
+  "adx",
+  "cmf",
+  "cmf_ema5",
+  "turnover_rate",
+];
+
+const transformSqlForPostgres = (sql: string): string => {
+  let processedSql = sql;
+
+  // 1. Handle SELECT * expansion for common tables
+  if (processedSql.match(/SELECT\s+\*\s+FROM\s+(daily|weekly|hourly)_deal/i)) {
+    processedSql = processedSql.replace(
+      /SELECT\s+\*\s+FROM\s+(daily|weekly|hourly)_deal/i,
+      (match, p1) =>
+        `SELECT stock_id, t, v, c::FLOAT as c, o::FLOAT as o, h::FLOAT as h, l::FLOAT as l FROM ${p1.toLowerCase()}_deal`,
+    );
+  }
+
+  // 2. Automated casting for individual numeric columns in SELECT clauses
+  const selectParts = processedSql.split(/FROM/i);
+  if (selectParts.length > 1) {
+    let selectClause = selectParts[0];
+    let modified = false;
+
+    NUMERIC_COLUMNS.forEach((col) => {
+      const regex = new RegExp(`(\\b|\\.)${col}\\b`, "g");
+
+      if (selectClause.match(regex)) {
+        if (!selectClause.match(new RegExp(`${col}::`, "g"))) {
+          selectClause = selectClause.replace(regex, (match) => {
+            const prefix = match.startsWith(".") ? "." : "";
+            return `${prefix}${col}::FLOAT as ${col}`;
+          });
+          modified = true;
+        }
+      }
+    });
+
+    if (modified) {
+      processedSql =
+        selectClause + " FROM " + selectParts.slice(1).join("FROM");
+    }
+  }
+
+  return processedSql;
+};
+
+// Wrapper function to intercept and log database queries
 const wrapDatabaseWithLogging = (db: Database, dbType: string): Database => {
   return new Proxy(db, {
     get(target, prop, receiver) {
@@ -12,21 +112,34 @@ const wrapDatabaseWithLogging = (db: Database, dbType: string): Database => {
       // Intercept 'execute' and 'select' methods
       if (prop === "execute" || prop === "select") {
         return async (...args: any[]) => {
-          const sql = args[0];
-          // Truncate long SQL queries for cleaner logs if needed, but for now log full
+          let sql = args[0];
+          const params = args[1];
+
+          // Transformation logic for Postgres compatibility
+          if (dbType === "postgres" && typeof sql === "string") {
+            const originalSql = sql;
+            sql = transformSqlForPostgres(sql);
+            args[0] = sql;
+
+            if (sql !== originalSql) {
+              info(
+                `[DB][postgres] SQL Transformed: ${sql.substring(0, 100)}...`,
+              );
+            }
+          }
+
           let logSql = sql;
           if (logSql.length > 200) {
             logSql = logSql.substring(0, 200) + "...";
           }
-          const params = args[1];
-          const queryId = Math.random().toString(36).substring(7); // Basic ID for correlation
+          const queryId = Math.random().toString(36).substring(7);
 
           info(
             `[DB][${dbType}][${String(
-              prop
+              prop,
             )}][${queryId}] START SQL: ${logSql} ${
               params ? `| Params: ${JSON.stringify(params)}` : ""
-            }`
+            }`,
           );
 
           try {
@@ -35,13 +148,13 @@ const wrapDatabaseWithLogging = (db: Database, dbType: string): Database => {
             const duration = performance.now() - start;
             info(
               `[DB][${dbType}][${String(
-                prop
-              )}][${queryId}] END Success (${duration.toFixed(2)}ms)`
+                prop,
+              )}][${queryId}] END Success (${duration.toFixed(2)}ms)`,
             );
             return result;
           } catch (e: any) {
             error(
-              `[DB][${dbType}][${String(prop)}][${queryId}] END Error: ${e}`
+              `[DB][${dbType}][${String(prop)}][${queryId}] END Error: ${e}`,
             );
             throw e;
           }
@@ -84,8 +197,8 @@ export default function useDatabase() {
           const timeoutPromise = new Promise<never>((_, reject) =>
             setTimeout(
               () => reject(new Error("Postgres connection timeout")),
-              5000
-            )
+              5000,
+            ),
           );
 
           const postgresDb = await Promise.race([
@@ -149,7 +262,7 @@ export default function useDatabase() {
         setIsSwitching(false);
       }
     },
-    [isInitializing, db]
+    [isInitializing, db],
   );
 
   const switchDatabase = useCallback(
@@ -158,7 +271,7 @@ export default function useDatabase() {
       // 可以選擇 reload window 確保徹底清除狀態，但如果是 React 狀態管理得當，不需要 reload
       // window.location.reload();
     },
-    [initializeDb]
+    [initializeDb],
   );
 
   useEffect(() => {
