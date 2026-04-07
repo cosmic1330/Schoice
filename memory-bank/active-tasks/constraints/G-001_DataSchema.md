@@ -1,11 +1,11 @@
 ---
-id: REQ-002
+id: G-001
 type: Global Constraint
 status: Active
 last_updated: 2026-04-07
 ---
 
-# REQ-002: 策略資料結構與特殊規則約束 (StorePrompt / PromptItem)
+# G-001: 策略資料結構與特殊規則約束 (StorePrompt / PromptItem)
 
 ## Description
 為了確保系統內自訂選股策略的結構一致性，所有的策略建構、讀取與儲存，均必須遵守以下 TypeScript 型別定義與邏輯：

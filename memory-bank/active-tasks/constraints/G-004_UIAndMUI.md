@@ -1,11 +1,11 @@
 ---
-id: REQ-005
+id: G-004
 type: Global Constraint
 status: Active
 last_updated: 2026-04-07
 ---
 
-# REQ-005: 前端 UI 與組件開發規範 (MUI, Grid2 & Localization)
+# G-004: 前端 UI 與組件開發規範 (MUI, Grid2 & Localization)
 
 ## Description
 本約束保留了專案在 UI 優化與前端開發的基調與底線原則，所有涉及介面的異動必須遵守以下規範：

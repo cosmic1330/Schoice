@@ -1,6 +1,12 @@
-# 萬物之簿 (The Master Ledger)
+# 萬物之簿 (The Master Ledger & Knowledge Map)
 
-這是專案的總控台與所有需求 (Requirements) 的索引頁面。
+這是專案的總控台、知識地圖與需求索引。請優先以本篇提供的摘要作上下文，如有需要深入細節才去 `view_file` 相關文件。
+
+## 🗺️ 知識地圖 (Knowledge Map)
+- **⚙️ 架構與設計**: 詳見 `architecture.md` (前後端分工、Tauri、Rust 邏輯)
+- **📖 產品與規格**: 詳見 `prd.md` (選股策略邏輯、SQL 自動生成目標)
+- **🛠️ 技術堆疊**: 詳見 `tech-stack.md` (套件版本與 Tauri Plugin)
+- **📜 歷史日誌**: 詳見 `log.md` (記錄近期系統狀態變更，過舊紀錄移至 `log-archive.md`)
 
 ## 狀態說明 (Status Schema)
 - 🟢 **Active** (執行中/有效)
@@ -10,12 +16,17 @@
 
 ## 需求列表 (Requirements Index)
 
-### 核心與全局約束 (Global Constraints)
-*(參見 `../active-tasks/` 目錄)*
-- 🟢 [REQ-002: 策略資料結構與特殊規則約束](../active-tasks/REQ-002.md)
-- 🟢 [REQ-003: 效能與本地端資料庫優化原則](../active-tasks/REQ-003.md)
-- 🟢 [REQ-004: 資料庫雙軌架構原則](../active-tasks/REQ-004.md)
-- 🟢 [REQ-005: 前端 UI 與組件開發規範](../active-tasks/REQ-005.md)
+### 核心與全局約束 (Active Global Constraints)
+*(存放於 `../active-tasks/constraints/` 目錄)*
+
+- 🟢 **[G-001: 策略資料結構與特殊規則約束](../active-tasks/constraints/G-001_DataSchema.md)**
+  - *TL;DR: 強制依賴 `StorePrompt` 與 `PromptItem` 作為單一條件與完整策略的型別標準。*
+- 🟢 **[G-002: 效能與本地端資料庫優化原則](../active-tasks/constraints/G-002_Performance.md)**
+  - *TL;DR: 表單限用 `React.memo` 防渲染瀑布，SQLite 必須走快取避免 N+1 重複查詢。*
+- 🟢 **[G-003: 資料庫雙軌架構原則](../active-tasks/constraints/G-003_DualDatabase.md)**
+  - *TL;DR: SQLite (本機) 專司 K線與技術分析；Supabase (雲端) 專司會員、關注清單與財報基本面。*
+- 🟢 **[G-004: 前端 UI 與組件開發規範](../active-tasks/constraints/G-004_UIAndMUI.md)**
+  - *TL;DR: 綁定 MUI Theme，全面捨棄舊版，改用 `Grid` (原 `Grid2`)，禁用寫死文字，一律使用 `/locale` 配置多語系。*
 
 ### 功能需求 (Functional Requirements)
 *(已完成的任務檔案已依據 Lean 規範刪除，內容併入主文檔)*

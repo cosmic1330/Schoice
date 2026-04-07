@@ -1,11 +1,11 @@
 ---
-id: REQ-003
+id: G-002
 type: Global Constraint
 status: Active
 last_updated: 2026-04-07
 ---
 
-# REQ-003: 效能與本地端資料庫優化原則 (Performance & DB Optimization)
+# G-002: 效能與本地端資料庫優化原則 (Performance & DB Optimization)
 
 ## Description
 為了維持跨平台桌面端應用 (Tauri) 的順暢度，特別是在處理大量表格 (如 `ResultTable`) 與頻繁更新的圖表時，必須嚴格遵守以下效能優化準則：

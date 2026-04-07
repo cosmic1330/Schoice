@@ -1,11 +1,11 @@
 ---
-id: REQ-004
+id: G-003
 type: Global Constraint
 status: Active
 last_updated: 2026-04-07
 ---
 
-# REQ-004: 資料庫雙軌架構原則 (SQLite & Supabase)
+# G-003: 資料庫雙軌架構原則 (SQLite & Supabase)
 
 ## Description
 專案的資料儲存體系被嚴格劃分為「本地龐大時序資料 (SQLite)」與「雲端用戶與基本面資料 (Supabase)」兩部分，開發與串接時不可混殽其職責。
