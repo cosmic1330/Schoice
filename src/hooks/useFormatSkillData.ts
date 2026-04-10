@@ -46,6 +46,7 @@ export default function useFormatSkillData(data: TaListType) {
     let ma5_data = ma.init(init, 5);
     let ma10_data = ma.init(init, 10);
     let ma20_data = ma.init(init, 20);
+    let ma30_data = ma.init(init, 30);
     let ma60_data = ma.init(init, 60);
     let ma120_data = ma.init(init, 120);
     let ma240_data = ma.init(init, 240);
@@ -78,6 +79,8 @@ export default function useFormatSkillData(data: TaListType) {
       ma10_ded: ma10_data.exclusionValue["d-1"],
       ma20: ma20_data.ma,
       ma20_ded: ma20_data.exclusionValue["d-1"],
+      ma30: ma30_data.ma,
+      ma30_ded: ma30_data.exclusionValue["d-1"],
       ma60: ma60_data.ma,
       ma60_ded: ma60_data.exclusionValue["d-1"],
       ma120: ma120_data.ma,
@@ -129,6 +132,7 @@ export default function useFormatSkillData(data: TaListType) {
       ma5_data = ma.next(value, ma5_data, 5);
       ma10_data = ma.next(value, ma10_data, 10);
       ma20_data = ma.next(value, ma20_data, 20);
+      ma30_data = ma.next(value, ma30_data, 30);
       ma60_data = ma.next(value, ma60_data, 60);
       ma120_data = ma.next(value, ma120_data, 120);
       ma240_data = ma.next(value, ma240_data, 240);
@@ -161,6 +165,8 @@ export default function useFormatSkillData(data: TaListType) {
         ma10_ded: ma10_data.exclusionValue["d-1"],
         ma20: ma20_data.ma,
         ma20_ded: ma20_data.exclusionValue["d-1"],
+        ma30: ma30_data.ma,
+        ma30_ded: ma30_data.exclusionValue["d-1"],
         ma60: ma60_data.ma,
         ma60_ded: ma60_data.exclusionValue["d-1"],
         ma120: ma120_data.ma,

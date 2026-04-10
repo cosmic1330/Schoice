@@ -134,10 +134,11 @@ export default class SqliteDataManager {
       let ma5_data = ma.init(init, 5);
       let ma10_data = ma.init(init, 10);
       let ma20_data = ma.init(init, 20);
+      let ma30_data = ma.init(init, 30);
+      let ma50_data = ma.init(init, 50);
       let ma60_data = ma.init(init, 60);
       let ma120_data = ma.init(init, 120);
       let ma240_data = ma.init(init, 240);
-      let ma50_data = ma.init(init, 50);
       let ema5_data = ema.init(init, 5);
       let ema10_data = ema.init(init, 10);
       let ema20_data = ema.init(init, 20);
@@ -168,10 +169,11 @@ export default class SqliteDataManager {
           ma5_data = ma.next(value, ma5_data, 5);
           ma10_data = ma.next(value, ma10_data, 10);
           ma20_data = ma.next(value, ma20_data, 20);
+          ma30_data = ma.next(value, ma30_data, 30);
+          ma50_data = ma.next(value, ma50_data, 50);
           ma60_data = ma.next(value, ma60_data, 60);
           ma120_data = ma.next(value, ma120_data, 120);
           ma240_data = ma.next(value, ma240_data, 240);
-          ma50_data = ma.next(value, ma50_data, 50);
           ema5_data = ema.next(value, ema5_data, 5);
           ema10_data = ema.next(value, ema10_data, 10);
           ema20_data = ema.next(value, ema20_data, 20);
@@ -215,14 +217,16 @@ export default class SqliteDataManager {
             ma10_ded: ma10_data.exclusionValue["d-1"],
             ma20: ma20_data.ma,
             ma20_ded: ma20_data.exclusionValue["d-1"],
+            ma30: ma30_data.ma,
+            ma30_ded: ma30_data.exclusionValue["d-1"],
+            ma50: ma50_data.ma,
+            ma50_ded: ma50_data.exclusionValue["d-1"],
             ma60: ma60_data.ma,
             ma60_ded: ma60_data.exclusionValue["d-1"],
             ma120: ma120_data.ma,
             ma120_ded: ma120_data.exclusionValue["d-1"],
             ma240: ma240_data.ma,
             ma240_ded: ma240_data.exclusionValue["d-1"],
-            ma50: ma50_data.ma,
-            ma50_ded: ma50_data.exclusionValue["d-1"],
             ema5: ema5_data.ema,
             ema10: ema10_data.ema,
             ema20: ema20_data.ema,
@@ -316,10 +320,11 @@ export default class SqliteDataManager {
       let ma5_data = ma.init(init, 5);
       let ma10_data = ma.init(init, 10);
       let ma20_data = ma.init(init, 20);
+      let ma30_data = ma.init(init, 30);
+      let ma50_data = ma.init(init, 50);
       let ma60_data = ma.init(init, 60);
       let ma120_data = ma.init(init, 120);
       let ma240_data = ma.init(init, 240);
-      let ma50_data = ma.init(init, 50);
       let ema5_data = ema.init(init, 5);
       let ema10_data = ema.init(init, 10);
       let ema20_data = ema.init(init, 20);
@@ -350,10 +355,11 @@ export default class SqliteDataManager {
           ma5_data = ma.next(value, ma5_data, 5);
           ma10_data = ma.next(value, ma10_data, 10);
           ma20_data = ma.next(value, ma20_data, 20);
+          ma30_data = ma.next(value, ma30_data, 30);
+          ma50_data = ma.next(value, ma50_data, 50);
           ma60_data = ma.next(value, ma60_data, 60);
           ma120_data = ma.next(value, ma120_data, 120);
           ma240_data = ma.next(value, ma240_data, 240);
-          ma50_data = ma.next(value, ma50_data, 50);
           ema5_data = ema.next(value, ema5_data, 5);
           ema10_data = ema.next(value, ema10_data, 10);
           ema20_data = ema.next(value, ema20_data, 20);
@@ -397,14 +403,16 @@ export default class SqliteDataManager {
             ma10_ded: ma10_data.exclusionValue["d-1"],
             ma20: ma20_data.ma,
             ma20_ded: ma20_data.exclusionValue["d-1"],
+            ma30: ma30_data.ma,
+            ma30_ded: ma30_data.exclusionValue["d-1"],
+            ma50: ma50_data.ma,
+            ma50_ded: ma50_data.exclusionValue["d-1"],
             ma60: ma60_data.ma,
             ma60_ded: ma60_data.exclusionValue["d-1"],
             ma120: ma120_data.ma,
             ma120_ded: ma120_data.exclusionValue["d-1"],
             ma240: ma240_data.ma,
             ma240_ded: ma240_data.exclusionValue["d-1"],
-            ma50: ma50_data.ma,
-            ma50_ded: ma50_data.exclusionValue["d-1"],
             ema5: ema5_data.ema,
             ema10: ema10_data.ema,
             ema20: ema20_data.ema,
@@ -515,14 +523,16 @@ export default class SqliteDataManager {
           ma10_ded,
           ma20,
           ma20_ded,
+          ma30,
+          ma30_ded,
+          ma50,
+          ma50_ded,
           ma60,
           ma60_ded,
           ma120,
           ma120_ded,
           ma240,
           ma240_ded,
-          ma50,
-          ma50_ded,
           ema5,
           ema10,
           ema20,
@@ -563,7 +573,7 @@ export default class SqliteDataManager {
           ) VALUES ${skills
             .map(
               (skill) =>
-                `('${skill.stock_id}', '${skill.t}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ma240}, ${skill.ma240_ded}, ${skill.ma50}, ${skill.ma50_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou}, ${skill.di_plus}, ${skill.di_minus}, ${skill.adx}, ${skill.cmf}, ${skill.cmf_ema5}, ${skill.turnover_rate || null})`
+                `('${skill.stock_id}', '${skill.t}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma30}, ${skill.ma30_ded}, ${skill.ma50}, ${skill.ma50_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ma240}, ${skill.ma240_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou}, ${skill.di_plus}, ${skill.di_minus}, ${skill.adx}, ${skill.cmf}, ${skill.cmf_ema5}, ${skill.turnover_rate || null})`
             )
             .join(", ")}`;
       await this.db.execute(sql);
@@ -607,14 +617,16 @@ export default class SqliteDataManager {
           ma10_ded,
           ma20,
           ma20_ded,
+          ma30,
+          ma30_ded,
+          ma50,
+          ma50_ded,
           ma60,
           ma60_ded,
           ma120,
           ma120_ded,
           ma240,
           ma240_ded,
-          ma50,
-          ma50_ded,
           ema5,
           ema10,
           ema20,
@@ -655,7 +667,7 @@ export default class SqliteDataManager {
           ) VALUES ${skills
             .map(
               (skill) =>
-                `('${skill.stock_id}', '${skill.ts}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ma240}, ${skill.ma240_ded}, ${skill.ma50}, ${skill.ma50_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou}, ${skill.di_plus}, ${skill.di_minus}, ${skill.adx}, ${skill.cmf}, ${skill.cmf_ema5}, ${skill.turnover_rate || null})`
+                `('${skill.stock_id}', '${skill.ts}', ${skill.ma5}, ${skill.ma5_ded}, ${skill.ma10}, ${skill.ma10_ded}, ${skill.ma20}, ${skill.ma20_ded}, ${skill.ma30}, ${skill.ma30_ded}, ${skill.ma50}, ${skill.ma50_ded}, ${skill.ma60}, ${skill.ma60_ded}, ${skill.ma120}, ${skill.ma120_ded}, ${skill.ma240}, ${skill.ma240_ded}, ${skill.ema5}, ${skill.ema10}, ${skill.ema20}, ${skill.ema60}, ${skill.ema120}, ${skill.macd}, ${skill.dif}, ${skill.osc}, ${skill.k}, ${skill.d}, ${skill.j}, ${skill.rsi5}, ${skill.rsi10}, ${skill.bollUb}, ${skill.bollMa}, ${skill.bollLb}, ${skill.obv}, ${skill.obv_ma5}, ${skill.obv_ma10}, ${skill.obv_ma20}, ${skill.obv_ma60}, ${skill.obv_ema5}, ${skill.obv_ema10}, ${skill.obv_ema20}, ${skill.obv_ema60}, ${skill.mfi}, ${skill.tenkan}, ${skill.kijun}, ${skill.senkouA}, ${skill.senkouB}, ${skill.chikou}, ${skill.di_plus}, ${skill.di_minus}, ${skill.adx}, ${skill.cmf}, ${skill.cmf_ema5}, ${skill.turnover_rate || null})`
             )
             .join(", ")}`;
       await this.db.execute(sql);
