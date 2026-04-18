@@ -1,5 +1,50 @@
 {
   "Pages": {
+    "SyncCenter": {
+      "title": "數據同步指揮中心",
+      "subtitle": "專業級市場數據同步與健康監控系統",
+      "stats": {
+        "rpm": "分時請求頻率 (RPM)",
+        "successRate": "同步成功率",
+        "progress": "總進度",
+        "remaining": "預計剩餘時間",
+        "totalStocks": "市場股票總數",
+        "engineVersion": "引擎版本"
+      },
+      "telemetry": {
+        "title": "即時監測數據"
+      },
+      "status": {
+        "idle": "閒置中",
+        "scanning": "正在掃描市場建康度...",
+        "syncing": "同步數據中",
+        "cooling": "冷卻保護中...",
+        "paused": "已暫停",
+        "stopped": "已停止",
+        "success": "同步完成",
+        "error": "發生異常"
+      },
+      "actions": {
+        "start": "啟動同步引擎",
+        "stop": "停止引擎",
+        "resume": "繼續同步",
+        "clearLogs": "清除日誌"
+      },
+      "terminal": {
+        "title": "引擎即時事件日誌",
+        "empty": "尚未啟動引擎"
+      },
+      "heatmap": {
+        "title": "數據新鮮度地圖",
+        "legend": {
+          "fresh": "最新",
+          "stale": "過期",
+          "missing": "缺失",
+          "syncing": "同步中",
+          "error": "錯誤"
+        }
+      }
+    },
     "Login": {
       "title": "建立屬於你的策略",
       "rememberMe": "記住我",

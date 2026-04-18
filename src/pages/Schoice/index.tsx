@@ -1,10 +1,8 @@
 import { Box, CircularProgress, styled } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router";
 import { DatabaseContext } from "../../context/DatabaseContext";
 import { useUser } from "../../context/UserContext";
-import useDatabase from "../../hooks/useDatabase";
-import useDatabaseDates from "../../hooks/useDatabaseDates";
 import { supabase } from "../../tools/supabase";
 import Header from "./layout/Header";
 import SideBar from "./layout/Sidebar";
@@ -44,10 +42,17 @@ const Main = styled(Box)`
 
 function Schoice() {
   const { session, loading } = useUser();
-  const { db, dbType, switchDatabase, isSwitching } = useDatabase();
+  const {
+    db,
+    dbType,
+    switchDatabase,
+    isSwitching,
+    dates,
+    fetchDates,
+    isLoading,
+  } = useContext(DatabaseContext);
   const [isAppReady, setIsAppReady] = useState(false);
   const navigate = useNavigate();
-  const { dates, fetchDates, isLoading } = useDatabaseDates(db);
 
   // 檢查是否所有依賴都已準備好
   const userReady = !loading && session !== null;
@@ -103,23 +108,13 @@ function Schoice() {
   }
 
   return (
-    <DatabaseContext.Provider
-      value={{
-        db,
-        dates,
-        fetchDates,
-        isLoading,
-        dbType,
-        switchDatabase,
-        isSwitching,
-      }}
-    >
-      <Main>
-        <SideBar />
-        <Header />
+    <Main>
+      <SideBar />
+      <Header />
+      <Box sx={{ gridArea: "page", overflow: "hidden" }}>
         <Outlet />
-      </Main>
-    </DatabaseContext.Provider>
+      </Box>
+    </Main>
   );
 }
 export default Schoice;

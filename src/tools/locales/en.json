@@ -1,5 +1,50 @@
 {
   "Pages": {
+    "SyncCenter": {
+      "title": "Data Sync Commander",
+      "subtitle": "Professional Market Data Sync & Health Monitoring System",
+      "stats": {
+        "rpm": "Requests Per Minute (RPM)",
+        "successRate": "Success Rate",
+        "progress": "Overall Progress",
+        "remaining": "Est. Time Remaining",
+        "totalStocks": "Total Stocks",
+        "engineVersion": "Engine Version"
+      },
+      "telemetry": {
+        "title": "Real-time Metrics"
+      },
+      "status": {
+        "idle": "Idle",
+        "scanning": "Scanning Market Health...",
+        "syncing": "Synchronizing Data",
+        "cooling": "Cooling Protection...",
+        "paused": "Paused",
+        "stopped": "Stopped",
+        "success": "Sync Completed",
+        "error": "Engine Error"
+      },
+      "actions": {
+        "start": "Start Sync Engine",
+        "stop": "Stop Engine",
+        "resume": "Resume Sync",
+        "clearLogs": "Clear Logs"
+      },
+      "terminal": {
+        "title": "Engine Real-time Event Logs",
+        "empty": "Engine not started yet"
+      },
+      "heatmap": {
+        "title": "Data Freshness Map",
+        "legend": {
+          "fresh": "Fresh",
+          "stale": "Stale",
+          "missing": "Missing",
+          "syncing": "Syncing",
+          "error": "Error"
+        }
+      }
+    },
     "Login": {
       "title": "Create your strategy",
       "rememberMe": "Remember me",
