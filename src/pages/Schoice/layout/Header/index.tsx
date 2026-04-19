@@ -1,4 +1,4 @@
-import { alpha, AppBar, Box, Stack, styled } from "@mui/material";
+import { alpha, AppBar, Box, Stack, styled, Tooltip } from "@mui/material";
 import MarketSentiment from "./TopBar/MarketSentiment";
 import Breadcrumb from "./BottomBar/Breadcrumb";
 import Actions from "./BottomBar/Actions";
@@ -6,6 +6,10 @@ import RollBack from "./TopBar/Rollback";
 import LatestDate from "./TopBar/LatestDate";
 import GlobalSyncIndicator from "../../../../components/SyncEngine/GlobalSyncIndicator";
 import useInitFilterStock from "../../../../hooks/useInitFilterStock";
+import { useContext } from "react";
+import { DatabaseContext } from "../../../../context/DatabaseContext";
+import CloudIcon from "@mui/icons-material/Cloud";
+import StorageIcon from "@mui/icons-material/Storage";
 
 const HeaderContainer = styled(AppBar)(({ theme }) => ({
   gridArea: "header",
@@ -45,7 +49,10 @@ const VerticalDivider = styled(Box)(({ theme }) => ({
 }));
 
 export default function Header() {
-  useInitFilterStock(); // 初始化股票資料
+  useInitFilterStock();
+  const { dbType } = useContext(DatabaseContext);
+  const isCloud = dbType === "postgres";
+
   return (
     <HeaderContainer>
       <Stack
@@ -53,14 +60,14 @@ export default function Header() {
         alignItems="center"
         justifyContent="space-between"
         px={2.5}
-        sx={{ minHeight: 64 }} // 高清標準 header 高度
+        sx={{ minHeight: 64 }}
       >
         {/* 左側：導航路徑 */}
         <Box sx={{ flex: 1, display: "flex", alignItems: "center" }}>
           <Breadcrumb />
         </Box>
 
-        {/* 中間：核心行情脈搏 (視覺重心) */}
+        {/* 中間：核心行情脈搏 */}
         <Box sx={{ 
           display: "flex", 
           alignItems: "center",

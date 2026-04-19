@@ -1,17 +1,6 @@
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import EditIcon from "@mui/icons-material/Edit";
-import ListAltIcon from "@mui/icons-material/ListAlt";
-import {
-  Alert,
-  Box,
-  Button,
-  Container,
-  Grid,
-  Paper,
-  Snackbar,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Alert, Box, Button, Snackbar, Stack, Typography } from "@mui/material";
 import { alpha, styled } from "@mui/material/styles";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -46,9 +35,10 @@ const ChartArea = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   padding: theme.spacing(3),
-  backgroundColor: theme.palette.mode === "dark" 
-    ? alpha(theme.palette.background.default, 0.05) 
-    : alpha(theme.palette.background.default, 0.2),
+  backgroundColor:
+    theme.palette.mode === "dark"
+      ? alpha(theme.palette.background.default, 0.05)
+      : alpha(theme.palette.background.default, 0.2),
 }));
 
 const SectionHeader = styled(Typography)(({ theme }) => ({
@@ -162,12 +152,14 @@ export default function PromptEdit() {
   }
 
   return (
-    <Box sx={{ 
-      height: "100%", 
-      display: "flex", 
-      overflow: "hidden",
-      bgcolor: "background.default"
-    }}>
+    <Box
+      sx={{
+        height: "100%",
+        display: "flex",
+        overflow: "hidden",
+        bgcolor: "background.default",
+      }}
+    >
       {/* 1. 側邊全功能控制台 */}
       <SidebarContainer>
         <Box>
@@ -198,11 +190,17 @@ export default function PromptEdit() {
           <ExpressionGenerator
             {...{
               setHourlyPrompts: (updater: any) =>
-                setHourlyPrompts((p) => typeof updater === "function" ? updater(p) : updater),
+                setHourlyPrompts((p) =>
+                  typeof updater === "function" ? updater(p) : updater,
+                ),
               setDailyPrompts: (updater: any) =>
-                setDailyPrompts((p) => typeof updater === "function" ? updater(p) : updater),
+                setDailyPrompts((p) =>
+                  typeof updater === "function" ? updater(p) : updater,
+                ),
               setWeekPrompts: (updater: any) =>
-                setWeekPrompts((p) => typeof updater === "function" ? updater(p) : updater),
+                setWeekPrompts((p) =>
+                  typeof updater === "function" ? updater(p) : updater,
+                ),
             }}
           />
         </Box>
@@ -234,14 +232,27 @@ export default function PromptEdit() {
           </Box>
         </Stack>
 
-        <Box sx={{ mt: 'auto', pt: 3, pb: 1, borderTop: (theme) => `1px solid ${alpha(theme.palette.divider, 0.05)}` }}>
+        <Box
+          sx={{
+            mt: "auto",
+            pt: 3,
+            pb: 1,
+            borderTop: (theme) =>
+              `1px solid ${alpha(theme.palette.divider, 0.05)}`,
+          }}
+        >
           <Stack direction="row" spacing={2}>
             <Button
               onClick={handleCancel}
               fullWidth
               variant="outlined"
               color="inherit"
-              sx={{ borderRadius: "12px", py: 1.5, fontWeight: 700, textTransform: "none" }}
+              sx={{
+                borderRadius: "12px",
+                py: 1.5,
+                fontWeight: 700,
+                textTransform: "none",
+              }}
             >
               {t("Pages.Schoice.Prompt.cancel")}
             </Button>
@@ -260,11 +271,14 @@ export default function PromptEdit() {
                 borderRadius: "12px",
                 py: 1.5,
                 fontWeight: 900,
-                boxShadow: (theme) => `0 8px 24px ${alpha(theme.palette.primary.main, 0.3)}`,
-                textTransform: "none"
+                boxShadow: (theme) =>
+                  `0 8px 24px ${alpha(theme.palette.primary.main, 0.3)}`,
+                textTransform: "none",
               }}
             >
-              {isEditing ? t("Pages.Schoice.Prompt.editing") : t("Pages.Schoice.Prompt.edit")}
+              {isEditing
+                ? t("Pages.Schoice.Prompt.editing")
+                : t("Pages.Schoice.Prompt.edit")}
             </Button>
           </Stack>
         </Box>
@@ -276,7 +290,14 @@ export default function PromptEdit() {
           <AutoFixHighIcon fontSize="inherit" />
           策略預覽與回測模擬 (右鍵可進行更進階圖表操作)
         </SectionHeader>
-        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+        <Box
+          sx={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+          }}
+        >
           <PromptChart
             hourlyPrompts={hourlyPrompts}
             dailyPrompts={dailyPrompts}

@@ -1,13 +1,7 @@
 import { dateFormat } from "@ch20026103/anysis";
 import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
-import {
-  alpha,
-  Box,
-  Stack,
-  Tooltip,
-  Typography,
-} from "@mui/material";
-import { motion, AnimatePresence } from "framer-motion";
+import { alpha, Box, Stack, Tooltip, Typography } from "@mui/material";
+import { AnimatePresence, motion } from "framer-motion";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import useSWR from "swr";
@@ -63,7 +57,7 @@ export default function MarketSentiment() {
       id: FutureIds.WTX,
       perd: UrlTaPerdOptions.Hour,
     }),
-    tauriFetcher
+    tauriFetcher,
   );
 
   const ta = useMemo(() => {
@@ -71,7 +65,7 @@ export default function MarketSentiment() {
     return analyzeIndicatorsData(data, IndicatorsDateTimeType.DateTime);
   }, [data]);
 
-  const { trends, power, date, trendChangePoints } = useMarketAnalysis({
+  const { trends, power, trendChangePoints } = useMarketAnalysis({
     ta,
     perd: UrlTaPerdOptions.Hour,
   });
@@ -85,7 +79,7 @@ export default function MarketSentiment() {
 
   const latestPrice = ta[ta.length - 1]?.c;
   const prevPrice = ta[ta.length - 2]?.c;
-  const diff = (latestPrice && prevPrice) ? latestPrice - prevPrice : 0;
+  const diff = latestPrice && prevPrice ? latestPrice - prevPrice : 0;
   const percent = prevPrice ? ((diff / prevPrice) * 100).toFixed(2) : "0.00";
 
   return (
@@ -96,7 +90,12 @@ export default function MarketSentiment() {
           arrow
           title={
             <Box sx={{ p: 1 }}>
-              <Typography variant="caption" fontWeight={800} display="block" mb={0.5}>
+              <Typography
+                variant="caption"
+                fontWeight={800}
+                display="block"
+                mb={0.5}
+              >
                 {t("Pages.Schoice.Header.marketSentiment")} 歷史
               </Typography>
               {trendChangePoints.slice(-5).map((point) => (
@@ -104,9 +103,10 @@ export default function MarketSentiment() {
                   variant="caption"
                   display="block"
                   key={point.t}
-                  sx={{ 
+                  sx={{
                     whiteSpace: "nowrap",
-                    color: point.trend === "多頭" ? "error.light" : "success.light"
+                    color:
+                      point.trend === "多頭" ? "error.light" : "success.light",
                   }}
                 >
                   {dateFormat(point.t, Mode.NumberToString)}{" "}
@@ -133,7 +133,7 @@ export default function MarketSentiment() {
               "&:hover": {
                 bgcolor: alpha(statusColor, 0.12),
                 borderColor: alpha(statusColor, 0.3),
-              }
+              },
             }}
           >
             <StatusOrb color={statusColor} />
@@ -148,7 +148,13 @@ export default function MarketSentiment() {
             >
               {trendLabel}
             </Typography>
-            <Box sx={{ width: "1px", height: 10, bgcolor: alpha(statusColor, 0.15) }} />
+            <Box
+              sx={{
+                width: "1px",
+                height: 10,
+                bgcolor: alpha(statusColor, 0.15),
+              }}
+            />
             <Typography
               variant="caption"
               sx={{
@@ -164,18 +170,24 @@ export default function MarketSentiment() {
         </Tooltip>
       </Stack>
 
-      <Box sx={{ width: "1px", height: 16, bgcolor: (theme) => alpha(theme.palette.divider, 0.05) }} />
+      <Box
+        sx={{
+          width: "1px",
+          height: 16,
+          bgcolor: (theme) => alpha(theme.palette.divider, 0.05),
+        }}
+      />
 
       {/* 指數價格顯示區 */}
       <Stack direction="row" alignItems="center" spacing={1.2}>
-        <Box 
+        <Box
           onClick={openDetailWindow}
-          sx={{ 
+          sx={{
             cursor: "pointer",
             display: "flex",
             flexDirection: "column",
             transition: "all 0.2s ease",
-            "&:hover": { opacity: 0.8 }
+            "&:hover": { opacity: 0.8 },
           }}
         >
           <Typography
@@ -234,12 +246,14 @@ export default function MarketSentiment() {
                   flexShrink: 0,
                   display: "flex",
                   alignItems: "center",
-                  gap: 0.3
+                  gap: 0.3,
                 }}
               >
                 <span>{diff >= 0 ? "▲" : "▼"}</span>
                 <span>{Math.abs(diff).toFixed(0)}</span>
-                <span style={{ opacity: 0.6, fontSize: '0.65rem' }}>({Math.abs(Number(percent))}%)</span>
+                <span style={{ opacity: 0.6, fontSize: "0.65rem" }}>
+                  ({Math.abs(Number(percent))}%)
+                </span>
               </Typography>
             </Box>
           </motion.div>

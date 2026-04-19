@@ -1,3 +1,4 @@
+import CloudIcon from "@mui/icons-material/Cloud";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import { Box, Stack, Tooltip, Typography, alpha } from "@mui/material";
 import { error } from "@tauri-apps/plugin-log";
@@ -13,6 +14,7 @@ export default function DataCount() {
   const { data_count, changeDataCount } = useSchoiceStore();
   const { syncStatus } = useSyncEngine();
   const { db, dbType } = useContext(DatabaseContext);
+  const isCloud = dbType === "postgres";
 
   useEffect(() => {
     if (!db) return;
@@ -24,7 +26,7 @@ export default function DataCount() {
         .then((result) => {
           changeDataCount(result.count);
         })
-        .catch((e) => {
+        .catch((e: any) => {
           error(`Error getting latest daily deal count: ${e}`);
         });
     };
@@ -35,18 +37,15 @@ export default function DataCount() {
     // 如果正在同步或掃描，每 10 秒刷新一次
     let interval: any;
     if (syncStatus === "syncing" || syncStatus === "scanning") {
-      console.log(
-        "[DataCount] Active sync detected. Starting periodic refresh...",
-      );
       interval = setInterval(refreshCount, 10000);
     }
 
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [db, syncStatus]);
+  }, [db, syncStatus, changeDataCount]);
 
-  const sourceLabel = dbType === "postgres" ? "(Postgres)" : "(SQLite)";
+  const sourceLabel = isCloud ? "(Cloud)" : "(Local)";
 
   return (
     <Tooltip title={`${t("Pages.Schoice.Header.dataCount")} ${sourceLabel}`} arrow>
@@ -55,16 +54,22 @@ export default function DataCount() {
         spacing={1}
         alignItems="center"
         sx={{
-          px: 1,
-          py: 0.2,
-          borderRadius: "100px",
+          px: 1.2,
+          py: 0.4,
+          borderRadius: "8px",
           transition: "all 0.2s ease",
           "&:hover": {
-             bgcolor: (theme) => alpha(theme.palette.text.primary, 0.02),
-          }
+             bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+          },
+          border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.05)}`,
+          bgcolor: (theme) => isCloud ? alpha(theme.palette.primary.main, 0.05) : "transparent",
         }}
       >
-        <BarChartIcon sx={{ color: "primary.main", fontSize: 16, opacity: 0.8 }} />
+        {isCloud ? (
+          <CloudIcon sx={{ color: "primary.main", fontSize: 16 }} />
+        ) : (
+          <BarChartIcon sx={{ color: "text.secondary", fontSize: 16, opacity: 0.8 }} />
+        )}
         <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5, whiteSpace: "nowrap", flexShrink: 0 }}>
           <Typography
             variant="body2"

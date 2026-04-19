@@ -1,6 +1,13 @@
-import RefreshIcon from "@mui/icons-material/Refresh";
 import SyncIcon from "@mui/icons-material/Sync";
-import { alpha, Button, CircularProgress, Stack, Tooltip, Typography, useTheme } from "@mui/material";
+import {
+  alpha,
+  Button,
+  CircularProgress,
+  Stack,
+  Tooltip,
+  Typography,
+  useTheme,
+} from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useSyncLaunch } from "../../../../../../hooks/useSyncLaunch";
 
@@ -39,13 +46,18 @@ export default function UpdateDeals() {
             height: 32,
             borderRadius: "50%",
             p: 0,
-            boxShadow: isSyncing || isCooling 
-              ? `0 0 12px ${alpha(getStatusHex(), 0.4)}`
-              : "none",
-            bgcolor: isSyncing || isCooling ? alpha(getStatusHex(), 0.1) : undefined,
+            boxShadow:
+              isSyncing || isCooling
+                ? `0 0 12px ${alpha(getStatusHex(), 0.4)}`
+                : "none",
+            bgcolor:
+              isSyncing || isCooling ? alpha(getStatusHex(), 0.1) : undefined,
             color: isSyncing || isCooling ? getStatusHex() : undefined,
             "&:hover": {
-              bgcolor: isSyncing || isCooling ? alpha(getStatusHex(), 0.15) : undefined,
+              bgcolor:
+                isSyncing || isCooling
+                  ? alpha(getStatusHex(), 0.15)
+                  : undefined,
               transform: "scale(1.05)",
             },
             transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -58,7 +70,7 @@ export default function UpdateDeals() {
               sx={{ color: getStatusHex() }}
             />
           ) : (
-             <SyncIcon sx={{ fontSize: 18 }} />
+            <SyncIcon sx={{ fontSize: 18 }} />
           )}
         </Button>
       </Tooltip>

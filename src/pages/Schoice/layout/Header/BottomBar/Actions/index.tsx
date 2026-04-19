@@ -1,17 +1,13 @@
-import { Box, Stack, Typography, alpha } from "@mui/material";
+import { Box, Stack, alpha } from "@mui/material";
 import { default as DataCount } from "./DataCount";
 import FilterSelect from "./FilterSelect";
 import UpdateDeals from "./UpdateDeals";
 
 export default function Actions() {
   return (
-    <Stack
-      direction="row"
-      alignItems="center"
-      spacing={1.5}
-    >
+    <Stack direction="row" alignItems="center" spacing={1.5}>
       <FilterSelect />
-      
+
       {/* 整合式狀態主群組 */}
       <Box
         sx={{
