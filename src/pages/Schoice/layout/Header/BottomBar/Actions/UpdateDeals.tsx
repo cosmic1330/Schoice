@@ -1,13 +1,6 @@
-import SyncIcon from "@mui/icons-material/Sync";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import LaunchIcon from "@mui/icons-material/Launch";
-import {
-  alpha,
-  Button,
-  CircularProgress,
-  Stack,
-  Tooltip,
-} from "@mui/material";
+import SyncIcon from "@mui/icons-material/Sync";
+import { alpha, Button, CircularProgress, Stack, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useSyncLaunch } from "../../../../../../hooks/useSyncLaunch";
 
@@ -30,7 +23,7 @@ export default function UpdateDeals() {
     <Stack direction="row" alignItems="center" spacing={1}>
       <Tooltip title={t("Pages.Schoice.Header.updateData")} arrow>
         <Button
-          variant={isSyncing || isCooling ? "soft" : "contained" as any}
+          variant={isSyncing || isCooling ? "soft" : ("contained" as any)}
           onClick={launch}
           size="medium"
           color={getStatusColor()}
@@ -57,9 +50,10 @@ export default function UpdateDeals() {
             transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           }}
         >
-          {!(isSyncing || isCooling) && (
-             workerActive ? t("Pages.SyncCenter.actions.openDashboard") : t("Pages.Schoice.Header.updateData")
-          )}
+          {!(isSyncing || isCooling) &&
+            (workerActive
+              ? t("Pages.SyncCenter.actions.openDashboard")
+              : t("Pages.Schoice.Header.updateData"))}
         </Button>
       </Tooltip>
 

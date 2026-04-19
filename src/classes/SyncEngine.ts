@@ -14,8 +14,8 @@ import {
   Rsi,
 } from "@ch20026103/anysis";
 import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
-import { error, info } from "@tauri-apps/plugin-log";
 import { emit, listen } from "@tauri-apps/api/event";
+import { error, info } from "@tauri-apps/plugin-log";
 import pLimit from "p-limit";
 import useSyncDashboardStore, {
   HealthStatus,
@@ -39,7 +39,10 @@ import {
 } from "../utils/analyzeIndicatorsData";
 import checkTimeRange from "../utils/checkTimeRange";
 import generateDealDataDownloadUrl from "../utils/generateDealDataDownloadUrl";
-import { fetchWithLog as fetch, getCoolDownRemainingMillis } from "../utils/logFetch";
+import {
+  fetchWithLog as fetch,
+  getCoolDownRemainingMillis,
+} from "../utils/logFetch";
 import SyncDatabaseHelper from "./SyncDatabaseHelper";
 
 /**
@@ -83,8 +86,7 @@ class TokenBucket {
 /**
  * yieldControl - Helper to release the main thread to UI tasks.
  */
-const yieldControl = () =>
-  new Promise((resolve) => setTimeout(resolve, 0));
+const yieldControl = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 /**
  * SyncEngine - The Orchestrator for data synchronization.
@@ -113,7 +115,10 @@ export default class SyncEngine {
     return !!this.dbHelper;
   }
 
-  private async broadcast(type: "status" | "logs" | "stats" | "health" | "total", payload: any) {
+  private async broadcast(
+    type: "status" | "logs" | "stats" | "health" | "total",
+    payload: any,
+  ) {
     const store = useSyncDashboardStore.getState();
 
     // 1. Update local store (Synchronous feedback for the current window)
@@ -139,10 +144,6 @@ export default class SyncEngine {
         await emit("sync:total_count_update", payload);
         break;
     }
-  }
-
-  private async emitSyncEvent(event: string, payload: any) {
-    await emit(event, payload);
   }
 
   public async setupCommandListeners() {
@@ -203,7 +204,8 @@ export default class SyncEngine {
       const snapshot = await this.dbHelper.getHealthSnapshot();
       const healthMap: Record<string, HealthStatus> = {};
       const today =
-        dates[0] || String(dateFormat(new Date().getTime(), Mode.TimeStampToNumber));
+        dates[0] ||
+        String(dateFormat(new Date().getTime(), Mode.TimeStampToNumber));
 
       menu.forEach((stock) => {
         const info = snapshot[stock.stock_id];
@@ -225,7 +227,7 @@ export default class SyncEngine {
       // 2. Filter work list
       const workList = menu.filter((s) => healthMap[s.stock_id] !== "fresh");
       this.broadcast("total", workList.length); // Update total to be the actual work scope
-      
+
       if (workList.length === 0) {
         this.broadcast("status", "success");
         this.broadcast("logs", {
@@ -243,7 +245,7 @@ export default class SyncEngine {
       // 3. Process with concurrency limit and token bucket
       const limit = pLimit(1); // 併發數降為 1，極致穩定
 
-      const tasks = workList.map((stock, index) =>
+      const tasks = workList.map((stock) =>
         limit(async () => {
           let retryCount = 0;
           let success = false;
@@ -256,8 +258,8 @@ export default class SyncEngine {
 
             try {
               this.broadcast("health", { [stock.stock_id]: "syncing" });
-              await this.syncStock(stock, dates);
-              
+              await this.syncStock(stock);
+
               // 成功後處理統計與延遲
               completed++;
               const elapsed = Date.now() - startTime;
@@ -274,13 +276,15 @@ export default class SyncEngine {
               this.broadcast("health", { [stock.stock_id]: "fresh" });
 
               // 自發性隨機延遲 (500ms ~ 1500ms)
-              await new Promise((resolve) => setTimeout(resolve, 500 + Math.random() * 1000));
+              await new Promise((resolve) =>
+                setTimeout(resolve, 500 + Math.random() * 1000),
+              );
               await yieldControl();
-              
+
               success = true;
             } catch (e: any) {
               const errorMsg = String(e);
-              
+
               // 只要目前處於冷卻期 (不論錯誤訊息為何)，就原地休眠
               const remaining = getCoolDownRemainingMillis();
               if (remaining > 0 || errorMsg.includes("[BLOCK]")) {
@@ -328,28 +332,40 @@ export default class SyncEngine {
     }
     this.isRunning = false;
     this.broadcast("status", "stopped");
-    this.broadcast("logs", { msg: "Synchronization stopped by user.", type: "wait" });
+    this.broadcast("logs", {
+      msg: "Synchronization stopped by user.",
+      type: "wait",
+    });
   }
 
-  private async syncStock(stock: StockTableType, dates: string[]) {
+  private async syncStock(stock: StockTableType) {
     if (!this.dbHelper) return;
 
     // A. Check for partial data (market hours check)
     const snapshot = await this.dbHelper.getHealthSnapshot(stock.stock_id);
     const snap = snapshot[stock.stock_id];
-    
+
     const preFetchTime = localStorage.getItem(
       `schoice:fetch:time:${stock.stock_id}`,
     );
 
-    const today = String(dateFormat(new Date().getTime(), Mode.TimeStampToNumber));
-    const preFetchDate = preFetchTime ? String(dateFormat(new Date(preFetchTime).getTime(), Mode.TimeStampToNumber)) : null;
+    const today = String(
+      dateFormat(new Date().getTime(), Mode.TimeStampToNumber),
+    );
+    const preFetchDate = preFetchTime
+      ? String(
+          dateFormat(new Date(preFetchTime).getTime(), Mode.TimeStampToNumber),
+        )
+      : null;
 
     // 如果今天已經同步過 (DB 已有資料且 localStorage 也有今天紀錄)，則進行盤中判斷或跳過
     if (snap && snap.last_date >= today && preFetchDate === today) {
       // 在非盤中時段且今日已同步過，跳過
       if (!checkTimeRange(preFetchTime || "")) {
-        this.broadcast("logs", { msg: `[Skip] ${stock.stock_id} already up-to-date in DB.`, type: "info" });
+        this.broadcast("logs", {
+          msg: `[Skip] ${stock.stock_id} already up-to-date in DB.`,
+          type: "info",
+        });
         return;
       }
     }
@@ -532,103 +548,103 @@ export default class SyncEngine {
     };
 
     for (let i = 0; i < ta.length; i++) {
-        const val = ta[i];
-        const tStr = String(val.t);
-        
-        if (i % 50 === 0) await yieldControl();
+      const val = ta[i];
+      const tStr = String(val.t);
 
-        if (i > 0) {
-            state.ma5 = ma.next(val, state.ma5, 5);
-            state.ma10 = ma.next(val, state.ma10, 10);
-            state.ma20 = ma.next(val, state.ma20, 20);
-            state.ma30 = ma.next(val, state.ma30, 30);
-            state.ma50 = ma.next(val, state.ma50, 50);
-            state.ma60 = ma.next(val, state.ma60, 60);
-            state.ma120 = ma.next(val, state.ma120, 120);
-            state.ma240 = ma.next(val, state.ma240, 240);
-            state.ema5 = ema.next(val, state.ema5, 5);
-            state.ema10 = ema.next(val, state.ema10, 10);
-            state.ema20 = ema.next(val, state.ema20, 20);
-            state.ema60 = ema.next(val, state.ema60, 60);
-            state.ema120 = ema.next(val, state.ema120, 120);
-            state.boll = boll.next(val, state.boll, 20);
-            state.macd = macd.next(val, state.macd);
-            state.kd = kd.next(val, state.kd, 9);
-            state.rsi5 = rsi.next(val, state.rsi5, 5);
-            state.rsi10 = rsi.next(val, state.rsi10, 10);
-            state.obv = obv.next(val, state.obv);
-            state.obv_ma5 = obvEma.next(state.obv.obv, state.obv_ma5, 5);
-            state.obv_ma10 = obvEma.next(state.obv.obv, state.obv_ma10, 10);
-            state.obv_ma20 = obvEma.next(state.obv.obv, state.obv_ma20, 20);
-            state.obv_ma60 = obvEma.next(state.obv.obv, state.obv_ma60, 60);
-            state.mfi = mfi.next(val, state.mfi, 14);
-            state.ichimoku = ichimoku.next(val, state.ichimoku);
-            state.dmi = dmi.next(val, state.dmi, 14);
-            state.cmf = cmf.next(val, state.cmf, 21, 5);
-        }
+      if (i % 50 === 0) await yieldControl();
 
-        if (missingSet.has(tStr)) {
-            deals.push({ stock_id: stock.stock_id, ...val, t: tStr });
-            skills.push({
-                stock_id: stock.stock_id,
-                t: tStr,
-                ma5: state.ma5.ma,
-                ma5_ded: state.ma5.exclusionValue["d-1"],
-                ma10: state.ma10.ma,
-                ma10_ded: state.ma10.exclusionValue["d-1"],
-                ma20: state.ma20.ma,
-                ma20_ded: state.ma20.exclusionValue["d-1"],
-                ma30: state.ma30.ma,
-                ma30_ded: state.ma30.exclusionValue["d-1"],
-                ma50: state.ma50.ma,
-                ma50_ded: state.ma50.exclusionValue["d-1"],
-                ma60: state.ma60.ma,
-                ma60_ded: state.ma60.exclusionValue["d-1"],
-                ma120: state.ma120.ma,
-                ma120_ded: state.ma120.exclusionValue["d-1"],
-                ma240: state.ma240.ma,
-                ma240_ded: state.ma240.exclusionValue["d-1"],
-                ema5: state.ema5.ema,
-                ema10: state.ema10.ema,
-                ema20: state.ema20.ema,
-                ema60: state.ema60.ema,
-                ema120: state.ema120.ema,
-                macd: state.macd.macd,
-                dif: state.macd.dif[state.macd.dif.length - 1] || 0,
-                osc: state.macd.osc,
-                k: state.kd.k,
-                d: state.kd.d,
-                j: state.kd.j,
-                rsi5: state.rsi5.rsi,
-                rsi10: state.rsi10.rsi,
-                bollUb: state.boll.bollUb,
-                bollMa: state.boll.bollMa,
-                bollLb: state.boll.bollLb,
-                obv: state.obv.obv,
-                obv_ma5: state.obv_ma5.ma,
-                obv_ma10: state.obv_ma10.ma,
-                obv_ma20: state.obv_ma20.ma,
-                obv_ma60: state.obv_ma60.ma,
-                obv_ema5: state.obv_ma5.ema,
-                obv_ema10: state.obv_ma10.ema,
-                obv_ema20: state.obv_ma20.ema,
-                obv_ema60: state.obv_ma60.ema,
-                mfi: state.mfi.mfi,
-                tenkan: state.ichimoku.ichimoku.tenkan,
-                kijun: state.ichimoku.ichimoku.kijun,
-                senkouA: state.ichimoku.ichimoku.senkouA,
-                senkouB: state.ichimoku.ichimoku.senkouB,
-                chikou: state.ichimoku.ichimoku.chikou,
-                di_plus: state.dmi.pDi,
-                di_minus: state.dmi.mDi,
-                adx: state.dmi.adx,
-                cmf: state.cmf.cmf,
-                cmf_ema5: state.cmf.ema,
-                turnover_rate: stock.issued_shares
-                    ? ((val.v * 1000) / stock.issued_shares) * 100
-                    : 0,
-            });
-        }
+      if (i > 0) {
+        state.ma5 = ma.next(val, state.ma5, 5);
+        state.ma10 = ma.next(val, state.ma10, 10);
+        state.ma20 = ma.next(val, state.ma20, 20);
+        state.ma30 = ma.next(val, state.ma30, 30);
+        state.ma50 = ma.next(val, state.ma50, 50);
+        state.ma60 = ma.next(val, state.ma60, 60);
+        state.ma120 = ma.next(val, state.ma120, 120);
+        state.ma240 = ma.next(val, state.ma240, 240);
+        state.ema5 = ema.next(val, state.ema5, 5);
+        state.ema10 = ema.next(val, state.ema10, 10);
+        state.ema20 = ema.next(val, state.ema20, 20);
+        state.ema60 = ema.next(val, state.ema60, 60);
+        state.ema120 = ema.next(val, state.ema120, 120);
+        state.boll = boll.next(val, state.boll, 20);
+        state.macd = macd.next(val, state.macd);
+        state.kd = kd.next(val, state.kd, 9);
+        state.rsi5 = rsi.next(val, state.rsi5, 5);
+        state.rsi10 = rsi.next(val, state.rsi10, 10);
+        state.obv = obv.next(val, state.obv);
+        state.obv_ma5 = obvEma.next(state.obv.obv, state.obv_ma5, 5);
+        state.obv_ma10 = obvEma.next(state.obv.obv, state.obv_ma10, 10);
+        state.obv_ma20 = obvEma.next(state.obv.obv, state.obv_ma20, 20);
+        state.obv_ma60 = obvEma.next(state.obv.obv, state.obv_ma60, 60);
+        state.mfi = mfi.next(val, state.mfi, 14);
+        state.ichimoku = ichimoku.next(val, state.ichimoku);
+        state.dmi = dmi.next(val, state.dmi, 14);
+        state.cmf = cmf.next(val, state.cmf, 21, 5);
+      }
+
+      if (missingSet.has(tStr)) {
+        deals.push({ stock_id: stock.stock_id, ...val, t: tStr });
+        skills.push({
+          stock_id: stock.stock_id,
+          t: tStr,
+          ma5: state.ma5.ma,
+          ma5_ded: state.ma5.exclusionValue["d-1"],
+          ma10: state.ma10.ma,
+          ma10_ded: state.ma10.exclusionValue["d-1"],
+          ma20: state.ma20.ma,
+          ma20_ded: state.ma20.exclusionValue["d-1"],
+          ma30: state.ma30.ma,
+          ma30_ded: state.ma30.exclusionValue["d-1"],
+          ma50: state.ma50.ma,
+          ma50_ded: state.ma50.exclusionValue["d-1"],
+          ma60: state.ma60.ma,
+          ma60_ded: state.ma60.exclusionValue["d-1"],
+          ma120: state.ma120.ma,
+          ma120_ded: state.ma120.exclusionValue["d-1"],
+          ma240: state.ma240.ma,
+          ma240_ded: state.ma240.exclusionValue["d-1"],
+          ema5: state.ema5.ema,
+          ema10: state.ema10.ema,
+          ema20: state.ema20.ema,
+          ema60: state.ema60.ema,
+          ema120: state.ema120.ema,
+          macd: state.macd.macd,
+          dif: state.macd.dif[state.macd.dif.length - 1] || 0,
+          osc: state.macd.osc,
+          k: state.kd.k,
+          d: state.kd.d,
+          j: state.kd.j,
+          rsi5: state.rsi5.rsi,
+          rsi10: state.rsi10.rsi,
+          bollUb: state.boll.bollUb,
+          bollMa: state.boll.bollMa,
+          bollLb: state.boll.bollLb,
+          obv: state.obv.obv,
+          obv_ma5: state.obv_ma5.ma,
+          obv_ma10: state.obv_ma10.ma,
+          obv_ma20: state.obv_ma20.ma,
+          obv_ma60: state.obv_ma60.ma,
+          obv_ema5: state.obv_ma5.ema,
+          obv_ema10: state.obv_ma10.ema,
+          obv_ema20: state.obv_ma20.ema,
+          obv_ema60: state.obv_ma60.ema,
+          mfi: state.mfi.mfi,
+          tenkan: state.ichimoku.ichimoku.tenkan,
+          kijun: state.ichimoku.ichimoku.kijun,
+          senkouA: state.ichimoku.ichimoku.senkouA,
+          senkouB: state.ichimoku.ichimoku.senkouB,
+          chikou: state.ichimoku.ichimoku.chikou,
+          di_plus: state.dmi.pDi,
+          di_minus: state.dmi.mDi,
+          adx: state.dmi.adx,
+          cmf: state.cmf.cmf,
+          cmf_ema5: state.cmf.ema,
+          turnover_rate: stock.issued_shares
+            ? ((val.v * 1000) / stock.issued_shares) * 100
+            : 0,
+        });
+      }
     }
 
     return { deals, skills };
@@ -641,7 +657,11 @@ export default class SyncEngine {
   ) {
     // Similar to calculateIndicators but for hourly data
     // For brevity, using the same pattern but mapping to TimeSharing types
-    const { deals, skills } = await this.calculateIndicators(stock, ta, missingTs);
+    const { deals, skills } = await this.calculateIndicators(
+      stock,
+      ta,
+      missingTs,
+    );
     return {
       deals: deals.map((d) => ({ ...d, ts: d.t })),
       skills: skills.map((s) => ({ ...s, ts: s.t })),
@@ -652,14 +672,14 @@ export default class SyncEngine {
     let remaining = getCoolDownRemainingMillis();
     while (remaining > 0) {
       if (this.abortController?.signal.aborted) return;
-      
+
       const sec = Math.ceil(remaining / 1000);
       this.broadcast("status", "cooling"); // 暫時切換狀態為 cooling
       this.broadcast("logs", {
         msg: `[安全冷卻中] 剩餘解鎖時間：${sec} 秒...`,
         type: "wait",
       });
-      
+
       await new Promise((resolve) => setTimeout(resolve, 5000)); // 每 5 秒檢查一次
       remaining = getCoolDownRemainingMillis();
     }

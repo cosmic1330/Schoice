@@ -1,4 +1,10 @@
-import { Box, createTheme, styled, ThemeProvider, Typography } from "@mui/material";
+import {
+  Box,
+  createTheme,
+  styled,
+  ThemeProvider,
+  Typography,
+} from "@mui/material";
 import { listen } from "@tauri-apps/api/event";
 import { AnimatePresence, motion, Variants } from "framer-motion";
 import React, {
@@ -12,9 +18,9 @@ import React, {
 } from "react";
 import { useNavigate, useParams } from "react-router";
 import useSWR from "swr";
-import { tauriFetcher } from "../../tools/http";
 import DocModal from "../../components/DocModal";
 import { DealsContext } from "../../context/DealsContext";
+import { tauriFetcher } from "../../tools/http";
 import { FutureIds, UrlTaPerdOptions, UrlType } from "../../types";
 import {
   analyzeIndicatorsData,
@@ -52,15 +58,16 @@ const PageContainer = styled(Box)`
   overflow: hidden;
   position: relative;
   background-color: #0f1214;
-  background-image: radial-gradient(
-      at 0% 0%,
-      hsla(253, 16%, 7%, 1) 0,
-      transparent 50%
-    ),
+  background-image:
+    radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
     radial-gradient(at 50% 0%, hsla(225, 39%, 25%, 1) 0, transparent 50%),
     radial-gradient(at 100% 0%, hsla(339, 49%, 25%, 1) 0, transparent 50%),
     url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
-  background-size: 100% 100%, 100% 100%, 100% 100%, 200px 200px;
+  background-size:
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    200px 200px;
   background-repeat: no-repeat, no-repeat, no-repeat, repeat;
 `;
 
@@ -100,7 +107,7 @@ const FullscreenVerticalCarousel: React.FC = () => {
   const [scrolling, setScrolling] = useState(false);
   const [perd, setPerd] = useState<UrlTaPerdOptions>(
     (localStorage.getItem("detail:perd:type") as UrlTaPerdOptions) ||
-      UrlTaPerdOptions.Hour
+      UrlTaPerdOptions.Hour,
   );
   const { id } = useParams();
   const [isCollapsed, setIsCollapsed] = useState(true);
@@ -125,7 +132,7 @@ const FullscreenVerticalCarousel: React.FC = () => {
       mfi: { title: "MFI資金流便覽", content: mfiDoc },
       ichimoku_cloud: { title: "一目均衡表說明", content: ichimokuDoc },
     }),
-    []
+    [],
   );
 
   const handleSetPerd = useCallback((newPerd: UrlTaPerdOptions) => {
@@ -230,7 +237,7 @@ const FullscreenVerticalCarousel: React.FC = () => {
         content: <IchimokuCloud perd={perd} />,
       },
     ],
-    [perd, visibleCount, rightOffset]
+    [perd, visibleCount, rightOffset],
   );
 
   const goToSlide = useCallback((index: number) => {
@@ -256,7 +263,7 @@ const FullscreenVerticalCarousel: React.FC = () => {
 
       setTimeout(() => setScrolling(false), 800);
     },
-    [current, scrolling, goToSlide, isDocOpen]
+    [current, scrolling, goToSlide, isDocOpen],
   );
 
   const handleKeyDown = useCallback(
@@ -288,7 +295,7 @@ const FullscreenVerticalCarousel: React.FC = () => {
         window.dispatchEvent(new CustomEvent("detail-switch-step"));
       }
     },
-    [current, scrolling, goToSlide, perd, handleSetPerd, isDocOpen]
+    [current, scrolling, goToSlide, perd, handleSetPerd, isDocOpen],
   );
 
   useEffect(() => {
@@ -321,7 +328,6 @@ const FullscreenVerticalCarousel: React.FC = () => {
 
   // data
   const navigate = useNavigate();
-  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     // 监听股票添加事件
@@ -335,27 +341,28 @@ const FullscreenVerticalCarousel: React.FC = () => {
     };
   }, []);
 
-  const swrKey = id === FutureIds.NASDAQ
-    ? `https://query1.finance.yahoo.com/v8/finance/chart/${
-        FutureIds.NASDAQ
-      }?interval=${
-        perd === UrlTaPerdOptions.Hour
-          ? "1h"
-          : perd === UrlTaPerdOptions.Week
-          ? "1wk"
-          : "1d"
-      }&range=${
-        perd === UrlTaPerdOptions.Hour
-          ? "730d"
-          : perd === UrlTaPerdOptions.Week
-          ? "5y"
-          : "10y"
-      }`
-    : generateDealDataDownloadUrl({
-        type: UrlType.Indicators,
-        id: encodeURIComponent(id as string),
-        perd,
-      });
+  const swrKey =
+    id === FutureIds.NASDAQ
+      ? `https://query1.finance.yahoo.com/v8/finance/chart/${
+          FutureIds.NASDAQ
+        }?interval=${
+          perd === UrlTaPerdOptions.Hour
+            ? "1h"
+            : perd === UrlTaPerdOptions.Week
+              ? "1wk"
+              : "1d"
+        }&range=${
+          perd === UrlTaPerdOptions.Hour
+            ? "730d"
+            : perd === UrlTaPerdOptions.Week
+              ? "5y"
+              : "10y"
+        }`
+      : generateDealDataDownloadUrl({
+          type: UrlType.Indicators,
+          id: encodeURIComponent(id as string),
+          perd,
+        });
 
   const { data, error: swrError } = useSWR(swrKey, tauriFetcher, {
     shouldRetryOnError: true,
@@ -370,13 +377,13 @@ const FullscreenVerticalCarousel: React.FC = () => {
             data,
             perd === UrlTaPerdOptions.Hour
               ? IndicatorsDateTimeType.DateTime
-              : IndicatorsDateTimeType.Date
+              : IndicatorsDateTimeType.Date,
           )
         : analyzeIndicatorsData(
             data,
             perd === UrlTaPerdOptions.Hour
               ? IndicatorsDateTimeType.DateTime
-              : IndicatorsDateTimeType.Date
+              : IndicatorsDateTimeType.Date,
           );
     } catch (e) {
       console.error("Data processing error:", e);
@@ -400,10 +407,13 @@ const FullscreenVerticalCarousel: React.FC = () => {
         <Typography variant="body2" sx={{ mb: 3, opacity: 0.7 }}>
           {swrError.message || "發生未知錯誤，請檢查網路連線或權限設定。"}
         </Typography>
-        <Typography variant="caption" sx={{ mb: 4, display: "block", opacity: 0.5 }}>
+        <Typography
+          variant="caption"
+          sx={{ mb: 4, display: "block", opacity: 0.5 }}
+        >
           URL: {swrKey.substring(0, 100)}...
         </Typography>
-        <button 
+        <button
           onClick={() => window.location.reload()}
           style={{
             padding: "8px 24px",
@@ -411,7 +421,7 @@ const FullscreenVerticalCarousel: React.FC = () => {
             color: "white",
             border: "none",
             borderRadius: "4px",
-            cursor: "pointer"
+            cursor: "pointer",
           }}
         >
           重新整理

@@ -14,16 +14,15 @@ import Trash from "./pages/Schoice/Trash";
 
 import { Box, CssBaseline, ThemeProvider, useMediaQuery } from "@mui/material";
 import { useMemo } from "react";
-import Detail from "./pages/Detail";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import useSchoiceStore from "./store/Schoice.store";
-import { getTheme } from "./theme";
-import SyncWorker from "./pages/Schoice/SyncWorker";
 import { DatabaseContext } from "./context/DatabaseContext";
 import useDatabase from "./hooks/useDatabase";
 import useDatabaseDates from "./hooks/useDatabaseDates";
-import { useEffect } from "react";
+import Detail from "./pages/Detail";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import SyncWorker from "./pages/Schoice/SyncWorker";
+import useSchoiceStore from "./store/Schoice.store";
+import { getTheme } from "./theme";
 
 const AppRoutes = () => {
   return (
@@ -34,7 +33,7 @@ const AppRoutes = () => {
         <Route path="/register" element={<Register />} />
         <Route path="detail/:id" element={<Detail />} />
         <Route path="/sync-worker" element={<SyncWorker />} />
-        
+
         <Route path="/schoice" element={<Schoice />}>
           <Route index element={<PromptList />} />
           <Route path="favorite" element={<Favorite />} />

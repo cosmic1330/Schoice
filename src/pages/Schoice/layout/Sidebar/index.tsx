@@ -1,4 +1,3 @@
-import CloudSyncIcon from "@mui/icons-material/CloudSync";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import FastRewindIcon from "@mui/icons-material/FastRewind";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
@@ -49,7 +48,11 @@ export default function SideBar() {
   return (
     <Box gridArea="sidebar">
       <GridItem>
-        <Stack spacing={2} alignItems="center" direction={{ xs: "row", sm: "column" }}>
+        <Stack
+          spacing={2}
+          alignItems="center"
+          direction={{ xs: "row", sm: "column" }}
+        >
           <img
             src="/schoice_icon.png"
             alt="logo"

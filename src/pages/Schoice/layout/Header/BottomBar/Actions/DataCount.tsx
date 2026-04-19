@@ -3,12 +3,10 @@ import { Box, Stack, Typography, alpha } from "@mui/material";
 import { error } from "@tauri-apps/plugin-log";
 import { useContext, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useSyncLaunch } from "../../../../../../hooks/useSyncLaunch";
-import { useSyncEngine } from "../../../../../../hooks/useSyncEngine";
 import SqliteDataManager from "../../../../../../classes/SqliteDataManager";
 import { DatabaseContext } from "../../../../../../context/DatabaseContext";
+import { useSyncEngine } from "../../../../../../hooks/useSyncEngine";
 import useSchoiceStore from "../../../../../../store/Schoice.store";
-import useSyncDashboardStore from "../../../../../../store/SyncDashboard.store";
 
 export default function DataCount() {
   const { t } = useTranslation();
@@ -37,7 +35,9 @@ export default function DataCount() {
     // 如果正在同步或掃描，每 10 秒刷新一次
     let interval: any;
     if (syncStatus === "syncing" || syncStatus === "scanning") {
-      console.log("[DataCount] Active sync detected. Starting periodic refresh...");
+      console.log(
+        "[DataCount] Active sync detected. Starting periodic refresh...",
+      );
       interval = setInterval(refreshCount, 10000);
     }
 

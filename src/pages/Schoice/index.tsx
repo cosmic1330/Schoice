@@ -42,15 +42,7 @@ const Main = styled(Box)`
 
 function Schoice() {
   const { session, loading } = useUser();
-  const {
-    db,
-    dbType,
-    switchDatabase,
-    isSwitching,
-    dates,
-    fetchDates,
-    isLoading,
-  } = useContext(DatabaseContext);
+  const { db } = useContext(DatabaseContext);
   const [isAppReady, setIsAppReady] = useState(false);
   const navigate = useNavigate();
 
