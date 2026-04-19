@@ -9,11 +9,11 @@ const GlassPaper = styled(Paper)(({ theme }) => ({
   backgroundColor: alpha(theme.palette.background.paper, 0.4),
   backdropFilter: "blur(10px)",
   border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-  borderRadius: "16px",
-  boxShadow: "none",
-  height: "100%",
+  height: "auto",
+  maxHeight: "100%",
   display: "flex",
   flexDirection: "column",
+  overflow: "hidden",
 }));
 
 const ConditionItem = styled(Box)(({ theme }) => ({

@@ -26,7 +26,7 @@ import useSchoiceStore from "../../../store/Schoice.store";
 import { PromptType, PromptValue } from "../../../types";
 
 const SidebarContainer = styled(Box)(({ theme }) => ({
-  width: "360px",
+  width: "400px",
   height: "100%",
   backgroundColor: alpha(theme.palette.background.paper, 0.4),
   backdropFilter: "blur(12px)",
@@ -35,17 +35,19 @@ const SidebarContainer = styled(Box)(({ theme }) => ({
   flexDirection: "column",
   padding: theme.spacing(3),
   overflowY: "auto",
+  gap: theme.spacing(3),
   "&::-webkit-scrollbar": { width: "4px" },
 }));
 
-const MainContent = styled(Box)(({ theme }) => ({
+const ChartArea = styled(Box)(({ theme }) => ({
   flex: 1,
   height: "100%",
   display: "flex",
   flexDirection: "column",
+  padding: theme.spacing(2),
   backgroundColor: theme.palette.mode === "dark" 
-    ? alpha(theme.palette.background.default, 0.2) 
-    : alpha(theme.palette.background.default, 0.5),
+    ? alpha(theme.palette.background.default, 0.05) 
+    : alpha(theme.palette.background.default, 0.2),
 }));
 
 const SectionHeader = styled(Typography)(({ theme }) => ({
@@ -57,7 +59,7 @@ const SectionHeader = styled(Typography)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   gap: theme.spacing(1),
-  marginBottom: theme.spacing(2),
+  marginBottom: theme.spacing(1.5),
 }));
 
 export default function PromptAdd() {
@@ -128,64 +130,89 @@ export default function PromptAdd() {
 
   return (
     <Box sx={{ 
-      height: "calc(100vh - 64px)", 
+      height: "100%", 
       display: "flex", 
       overflow: "hidden",
       bgcolor: "background.default"
     }}>
-      {/* 側邊構建欄 */}
+      {/* 1. 側邊全功能控制台 */}
       <SidebarContainer>
-        <Stack spacing={4} sx={{ flex: 1 }}>
-          <Box>
-            <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
-              <AddCircleOutlineIcon color="primary" sx={{ fontSize: 24 }} />
-              <Typography variant="h6" fontWeight={900}>
-                {t("Pages.Schoice.Prompt.addTitle")}
-              </Typography>
-            </Stack>
-            <Typography variant="caption" sx={{ opacity: 0.6 }}>
-              {promptType === "bull"
-                ? t("Pages.Schoice.PromptList.tabs.bullish")
-                : t("Pages.Schoice.PromptList.tabs.bearish")} 模型建構中
+        <Box>
+          <Stack direction="row" alignItems="center" spacing={1.5} mb={0.5}>
+            <AddCircleOutlineIcon color="primary" sx={{ fontSize: 24 }} />
+            <Typography variant="h6" fontWeight={900}>
+              {t("Pages.Schoice.Prompt.addTitle")}
             </Typography>
-          </Box>
+          </Stack>
+          <Typography variant="caption" sx={{ opacity: 0.6 }}>
+            {promptType === "bull"
+              ? t("Pages.Schoice.PromptList.tabs.bullish")
+              : t("Pages.Schoice.PromptList.tabs.bearish")} 模型建構系統
+          </Typography>
+        </Box>
 
+        <Box>
+          <SectionHeader>
+            <ChecklistIcon fontSize="inherit" />
+            {t("Pages.Schoice.Prompt.strategyName")}
+          </SectionHeader>
+          <PromptName {...{ name, setName }} />
+        </Box>
+
+        <Box>
+          <SectionHeader>
+            <AutoFixHighIcon fontSize="inherit" />
+            {t("Pages.Schoice.Prompt.newCondition")}
+          </SectionHeader>
+          <ExpressionGenerator
+            {...{
+              setHourlyPrompts: (updater: any) =>
+                setPrompts((p) => ({
+                  ...p,
+                  hourly: typeof updater === "function" ? updater(p.hourly) : updater,
+                })),
+              setDailyPrompts: (updater: any) =>
+                setPrompts((p) => ({
+                  ...p,
+                  daily: typeof updater === "function" ? updater(p.daily) : updater,
+                })),
+              setWeekPrompts: (updater: any) =>
+                setPrompts((p) => ({
+                  ...p,
+                  weekly: typeof updater === "function" ? updater(p.weekly) : updater,
+                })),
+            }}
+          />
+        </Box>
+
+        {/* 策略邏輯清單 (整合至側邊欄) */}
+        <Stack spacing={2.5}>
           <Box>
             <SectionHeader>
               <ChecklistIcon fontSize="inherit" />
-              {t("Pages.Schoice.Prompt.strategyName")}
+              已選條件清單
             </SectionHeader>
-            <PromptName {...{ name, setName }} />
-          </Box>
-
-          <Box>
-            <SectionHeader>
-              <AutoFixHighIcon fontSize="inherit" />
-              {t("Pages.Schoice.Prompt.newCondition")}
-            </SectionHeader>
-            <ExpressionGenerator
-              {...{
-                setHourlyPrompts: (updater: any) =>
-                  setPrompts((p) => ({
-                    ...p,
-                    hourly: typeof updater === "function" ? updater(p.hourly) : updater,
-                  })),
-                setDailyPrompts: (updater: any) =>
-                  setPrompts((p) => ({
-                    ...p,
-                    daily: typeof updater === "function" ? updater(p.daily) : updater,
-                  })),
-                setWeekPrompts: (updater: any) =>
-                  setPrompts((p) => ({
-                    ...p,
-                    weekly: typeof updater === "function" ? updater(p.weekly) : updater,
-                  })),
-              }}
-            />
+            <Stack spacing={1.5}>
+              <PromptList
+                title={t("Pages.Schoice.Prompt.hourlyConditions")}
+                prompts={prompts.hourly}
+                onRemove={(index) => handleRemove("hourly", index)}
+              />
+              <PromptList
+                title={t("Pages.Schoice.Prompt.dailyConditions")}
+                prompts={prompts.daily}
+                onRemove={(index) => handleRemove("daily", index)}
+              />
+              <PromptList
+                title={t("Pages.Schoice.Prompt.weeklyConditions")}
+                prompts={prompts.weekly}
+                onRemove={(index) => handleRemove("weekly", index)}
+              />
+            </Stack>
           </Box>
         </Stack>
 
-        <Box sx={{ mt: 4, pt: 2, borderTop: (theme) => `1px solid ${alpha(theme.palette.divider, 0.05)}` }}>
+        <Box sx={{ mt: 'auto', pt: 3, pb: 1, borderTop: (theme) => `1px solid ${alpha(theme.palette.divider, 0.05)}` }}>
           <Button
             onClick={handleCreate}
             fullWidth
@@ -212,65 +239,23 @@ export default function PromptAdd() {
         </Box>
       </SidebarContainer>
 
-      {/* 主儀表板區域 */}
-      <MainContent>
-        {/* 上半部：條件清單 (三欄式排列) */}
-        <Box sx={{ 
-          flex: "0 1 auto", 
-          p: 3, 
-          display: "grid", 
-          gridTemplateColumns: "repeat(3, 1fr)", 
-          gap: 2,
-          minHeight: "40%",
-          maxHeight: "50%",
-          overflow: "hidden"
-        }}>
-          <PromptList
-            title={t("Pages.Schoice.Prompt.hourlyConditions")}
-            prompts={prompts.hourly}
-            onRemove={(index) => handleRemove("hourly", index)}
-          />
-          <PromptList
-            title={t("Pages.Schoice.Prompt.dailyConditions")}
-            prompts={prompts.daily}
-            onRemove={(index) => handleRemove("daily", index)}
-          />
-          <PromptList
-            title={t("Pages.Schoice.Prompt.weeklyConditions")}
-            prompts={prompts.weekly}
-            onRemove={(index) => handleRemove("weekly", index)}
-          />
+      {/* 2. 右側滿版圖表視覺區 */}
+      <ChartArea sx={{ p: 3 }}>
+        <SectionHeader sx={{ mb: 1.5, opacity: 0.8 }}>
+          <BarChartIcon fontSize="inherit" />
+          效能預覽與回測模擬 (右鍵可進行更進階圖表操作)
+        </SectionHeader>
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+           <PromptChart
+              hourlyPrompts={prompts.hourly}
+              dailyPrompts={prompts.daily}
+              weeklyPrompts={prompts.weekly}
+              hourlyData={hourlyData}
+              dailyData={dailyData}
+              weeklyData={weeklyData}
+            />
         </Box>
-
-        {/* 下半部：回測圖表 */}
-        <Box sx={{ 
-          flex: 1, 
-          m: 3, 
-          mt: 0,
-          p: 2.5,
-          borderRadius: "20px",
-          bgcolor: alpha("#000", 0.02),
-          border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.05)}`,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden"
-        }}>
-          <SectionHeader sx={{ mb: 1 }}>
-            <BarChartIcon fontSize="inherit" />
-            策略預覽 (示例數據與回測模擬)
-          </SectionHeader>
-          <Box sx={{ flex: 1, overflow: "hidden" }}>
-             <PromptChart
-                hourlyPrompts={prompts.hourly}
-                dailyPrompts={prompts.daily}
-                weeklyPrompts={prompts.weekly}
-                hourlyData={hourlyData}
-                dailyData={dailyData}
-                weeklyData={weeklyData}
-              />
-          </Box>
-        </Box>
-      </MainContent>
+      </ChartArea>
 
       <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleCloseSnackbar}>
         <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: "100%" }}>
