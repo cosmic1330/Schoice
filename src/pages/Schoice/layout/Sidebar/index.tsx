@@ -60,11 +60,6 @@ export default function SideBar() {
               <HomeRoundedIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title="數據更新中心" arrow placement="right">
-            <IconButton onClick={() => navigate("/schoice/sync")}>
-              <CloudSyncIcon />
-            </IconButton>
-          </Tooltip>
           <Tooltip title="基本面篩選" arrow placement="right">
             <IconButton onClick={() => navigate("/schoice/fundamental")}>
               <SmartButtonIcon />

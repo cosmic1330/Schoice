@@ -19,7 +19,6 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import useSchoiceStore from "./store/Schoice.store";
 import { getTheme } from "./theme";
-import SyncCenter from "./pages/Schoice/SyncCenter";
 import SyncWorker from "./pages/Schoice/SyncWorker";
 import { DatabaseContext } from "./context/DatabaseContext";
 import useDatabase from "./hooks/useDatabase";
@@ -38,7 +37,6 @@ const AppRoutes = () => {
         
         <Route path="/schoice" element={<Schoice />}>
           <Route index element={<PromptList />} />
-          <Route path="sync" element={<SyncCenter />} />
           <Route path="favorite" element={<Favorite />} />
           <Route path="add" element={<PromptAdd />} />
           <Route path="edit/:id" element={<PromptEdit />} />

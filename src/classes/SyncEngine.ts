@@ -241,7 +241,7 @@ export default class SyncEngine {
       const startTime = Date.now();
 
       // 3. Process with concurrency limit and token bucket
-      const limit = pLimit(2); // 併發數降為 2，提升穩定性
+      const limit = pLimit(1); // 併發數降為 1，極致穩定
 
       const tasks = workList.map((stock, index) =>
         limit(async () => {

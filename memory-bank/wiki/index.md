@@ -28,7 +28,7 @@
 - 🟢 **[G-004: 前端 UI 與組件開發規範](../active-tasks/constraints/G-004_UIAndMUI.md)**
   - *TL;DR: 綁定 MUI Theme，全面捨棄舊版，改用 `Grid` (原 `Grid2`)，禁用寫死文字，一律使用 `/locale` 配置多語系。*
 - 🟢 **[G-005: 數據同步一致性與日期格式規範](../active-tasks/constraints/G-005_SyncDataConsistency.md)**
-  - *TL;DR: 強制使用 `YYYYMMDD` 格式；包含併發限制(2)、隨機延遲與 5 分鐘自動熔斷機制。*
+  - *TL;DR: 強制使用 `YYYYMMDD` 格式；包含併發限制(1)、隨機延遲與 3 分鐘自動熔斷機制。*
 - 🟢 **[G-006: BDD 行為驅動開發規範表](../active-tasks/REQ-000_Template.md)**
   - *TL;DR: 所有顯著開發必須包含 Given/When/Then 劇本，確保在實作前定義清晰行為邊界。*
 

@@ -1,79 +1,72 @@
 import SyncIcon from "@mui/icons-material/Sync";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import LaunchIcon from "@mui/icons-material/Launch";
 import {
   alpha,
   Button,
   CircularProgress,
   Stack,
-  Typography,
+  Tooltip,
 } from "@mui/material";
-import { useCallback, useContext } from "react";
 import { useTranslation } from "react-i18next";
-import { DatabaseContext } from "../../../../../../context/DatabaseContext";
-import useHighConcurrencyDeals, {
-  Status,
-} from "../../../../../../hooks/useHighConcurrencyDeals";
-import useSchoiceStore from "../../../../../../store/Schoice.store";
+import { useSyncLaunch } from "../../../../../../hooks/useSyncLaunch";
 
 export default function UpdateDeals() {
   const { t } = useTranslation();
-  const { update_progress } = useSchoiceStore();
-  const { run, status, stop } = useHighConcurrencyDeals();
-  const { dbType } = useContext(DatabaseContext);
+  const { launch, workerActive, syncStatus } = useSyncLaunch();
 
-  const handleClick = useCallback(async () => {
-    if (status === Status.Idle) {
-      sessionStorage.removeItem("schoice:update:stop");
-      run();
-    } else {
-      stop();
-    }
-  }, [status, run, stop]);
+  const isIdle = syncStatus === "idle";
+  const isSyncing = syncStatus === "syncing" || syncStatus === "scanning";
+  const isCooling = syncStatus === "cooling";
 
-  if (dbType === "postgres") {
-    return null;
-  }
-
-  const isIdle = status === Status.Idle;
+  const getStatusColor = () => {
+    if (isSyncing) return "primary";
+    if (isCooling) return "warning";
+    if (isIdle && workerActive) return "info";
+    return "primary";
+  };
 
   return (
-    <Stack direction="row" alignItems="center" spacing={1.5}>
-      {!isIdle && update_progress > 0 && (
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <CircularProgress size={16} thickness={6} />
-          <Typography
-            variant="caption"
-            sx={{ fontWeight: 700, color: "primary.main" }}
-          >
-            {t("Pages.Schoice.Header.updating")}: {update_progress}
-          </Typography>
-        </Stack>
-      )}
-      <Button
-        variant="contained"
-        onClick={handleClick}
-        size="medium"
-        startIcon={isIdle ? <SyncIcon /> : undefined}
-        color={isIdle ? "primary" : "error"}
-        sx={{
-          borderRadius: "12px",
-          px: 3,
-          fontWeight: 800,
-          boxShadow: (theme) =>
-            isIdle
-              ? `0 4px 14px 0 ${alpha(theme.palette.primary.main, 0.39)}`
-              : `0 4px 14px 0 ${alpha(theme.palette.error.main, 0.39)}`,
-          "&:hover": {
+    <Stack direction="row" alignItems="center" spacing={1}>
+      <Tooltip title={t("Pages.Schoice.Header.updateData")} arrow>
+        <Button
+          variant={isSyncing || isCooling ? "soft" : "contained" as any}
+          onClick={launch}
+          size="medium"
+          color={getStatusColor()}
+          startIcon={
+            isSyncing ? (
+              <RefreshIcon className="spin" />
+            ) : isCooling ? (
+              <CircularProgress size={18} color="warning" thickness={5} />
+            ) : (
+              <SyncIcon />
+            )
+          }
+          sx={{
+            borderRadius: "12px",
+            height: 40,
+            px: 2.5,
+            fontWeight: 800,
+            // 保持清爽：只在閒置時顯示完整文字，同步中保持簡約
+            minWidth: isSyncing || isCooling ? "auto" : 120,
             boxShadow: (theme) =>
               isIdle
-                ? `0 6px 20px 0 ${alpha(theme.palette.primary.main, 0.23)}`
-                : `0 6px 20px 0 ${alpha(theme.palette.error.main, 0.23)}`,
-          },
-        }}
-      >
-        {status === Status.Download
-          ? t("Pages.Schoice.Header.cancel")
-          : t("Pages.Schoice.Header.updateData")}
-      </Button>
+                ? `0 4px 14px 0 ${alpha(theme.palette.primary.main, 0.2)}`
+                : "none",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        >
+          {!(isSyncing || isCooling) && (
+             workerActive ? t("Pages.SyncCenter.actions.openDashboard") : t("Pages.Schoice.Header.updateData")
+          )}
+        </Button>
+      </Tooltip>
+
+      <style>{`
+        .spin { animation: spin 2s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </Stack>
   );
 }

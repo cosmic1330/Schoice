@@ -27,7 +27,6 @@ export enum ChartType {
 
 interface SchoiceState {
   data_count: number;
-  update_progress: number;
   using: PromptType;
   todayDate: number;
   select: SelectType | null;
@@ -41,7 +40,6 @@ interface SchoiceState {
   changeChartType: (type: ChartType) => void;
   changeTheme: (theme: string) => void;
   changeDataCount: (count: number) => void;
-  changeUpdateProgress: (p: number) => void;
   changeUsing: (type: PromptType) => void;
   clearSeleted: () => void;
   setSelect: ({
@@ -57,7 +55,6 @@ interface SchoiceState {
 
 const useSchoiceStore = create<SchoiceState>((set) => ({
   data_count: 0,
-  update_progress: 0,
   using: PromptType.BULL,
   todayDate: 0,
   theme: localStorage.getItem("slitenting-theme") || "",
@@ -86,9 +83,6 @@ const useSchoiceStore = create<SchoiceState>((set) => ({
   },
   changeDataCount: (count: number) => {
     set({ data_count: count });
-  },
-  changeUpdateProgress: (p: number) => {
-    set({ update_progress: p });
   },
   changeUsing: (type: PromptType) => {
     set({ using: type });
