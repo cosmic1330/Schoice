@@ -134,15 +134,15 @@ export default function SyncWorker() {
   const progress =
     syncStats.total > 0 ? (syncStats.completed / syncStats.total) * 100 : 0;
 
-  // Auto-close: ONLY on manual stop or success, NEVER on error/cooling
+  // [v10] 移除自動關閉邏輯，視窗生命週期由使用者主導
+  
+  // 當視窗即將關閉時，通知主畫面
   useEffect(() => {
-    if (syncStatus === "success") {
-      const timer = setTimeout(() => {
-        getCurrentWindow().close();
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [syncStatus]);
+    return () => {
+      console.log("[SyncWorker] Window unmounting. Notifying main window...");
+      emit("sync:worker_closed");
+    };
+  }, []);
 
   // 我們需要計算剩餘冷卻時間（近似值，從日誌或狀態推導較難，但這裏先顯示狀態）
   const isCooling = syncStatus === "cooling";

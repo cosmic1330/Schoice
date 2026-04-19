@@ -53,17 +53,11 @@ export default function SyncCenter() {
     checkWorker();
   }, []);
 
-  // Auto-close command: Only close worker window when task is DEFINITIVELY finished success
+  // [v11] 移除所有自動關閉邏輯，視窗應由使用者手動按 X 關閉
   useEffect(() => {
+    // 監聽同步狀態變更，但不再執行 win.close()
     if (syncStatus === "success") {
-      const timer = setTimeout(async () => {
-        const win = await WebviewWindow.getByLabel("sync-worker");
-        if (win) {
-          console.log(`[SyncCenter] Task Success. Closing worker window...`);
-          await win.close();
-        }
-      }, 5000); // 延長至 5 秒讓使用者確認
-      return () => clearTimeout(timer);
+       console.log("[SyncCenter] Task completed successfully. Window remains open.");
     }
   }, [syncStatus]);
 

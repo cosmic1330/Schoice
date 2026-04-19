@@ -41,8 +41,8 @@ export const fetchWithLog = async (
 
     // 如果拿到 429 或 403，主動進入冷卻
     if (response.status === 429 || response.status === 403) {
-      error(`[HTTP_PLUGIN][${method}][${requestId}] BLOCKED (Status ${response.status}) Cooling down for 5 mins.`);
-      globalCoolDownUntil = Date.now() + 5 * 60 * 1000;
+      error(`[HTTP_PLUGIN][${method}][${requestId}] BLOCKED (Status ${response.status}) Cooling down for 3 mins.`);
+      globalCoolDownUntil = Date.now() + 3 * 60 * 1000;
       throw new Error(`[BLOCK] 伺服器回傳狀態 ${response.status}，進入安全冷卻。`);
     }
 
@@ -52,8 +52,8 @@ export const fetchWithLog = async (
     
     // 如果發生 RangeError (Status 0)，這通常是 IP 封鎖的徵兆，進入冷卻
     if (String(e).includes("Status must be between")) {
-      globalCoolDownUntil = Date.now() + 5 * 60 * 1000;
-      error(`[HTTP_PLUGIN][${method}][${requestId}] Detected RangeError (Status 0). Cooling down for 5 mins.`);
+      globalCoolDownUntil = Date.now() + 3 * 60 * 1000;
+      error(`[HTTP_PLUGIN][${method}][${requestId}] Detected RangeError (Status 0). Cooling down for 3 mins.`);
       throw new Error(`[BLOCK] 偵測到連線權限異常 (RangeError)，進入安全冷卻。`);
     }
     

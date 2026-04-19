@@ -14,7 +14,8 @@ All persistent memory resides in `/memory-bank/`. The goal is to keep token usag
     * `log.md`: Chronological stream of recent changes (Keep under 15-20 entries).
     * `log-archive.md`: Storage for older logs to prevent bloat.
 * **`/memory-bank/active-tasks/`**: 
-    * Contains markdown files (e.g., `REQ-001_Feature.md`) for **Ongoing** functional tasks. Once completed, they are merged and deleted.
+    * 包含執行中的對功能任務檔案 (例如 `REQ-001_Feature.md`)。
+    * **[強制]** 每個 REQ 檔案必須包含 **Behavior Scenarios (BDD)** 區塊，使用 Given/When/Then 語法描述預期行為。
 * **`/memory-bank/active-tasks/constraints/`**:
     * A dedicated vault for **Global Constraints**. These are permanent and exempt from deletion. 
     * MUST use the `G-` prefix (e.g., `G-001_DataSchema.md`).
@@ -48,16 +49,14 @@ Global Constraints stay inside `/active-tasks/constraints/`. Every constraint (`
 
 ## 4. Implementation Workflow
 
-1.  **Phase 1 (Input):** Load `index.md` ONLY.
-2.  **Phase 2 (Action):** 
-    * Read TL;DRs in index. Use `view_file` or `grep_search` if detailed context is needed.
-    * Evaluate: Is this a "Significant Change"?
-    * If **Yes**: Match or Create REQ in active-tasks.
-    * If **No**: Apply "Minor Fix" logic.
-3.  **Phase 3 (Output):** 
-    * Deliver code.
-    * Update/Merge files, ensure `index.md` TL;DRs and G- constraints remain accurate.
-    * End response with: "Updated [[REQ-XXX]]/[[G-XXX]]" or "Minor adjustment synced to PRD/Log."
+1.  **Phase 1 (Input & Discovery):** 加載 `index.md`，辨識任務類型。
+2.  **Phase 2 (Behavior Definition - BDD):** 
+    * 若為顯著變更，建立/更新 `REQ-XXX.md`。
+    * 撰寫 **Given... When... Then...** 劇本定義行為邊界。
+3.  **Phase 3 (Action & Delivery):** 
+    * 根據劇本實作代碼，並更新 `log.md`。
+    * 確保 `index.md` 與 G- 控制項同步更新。
+    * 結束時註明： "Updated [[REQ-XXX]]/[[G-XXX]]"。
 
 ---
 
