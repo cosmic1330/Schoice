@@ -26,27 +26,41 @@ import useCloudStore from "../../../store/Cloud.store";
 import useSchoiceStore from "../../../store/Schoice.store";
 import { Prompts } from "../../../types";
 
-const GlassCard = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
+const SidebarContainer = styled(Box)(({ theme }) => ({
+  width: "400px",
+  height: "100%",
   backgroundColor: alpha(theme.palette.background.paper, 0.4),
   backdropFilter: "blur(12px)",
-  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-  borderRadius: "16px",
-  boxShadow: "none",
-  position: "relative",
-  overflow: "hidden",
+  borderRight: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  display: "flex",
+  flexDirection: "column",
+  padding: theme.spacing(3),
+  overflowY: "auto",
+  gap: theme.spacing(3),
+  "&::-webkit-scrollbar": { width: "4px" },
 }));
 
-const ConfigHeader = styled(Typography)(({ theme }) => ({
+const ChartArea = styled(Box)(({ theme }) => ({
+  flex: 1,
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+  padding: theme.spacing(3),
+  backgroundColor: theme.palette.mode === "dark" 
+    ? alpha(theme.palette.background.default, 0.05) 
+    : alpha(theme.palette.background.default, 0.2),
+}));
+
+const SectionHeader = styled(Typography)(({ theme }) => ({
   color: theme.palette.primary.main,
   fontWeight: 800,
-  fontSize: "0.875rem",
+  fontSize: "0.75rem",
   textTransform: "uppercase",
-  letterSpacing: "0.1em",
+  letterSpacing: "0.15em",
   display: "flex",
   alignItems: "center",
   gap: theme.spacing(1),
-  marginBottom: theme.spacing(2),
+  marginBottom: theme.spacing(1.5),
 }));
 
 export default function PromptEdit() {
@@ -148,144 +162,132 @@ export default function PromptEdit() {
   }
 
   return (
-    <Box
-      sx={{
-        height: "100%",
-        overflowY: "auto",
-        "&::-webkit-scrollbar": { display: "none" },
-        scrollbarWidth: "none",
-        msOverflowStyle: "none",
-      }}
-    >
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        <Box mb={4}>
-          <Stack direction="row" alignItems="center" spacing={2} mb={1}>
-            <EditIcon color="primary" sx={{ fontSize: 36 }} />
-            <Typography
-              variant="h4"
-              fontWeight={900}
-              sx={{ letterSpacing: "-0.02em" }}
-            >
+    <Box sx={{ 
+      height: "100%", 
+      display: "flex", 
+      overflow: "hidden",
+      bgcolor: "background.default"
+    }}>
+      {/* 1. 側邊全功能控制台 */}
+      <SidebarContainer>
+        <Box>
+          <Stack direction="row" alignItems="center" spacing={1.5} mb={0.5}>
+            <EditIcon color="primary" sx={{ fontSize: 24 }} />
+            <Typography variant="h6" fontWeight={900}>
               {t("Pages.Schoice.Prompt.editTitle")}
             </Typography>
           </Stack>
-          <Typography
-            variant="body1"
-            color="text.secondary"
-            sx={{ opacity: 0.8 }}
-          >
-            {id}
+          <Typography variant="caption" sx={{ opacity: 0.6 }}>
+            正在編輯策略 ID: {id}
           </Typography>
         </Box>
 
-        <Grid container spacing={3}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <GlassCard elevation={0}>
-              <ConfigHeader>
-                <AutoFixHighIcon fontSize="small" />
-                {t("Pages.Schoice.Prompt.strategyName")}
-              </ConfigHeader>
-              <Box mb={3}>
-                <PromptName {...{ name, setName }} />
-              </Box>
+        <Box>
+          <SectionHeader>
+            <AutoFixHighIcon fontSize="inherit" />
+            {t("Pages.Schoice.Prompt.strategyName")}
+          </SectionHeader>
+          <PromptName {...{ name, setName }} />
+        </Box>
 
-              <ConfigHeader>
-                <AutoFixHighIcon fontSize="small" />
-                修改條件配置
-              </ConfigHeader>
-              <ExpressionGenerator
-                {...{
-                  setHourlyPrompts,
-                  setDailyPrompts,
-                  setWeekPrompts,
-                }}
+        <Box>
+          <SectionHeader>
+            <AutoFixHighIcon fontSize="inherit" />
+            修改條件配置
+          </SectionHeader>
+          <ExpressionGenerator
+            {...{
+              setHourlyPrompts: (updater: any) =>
+                setHourlyPrompts((p) => typeof updater === "function" ? updater(p) : updater),
+              setDailyPrompts: (updater: any) =>
+                setDailyPrompts((p) => typeof updater === "function" ? updater(p) : updater),
+              setWeekPrompts: (updater: any) =>
+                setWeekPrompts((p) => typeof updater === "function" ? updater(p) : updater),
+            }}
+          />
+        </Box>
+
+        {/* 策略邏輯清單 */}
+        <Stack spacing={2.5}>
+          <Box>
+            <SectionHeader>
+              <AutoFixHighIcon fontSize="inherit" />
+              當前設定清單
+            </SectionHeader>
+            <Stack spacing={1.5}>
+              <PromptList
+                title={t("Pages.Schoice.Prompt.hourlyConditions")}
+                prompts={hourlyPrompts}
+                onRemove={(index) => handleRemove("hourly", index)}
               />
-            </GlassCard>
-          </Grid>
+              <PromptList
+                title={t("Pages.Schoice.Prompt.dailyConditions")}
+                prompts={dailyPrompts}
+                onRemove={(index) => handleRemove("daily", index)}
+              />
+              <PromptList
+                title={t("Pages.Schoice.Prompt.weeklyConditions")}
+                prompts={weekPrompts}
+                onRemove={(index) => handleRemove("weekly", index)}
+              />
+            </Stack>
+          </Box>
+        </Stack>
 
-          <Grid size={{ xs: 12, md: 6 }}>
-            <GlassCard
-              elevation={0}
-              sx={{ height: "100%", display: "flex", flexDirection: "column" }}
+        <Box sx={{ mt: 'auto', pt: 3, pb: 1, borderTop: (theme) => `1px solid ${alpha(theme.palette.divider, 0.05)}` }}>
+          <Stack direction="row" spacing={2}>
+            <Button
+              onClick={handleCancel}
+              fullWidth
+              variant="outlined"
+              color="inherit"
+              sx={{ borderRadius: "12px", py: 1.5, fontWeight: 700, textTransform: "none" }}
             >
-              <ConfigHeader>
-                <ListAltIcon fontSize="small" />
-                當前設定清單
-              </ConfigHeader>
-              <Box sx={{ flex: 1, overflowY: "auto", mb: 2 }}>
-                <PromptList
-                  title={t("Pages.Schoice.Prompt.hourlyConditions")}
-                  prompts={hourlyPrompts}
-                  onRemove={(index) => handleRemove("hourly", index)}
-                />
-                <PromptList
-                  title={t("Pages.Schoice.Prompt.dailyConditions")}
-                  prompts={dailyPrompts}
-                  onRemove={(index) => handleRemove("daily", index)}
-                />
-                <PromptList
-                  title={t("Pages.Schoice.Prompt.weeklyConditions")}
-                  prompts={weekPrompts}
-                  onRemove={(index) => handleRemove("weekly", index)}
-                />
-              </Box>
+              {t("Pages.Schoice.Prompt.cancel")}
+            </Button>
+            <Button
+              onClick={handleEdit}
+              fullWidth
+              variant="contained"
+              disabled={
+                (hourlyPrompts.length === 0 &&
+                  dailyPrompts.length === 0 &&
+                  weekPrompts.length === 0) ||
+                name === "" ||
+                isEditing
+              }
+              sx={{
+                borderRadius: "12px",
+                py: 1.5,
+                fontWeight: 900,
+                boxShadow: (theme) => `0 8px 24px ${alpha(theme.palette.primary.main, 0.3)}`,
+                textTransform: "none"
+              }}
+            >
+              {isEditing ? t("Pages.Schoice.Prompt.editing") : t("Pages.Schoice.Prompt.edit")}
+            </Button>
+          </Stack>
+        </Box>
+      </SidebarContainer>
 
-              <Stack direction="row" spacing={2}>
-                <Button
-                  onClick={handleCancel}
-                  fullWidth
-                  variant="outlined"
-                  color="error"
-                  sx={{ borderRadius: "12px", py: 1.5, fontWeight: 700 }}
-                >
-                  {t("Pages.Schoice.Prompt.cancel")}
-                </Button>
-                <Button
-                  onClick={handleEdit}
-                  fullWidth
-                  variant="contained"
-                  disabled={
-                    (hourlyPrompts.length === 0 &&
-                      dailyPrompts.length === 0 &&
-                      weekPrompts.length === 0) ||
-                    name === "" ||
-                    isEditing
-                  }
-                  color="success"
-                  sx={{
-                    borderRadius: "12px",
-                    py: 1.5,
-                    fontWeight: 700,
-                    boxShadow: (theme) =>
-                      `0 8px 16px ${alpha(theme.palette.success.main, 0.2)}`,
-                  }}
-                >
-                  {isEditing
-                    ? t("Pages.Schoice.Prompt.editing")
-                    : t("Pages.Schoice.Prompt.edit")}
-                </Button>
-              </Stack>
-            </GlassCard>
-          </Grid>
+      {/* 2. 右側滿版圖表無視覺裁切 */}
+      <ChartArea>
+        <SectionHeader sx={{ mb: 1.5, opacity: 0.8 }}>
+          <AutoFixHighIcon fontSize="inherit" />
+          策略預覽與回測模擬 (右鍵可進行更進階圖表操作)
+        </SectionHeader>
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+          <PromptChart
+            hourlyPrompts={hourlyPrompts}
+            dailyPrompts={dailyPrompts}
+            weeklyPrompts={weekPrompts}
+            hourlyData={hourlyData}
+            dailyData={dailyData}
+            weeklyData={weeklyData}
+          />
+        </Box>
+      </ChartArea>
 
-          <Grid size={12}>
-            <GlassCard elevation={0}>
-              <ConfigHeader>
-                <AutoFixHighIcon fontSize="small" />
-                策略預覽 (示例數據)
-              </ConfigHeader>
-              <PromptChart
-                hourlyPrompts={hourlyPrompts}
-                dailyPrompts={dailyPrompts}
-                weeklyPrompts={weekPrompts}
-                hourlyData={hourlyData}
-                dailyData={dailyData}
-                weeklyData={weeklyData}
-              />
-            </GlassCard>
-          </Grid>
-        </Grid>
-      </Container>
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={6000}
