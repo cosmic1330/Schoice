@@ -171,8 +171,8 @@ function ExpressionGenerator({
 
   return (
     <Box>
-      <Stack spacing={1} mb={3}>
-        <Typography variant="caption" fontWeight={700} color="text.secondary">
+      <Stack spacing={0.5} mb={2}>
+        <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.8 }}>
           {t("Pages.Schoice.Prompt.timeFrame")}
         </Typography>
         <StyledToggleButtonGroup
@@ -182,19 +182,19 @@ function ExpressionGenerator({
           aria-label="time frame"
           size="small"
         >
-          <ToggleButton value="hour" aria-label="hourly">
+          <ToggleButton value="hour" aria-label="hourly" sx={{ fontSize: '0.7rem' }}>
             {t("Pages.Schoice.Prompt.hourly")}
           </ToggleButton>
-          <ToggleButton value="day" aria-label="daily">
+          <ToggleButton value="day" aria-label="daily" sx={{ fontSize: '0.7rem' }}>
             {t("Pages.Schoice.Prompt.daily")}
           </ToggleButton>
-          <ToggleButton value="week" aria-label="weekly">
+          <ToggleButton value="week" aria-label="weekly" sx={{ fontSize: '0.7rem' }}>
             {t("Pages.Schoice.Prompt.weekly")}
           </ToggleButton>
         </StyledToggleButtonGroup>
       </Stack>
 
-      <Stack spacing={2} direction="row" my={2}>
+      <Stack spacing={1} direction="row" my={1.5}>
         <StyledSelect
           value={selects.day1}
           onChange={handleChange}
@@ -203,12 +203,11 @@ function ExpressionGenerator({
           size="small"
         >
           {timeOptions.map((day) => (
-            <MenuItem key={day} value={day}>
+            <MenuItem key={day} value={day} sx={{ fontSize: '0.8rem' }}>
               {day}
             </MenuItem>
           ))}
         </StyledSelect>
-
         <StyledSelect
           value={selects.indicator1}
           onChange={handleChange}
@@ -217,13 +216,13 @@ function ExpressionGenerator({
           size="small"
         >
           {indicators.map((indicator) => (
-            <MenuItem key={indicator} value={indicator}>
+            <MenuItem key={indicator} value={indicator} sx={{ fontSize: '0.8rem' }}>
               {indicator}
             </MenuItem>
           ))}
         </StyledSelect>
       </Stack>
-      <Stack mb={2}>
+      <Stack mb={1.5}>
         <StyledSelect
           value={selects.operator}
           onChange={handleChange}
@@ -232,13 +231,13 @@ function ExpressionGenerator({
           size="small"
         >
           {operators.map((op) => (
-            <MenuItem key={op} value={op}>
+            <MenuItem key={op} value={op} sx={{ fontSize: '0.8rem' }}>
               {op}
             </MenuItem>
           ))}
         </StyledSelect>
       </Stack>
-      <Stack spacing={2} direction="row" mb={3}>
+      <Stack spacing={1} direction="row" mb={2}>
         <StyledSelect
           value={selects.day2}
           onChange={handleChange}
@@ -247,12 +246,12 @@ function ExpressionGenerator({
           size="small"
         >
           {timeOptions.map((day) => (
-            <MenuItem key={day} value={day}>
+            <MenuItem key={day} value={day} sx={{ fontSize: '0.8rem' }}>
               {day}
             </MenuItem>
           ))}
         </StyledSelect>
-
+ 
         {selects.day2 === "自定義數值" ? (
           <TextField
             name="indicator2"
@@ -268,7 +267,7 @@ function ExpressionGenerator({
                 ? {
                     input: {
                       endAdornment: (
-                        <InputAdornment position="end">
+                        <InputAdornment position="end" sx={{ "& .MuiTypography-root": { fontSize: '0.7rem' } }}>
                           {currentUnit}
                         </InputAdornment>
                       ),
@@ -286,14 +285,14 @@ function ExpressionGenerator({
             size="small"
           >
             {indicators.map((indicator) => (
-              <MenuItem key={indicator} value={indicator}>
+              <MenuItem key={indicator} value={indicator} sx={{ fontSize: '0.8rem' }}>
                 {indicator}
               </MenuItem>
             ))}
           </StyledSelect>
         )}
       </Stack>
-
+ 
       <Button
         variant="contained"
         fullWidth
@@ -309,7 +308,8 @@ function ExpressionGenerator({
         }}
         sx={{
           borderRadius: "12px",
-          py: 1.2,
+          py: 1,
+          fontSize: '0.85rem',
           fontWeight: 700,
           background: (theme) =>
             `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,

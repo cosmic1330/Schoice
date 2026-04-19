@@ -33,7 +33,7 @@ export default function PromptName({
     setEdit(false);
   };
   return edit ? (
-    <Stack direction="row" alignItems="center" my={2} spacing={2}>
+    <Stack direction="row" alignItems="center" mb={2} spacing={2}>
       <StyledTextField
         label={t("Pages.Schoice.Prompt.strategyName")}
         onChange={(e) => setName(e.target.value)}
@@ -52,11 +52,16 @@ export default function PromptName({
       </Button>
     </Stack>
   ) : (
-    <Stack direction="row" alignItems="center" my={2} spacing={2}>
+    <Stack direction="row" alignItems="center" mb={1} spacing={2}>
       <Typography
-        variant="h5"
+        variant="h6"
         fontWeight={700}
+        noWrap
         sx={{
+          flex: 1,
+          minWidth: 0,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
           background: (theme) =>
             `linear-gradient(45deg, ${theme.palette.text.primary}, ${alpha(
               theme.palette.text.primary,

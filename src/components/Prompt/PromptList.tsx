@@ -5,29 +5,31 @@ import { useTranslation } from "react-i18next";
 import { Prompts } from "../../types";
 
 const GlassPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(2.5),
+  padding: theme.spacing(2),
   backgroundColor: alpha(theme.palette.background.paper, 0.4),
   backdropFilter: "blur(10px)",
   border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
   borderRadius: "16px",
   boxShadow: "none",
-  marginBottom: theme.spacing(3),
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
 }));
 
 const ConditionItem = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: theme.spacing(1.5),
-  backgroundColor: alpha(theme.palette.background.paper, 0.3),
-  borderRadius: "12px",
-  marginBottom: theme.spacing(1),
-  border: `1px solid ${alpha(theme.palette.divider, 0.05)}`,
+  padding: theme.spacing(1, 1.5),
+  backgroundColor: alpha(theme.palette.background.paper, 0.2),
+  borderRadius: "10px",
+  marginBottom: theme.spacing(0.8),
+  border: `1px solid ${alpha(theme.palette.divider, 0.03)}`,
   transition: "all 0.2s ease-in-out",
   "&:hover": {
-    backgroundColor: alpha(theme.palette.background.paper, 0.5),
-    borderColor: alpha(theme.palette.primary.main, 0.2),
-    transform: "translateX(4px)",
+    backgroundColor: alpha(theme.palette.background.paper, 0.4),
+    borderColor: alpha(theme.palette.primary.main, 0.15),
+    transform: "translateX(2px)",
   },
 }));
 
@@ -62,7 +64,16 @@ export function PromptList({ title, prompts, onRemove }: PromptListProps) {
       >
         {title}
       </Typography>
-      <Box sx={{ minHeight: "40px" }}>
+      <Box sx={{ 
+        flex: 1, 
+        overflowY: "auto", 
+        pr: 0.5,
+        "&::-webkit-scrollbar": { width: "4px" },
+        "&::-webkit-scrollbar-thumb": { 
+          backgroundColor: (theme) => alpha(theme.palette.divider, 0.1),
+          borderRadius: "10px"
+        }
+      }}>
         {prompts.length === 0 && (
           <Typography
             variant="body2"
