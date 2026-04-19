@@ -1,5 +1,4 @@
-import NavigateNextIcon from "@mui/icons-material/NavigateNext";
-import { Breadcrumbs, Link, Typography, alpha } from "@mui/material";
+import { Box, Breadcrumbs, Link, Typography, alpha } from "@mui/material";
 import { useLocation, useNavigate } from "react-router";
 
 export default function Breadcrumb() {
@@ -16,63 +15,88 @@ export default function Breadcrumb() {
   return (
     <Breadcrumbs
       separator={
-        <NavigateNextIcon
-          fontSize="small"
-          sx={{ color: "text.disabled", opacity: 0.5 }}
-        />
+        <Typography
+          sx={{ 
+            color: "text.disabled", 
+            opacity: 0.3, 
+            fontSize: "0.75rem",
+            mx: 0.5,
+            fontWeight: 300 
+          }}
+        >
+          /
+        </Typography>
       }
       sx={{
         "& .MuiBreadcrumbs-ol": { alignItems: "center" },
       }}
     >
       <Link
-        underline="hover"
+        underline="none"
         sx={{
           cursor: "pointer",
-          color: "primary.main",
-          fontWeight: 700,
-          fontSize: "0.875rem",
+          color: "text.secondary",
+          fontWeight: 600,
+          fontSize: "0.75rem",
           display: "flex",
           alignItems: "center",
-          "&:hover": { color: "primary.dark" },
+          transition: "all 0.2s ease",
+          "&:hover": { color: "primary.main" },
+          letterSpacing: 0.5,
         }}
         onClick={() => handleLink("/schoice")}
       >
-        Schoice
+        SCHOICE
       </Link>
-      {pathnames.map((path, index) =>
-        index + 1 === pathnames.length ? (
-          <Typography
+      {pathnames.map((path, index) => {
+        const isLast = index + 1 === pathnames.length;
+        const label = path.toUpperCase();
+        
+        return isLast ? (
+          <Box
             key={index}
             sx={{
-              color: "text.primary",
-              fontWeight: 800,
-              fontSize: "0.875rem",
-              bgcolor: (theme) => alpha(theme.palette.text.primary, 0.05),
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.06),
               px: 1,
-              py: 0.2,
-              borderRadius: 1,
+              py: 0.3,
+              borderRadius: "4px",
+              border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
             }}
           >
-            {path}
-          </Typography>
+            <Typography
+              sx={{
+                color: "primary.main",
+                fontWeight: 900,
+                fontSize: "0.7rem",
+                letterSpacing: 0.5,
+                lineHeight: 1,
+              }}
+            >
+              {label}
+            </Typography>
+          </Box>
         ) : (
           <Link
-            underline="hover"
+            key={index}
+            underline="none"
             sx={{
               cursor: "pointer",
               color: "text.secondary",
-              fontWeight: 500,
-              fontSize: "0.875rem",
+              fontWeight: 600,
+              fontSize: "0.75rem",
+              transition: "all 0.2s ease",
               "&:hover": { color: "text.primary" },
+              letterSpacing: 0.5,
             }}
-            onClick={() => handleLink(pathnames.slice(0, index + 1).join("/"))}
-            key={index}
+            onClick={() => handleLink("/schoice/" + pathnames.slice(0, index + 1).join("/"))}
           >
-            {path}
+            {label}
           </Link>
-        )
-      )}
+        );
+      })}
     </Breadcrumbs>
   );
 }

@@ -1,11 +1,12 @@
 import RefreshIcon from "@mui/icons-material/Refresh";
 import SyncIcon from "@mui/icons-material/Sync";
-import { alpha, Button, CircularProgress, Stack, Tooltip } from "@mui/material";
+import { alpha, Button, CircularProgress, Stack, Tooltip, Typography, useTheme } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useSyncLaunch } from "../../../../../../hooks/useSyncLaunch";
 
 export default function UpdateDeals() {
   const { t } = useTranslation();
+  const theme = useTheme();
   const { launch, workerActive, syncStatus } = useSyncLaunch();
 
   const isIdle = syncStatus === "idle";
@@ -19,48 +20,63 @@ export default function UpdateDeals() {
     return "primary";
   };
 
+  const getStatusHex = () => {
+    const color = getStatusColor();
+    return (theme.palette as any)[color].main;
+  };
+
   return (
     <Stack direction="row" alignItems="center" spacing={1}>
       <Tooltip title={t("Pages.Schoice.Header.updateData")} arrow>
         <Button
-          variant={isSyncing || isCooling ? "soft" : ("contained" as any)}
+          variant="contained"
           onClick={launch}
-          size="medium"
+          size="small"
           color={getStatusColor()}
-          startIcon={
-            isSyncing ? (
-              <RefreshIcon className="spin" />
-            ) : isCooling ? (
-              <CircularProgress size={18} color="warning" thickness={5} />
-            ) : (
-              <SyncIcon />
-            )
-          }
           sx={{
-            borderRadius: "12px",
-            height: 40,
-            px: 2.5,
-            fontWeight: 800,
-            // 保持清爽：只在閒置時顯示完整文字，同步中保持簡約
-            minWidth: isSyncing || isCooling ? "auto" : 120,
-            boxShadow: (theme) =>
-              isIdle
-                ? `0 4px 14px 0 ${alpha(theme.palette.primary.main, 0.2)}`
-                : "none",
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            minWidth: 0,
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            p: 0,
+            boxShadow: isSyncing || isCooling 
+              ? `0 0 12px ${alpha(getStatusHex(), 0.4)}`
+              : "none",
+            bgcolor: isSyncing || isCooling ? alpha(getStatusHex(), 0.1) : undefined,
+            color: isSyncing || isCooling ? getStatusHex() : undefined,
+            "&:hover": {
+              bgcolor: isSyncing || isCooling ? alpha(getStatusHex(), 0.15) : undefined,
+              transform: "scale(1.05)",
+            },
+            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
           }}
         >
-          {!(isSyncing || isCooling) &&
-            (workerActive
-              ? t("Pages.SyncCenter.actions.openDashboard")
-              : t("Pages.Schoice.Header.updateData"))}
+          {isSyncing || isCooling ? (
+            <CircularProgress
+              size={16}
+              thickness={6}
+              sx={{ color: getStatusHex() }}
+            />
+          ) : (
+             <SyncIcon sx={{ fontSize: 18 }} />
+          )}
         </Button>
       </Tooltip>
 
-      <style>{`
-        .spin { animation: spin 2s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      `}</style>
+      {(isSyncing || isCooling) && (
+        <Typography
+          variant="caption"
+          sx={{
+            fontWeight: 800,
+            color: getStatusHex(),
+            fontSize: "0.7rem",
+            letterSpacing: 0.5,
+            textTransform: "uppercase",
+          }}
+        >
+          {isCooling ? "Cooling" : "Syncing"}
+        </Typography>
+      )}
     </Stack>
   );
 }

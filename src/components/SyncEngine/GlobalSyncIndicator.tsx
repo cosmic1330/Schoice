@@ -104,12 +104,15 @@ const GlobalSyncIndicator: React.FC = () => {
         {isSyncing && (
           <Typography
             variant="caption"
+            noWrap
             sx={{
               fontWeight: 800,
               fontSize: "0.75rem",
               fontFamily: "'Outfit', sans-serif",
               color: "text.primary",
               letterSpacing: 0.5,
+              whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
           >
             {progress}%
