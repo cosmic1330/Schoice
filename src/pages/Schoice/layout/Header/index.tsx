@@ -1,15 +1,11 @@
-import { alpha, AppBar, Box, Stack, styled, Tooltip } from "@mui/material";
-import MarketSentiment from "./TopBar/MarketSentiment";
-import Breadcrumb from "./BottomBar/Breadcrumb";
-import Actions from "./BottomBar/Actions";
-import RollBack from "./TopBar/Rollback";
-import LatestDate from "./TopBar/LatestDate";
+import { alpha, AppBar, Box, Stack, styled } from "@mui/material";
 import GlobalSyncIndicator from "../../../../components/SyncEngine/GlobalSyncIndicator";
 import useInitFilterStock from "../../../../hooks/useInitFilterStock";
-import { useContext } from "react";
-import { DatabaseContext } from "../../../../context/DatabaseContext";
-import CloudIcon from "@mui/icons-material/Cloud";
-import StorageIcon from "@mui/icons-material/Storage";
+import Actions from "./BottomBar/Actions";
+import Breadcrumb from "./BottomBar/Breadcrumb";
+import LatestDate from "./TopBar/LatestDate";
+import MarketSentiment from "./TopBar/MarketSentiment";
+import RollBack from "./TopBar/Rollback";
 
 const HeaderContainer = styled(AppBar)(({ theme }) => ({
   gridArea: "header",
@@ -25,7 +21,7 @@ const HeaderContainer = styled(AppBar)(({ theme }) => ({
   backgroundImage: "none",
   overflow: "hidden",
   fontVariantNumeric: "tabular-nums",
-  
+
   "&::after": {
     content: '""',
     position: "absolute",
@@ -50,8 +46,6 @@ const VerticalDivider = styled(Box)(({ theme }) => ({
 
 export default function Header() {
   useInitFilterStock();
-  const { dbType } = useContext(DatabaseContext);
-  const isCloud = dbType === "postgres";
 
   return (
     <HeaderContainer>
@@ -68,21 +62,25 @@ export default function Header() {
         </Box>
 
         {/* 中間：核心行情脈搏 */}
-        <Box sx={{ 
-          display: "flex", 
-          alignItems: "center",
-          px: 4,
-          borderLeft: (theme) => `1px solid ${alpha(theme.palette.divider, 0.05)}`,
-          borderRight: (theme) => `1px solid ${alpha(theme.palette.divider, 0.05)}`,
-        }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            px: 4,
+            borderLeft: (theme) =>
+              `1px solid ${alpha(theme.palette.divider, 0.05)}`,
+            borderRight: (theme) =>
+              `1px solid ${alpha(theme.palette.divider, 0.05)}`,
+          }}
+        >
           <MarketSentiment />
         </Box>
 
         {/* 右側：工具與操作集群 */}
-        <Stack 
-          direction="row" 
-          alignItems="center" 
-          spacing={2} 
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={2}
           sx={{ flex: 1, justifyContent: "flex-end" }}
         >
           <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -90,7 +88,7 @@ export default function Header() {
             <VerticalDivider />
             <LatestDate />
           </Stack>
-          
+
           <Stack direction="row" alignItems="center" spacing={1.5}>
             <GlobalSyncIndicator />
             <Actions />
