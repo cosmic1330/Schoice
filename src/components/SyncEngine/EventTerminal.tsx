@@ -10,6 +10,14 @@ import useSyncDashboardStore from "../../store/SyncDashboard.store";
 const EventTerminal: React.FC = () => {
   const { syncLogs } = useSyncDashboardStore();
   const { t } = useTranslation();
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when logs change
+  React.useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [syncLogs]);
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -35,6 +43,7 @@ const EventTerminal: React.FC = () => {
       }}
     >
       <Box
+        ref={scrollRef}
         sx={{
           flex: 1,
           backgroundColor: "rgba(0, 0, 0, 0.4)",
@@ -69,9 +78,9 @@ const EventTerminal: React.FC = () => {
             syncLogs.map((log) => (
               <motion.div
                 key={log.id}
-                initial={{ opacity: 0, x: -5 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.1 }}
                 style={{
                   display: "flex",
                   gap: "10px",

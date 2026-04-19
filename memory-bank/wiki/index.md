@@ -27,6 +27,8 @@
   - *TL;DR: SQLite (本機) 專司 K線與技術分析；Supabase (雲端) 專司會員、關注清單與財報基本面。*
 - 🟢 **[G-004: 前端 UI 與組件開發規範](../active-tasks/constraints/G-004_UIAndMUI.md)**
   - *TL;DR: 綁定 MUI Theme，全面捨棄舊版，改用 `Grid` (原 `Grid2`)，禁用寫死文字，一律使用 `/locale` 配置多語系。*
+- 🟢 **[G-005: 數據同步一致性與日期格式規範](../active-tasks/constraints/G-005_SyncDataConsistency.md)**
+  - *TL;DR: 強制使用 `YYYYMMDD` 純數字格式進行比對與儲存，避免斜線導致的比對迴圈錯誤。*
 
 ### 功能需求 (Functional Requirements)
 *(已完成的任務檔案已依據 Lean 規範刪除，內容併入主文檔)*

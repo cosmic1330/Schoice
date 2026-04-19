@@ -15,6 +15,7 @@ import {
 } from "@ch20026103/anysis";
 import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
 import { error, info } from "@tauri-apps/plugin-log";
+import { emit, listen } from "@tauri-apps/api/event";
 import pLimit from "p-limit";
 import useSyncDashboardStore, {
   HealthStatus,
@@ -38,7 +39,7 @@ import {
 } from "../utils/analyzeIndicatorsData";
 import checkTimeRange from "../utils/checkTimeRange";
 import generateDealDataDownloadUrl from "../utils/generateDealDataDownloadUrl";
-import { fetchWithLog as fetch } from "../utils/logFetch";
+import { fetchWithLog as fetch, getCoolDownRemainingMillis } from "../utils/logFetch";
 import SyncDatabaseHelper from "./SyncDatabaseHelper";
 
 /**
@@ -91,7 +92,7 @@ const yieldControl = () =>
 export default class SyncEngine {
   private static instance: SyncEngine;
   private dbHelper: SyncDatabaseHelper | null = null;
-  private limiter = new TokenBucket(10, 2); // 2 requests per second, burst up to 10
+  private limiter = new TokenBucket(10, 3); // 降低為每秒 3 請求，最高累積 10
   private abortController: AbortController | null = null;
   private isRunning = false;
 
@@ -112,6 +113,56 @@ export default class SyncEngine {
     return !!this.dbHelper;
   }
 
+  private async broadcast(type: "status" | "logs" | "stats" | "health" | "total", payload: any) {
+    const store = useSyncDashboardStore.getState();
+
+    // 1. Update local store (Synchronous feedback for the current window)
+    switch (type) {
+      case "status":
+        store.setSyncStatus(payload);
+        await emit("sync:status_change", payload);
+        break;
+      case "logs":
+        store.addSyncLog(payload);
+        await emit("sync:log_added", payload);
+        break;
+      case "stats":
+        store.setSyncStats(payload);
+        await emit("sync:stats_update", payload);
+        break;
+      case "health":
+        store.updateHealthMap(payload);
+        await emit("sync:health_map_update", payload);
+        break;
+      case "total":
+        store.setTotalCount(payload);
+        await emit("sync:total_count_update", payload);
+        break;
+    }
+  }
+
+  private async emitSyncEvent(event: string, payload: any) {
+    await emit(event, payload);
+  }
+
+  public async setupCommandListeners() {
+    const unlistens = await Promise.all([
+      listen<{ menu: StockTableType[]; dates: string[] }>(
+        "sync:command_start",
+        (event) => {
+          this.start(event.payload.menu, event.payload.dates);
+        },
+      ),
+      listen("sync:command_stop", () => {
+        this.stop();
+      }),
+    ]);
+
+    return () => {
+      unlistens.forEach((unlisten) => unlisten());
+    };
+  }
+
   /**
    * Start the full synchronization process.
    */
@@ -129,7 +180,7 @@ export default class SyncEngine {
     }
     if (!this.dbHelper) {
       console.error("[SyncEngine] Cannot start sync: dbHelper is null.");
-      useSyncDashboardStore.getState().addSyncLog({
+      this.broadcast("logs", {
         msg: "Sync failed: Database not initialized. Please try restarting.",
         type: "error",
       });
@@ -138,9 +189,8 @@ export default class SyncEngine {
     this.isRunning = true;
     this.abortController = new AbortController();
 
-    const store = useSyncDashboardStore.getState();
-    store.setSyncStatus("scanning");
-    store.addSyncLog({
+    this.broadcast("status", "scanning");
+    this.broadcast("logs", {
       msg: "Starting market-wide health scan...",
       type: "info",
     });
@@ -153,7 +203,7 @@ export default class SyncEngine {
       const snapshot = await this.dbHelper.getHealthSnapshot();
       const healthMap: Record<string, HealthStatus> = {};
       const today =
-        dates[0] || dateFormat(new Date().getTime(), Mode.TimeStampToString);
+        dates[0] || String(dateFormat(new Date().getTime(), Mode.TimeStampToNumber));
 
       menu.forEach((stock) => {
         const info = snapshot[stock.stock_id];
@@ -166,18 +216,19 @@ export default class SyncEngine {
         }
       });
 
-      store.updateHealthMap(healthMap);
-      store.setTotalCount(menu.length);
-      store.addSyncLog({
+      this.broadcast("health", healthMap);
+      this.broadcast("logs", {
         msg: `Scan complete. Found ${Object.values(healthMap).filter((v) => v !== "fresh").length} items needing update.`,
         type: "success",
       });
 
       // 2. Filter work list
       const workList = menu.filter((s) => healthMap[s.stock_id] !== "fresh");
+      this.broadcast("total", workList.length); // Update total to be the actual work scope
+      
       if (workList.length === 0) {
-        store.setSyncStatus("success");
-        store.addSyncLog({
+        this.broadcast("status", "success");
+        this.broadcast("logs", {
           msg: "Data is already up to date.",
           type: "success",
         });
@@ -185,44 +236,71 @@ export default class SyncEngine {
         return;
       }
 
-      store.setSyncStatus("syncing");
+      this.broadcast("status", "syncing");
       let completed = 0;
       const startTime = Date.now();
 
       // 3. Process with concurrency limit and token bucket
-      const limit = pLimit(3); // Process 3 stocks in parallel
+      const limit = pLimit(2); // 併發數降為 2，提升穩定性
 
       const tasks = workList.map((stock, index) =>
         limit(async () => {
-          if (this.abortController?.signal.aborted) return;
+          let retryCount = 0;
+          let success = false;
 
-          try {
-            store.updateHealthMap({ [stock.stock_id]: "syncing" });
-            await this.syncStock(stock, dates);
+          while (!success && retryCount < 3) {
+            // [v10] 預防性檢查：出發前先看是否處於冷卻期，如果是則原地等待
+            await this.waitForCoolDown();
 
-            completed++;
-            const elapsed = Date.now() - startTime;
-            const rpm = Math.round(completed / (elapsed / 60000));
-            const remaining = Math.round(
-              ((elapsed / completed) * (workList.length - completed)) / 1000,
-            );
+            if (this.abortController?.signal.aborted) return;
 
-            store.setSyncStats({
-              completed,
-              rpm,
-              remainingTime: this.formatRemaining(remaining),
-            });
-            store.updateHealthMap({ [stock.stock_id]: "fresh" });
-            
-            // YIELD: Let UI breathe between stocks
-            await yieldControl();
-          } catch (e) {
-            error(`Failed to sync ${stock.stock_id}: ${e}`);
-            store.updateHealthMap({ [stock.stock_id]: "error" });
-            store.addSyncLog({
-              msg: `Error syncing ${stock.stock_id}: ${e}`,
-              type: "error",
-            });
+            try {
+              this.broadcast("health", { [stock.stock_id]: "syncing" });
+              await this.syncStock(stock, dates);
+              
+              // 成功後處理統計與延遲
+              completed++;
+              const elapsed = Date.now() - startTime;
+              const rpm = Math.round(completed / (elapsed / 60000));
+              const remainingTime = Math.round(
+                ((elapsed / completed) * (workList.length - completed)) / 1000,
+              );
+
+              this.broadcast("stats", {
+                completed,
+                rpm,
+                remainingTime: this.formatRemaining(remainingTime),
+              });
+              this.broadcast("health", { [stock.stock_id]: "fresh" });
+
+              // 自發性隨機延遲 (500ms ~ 1500ms)
+              await new Promise((resolve) => setTimeout(resolve, 500 + Math.random() * 1000));
+              await yieldControl();
+              
+              success = true;
+            } catch (e: any) {
+              const errorMsg = String(e);
+              
+              // 只要目前處於冷卻期 (不論錯誤訊息為何)，就原地休眠
+              const remaining = getCoolDownRemainingMillis();
+              if (remaining > 0 || errorMsg.includes("[BLOCK]")) {
+                this.broadcast("logs", {
+                  msg: `偵測到伺服器封鎖，系統暫停任務並進入安全冷卻...`,
+                  type: "wait",
+                });
+                await this.waitForCoolDown();
+                // 冷卻期等待不計入重試次數
+                continue; // 重試同一支股票
+              }
+
+              error(`Failed to sync ${stock.stock_id}: ${errorMsg}`);
+              this.broadcast("health", { [stock.stock_id]: "error" });
+              this.broadcast("logs", {
+                msg: `Error syncing ${stock.stock_id}: ${e}`,
+                type: "error",
+              });
+              success = true; // 標記為完成以跳出循環 (雖然是報錯)
+            }
           }
         }),
       );
@@ -230,15 +308,15 @@ export default class SyncEngine {
       await Promise.all(tasks);
 
       if (!this.abortController?.signal.aborted) {
-        store.setSyncStatus("success");
-        store.addSyncLog({
+        this.broadcast("status", "success");
+        this.broadcast("logs", {
           msg: "Task completed successfully! 🎉",
           type: "success",
         });
       }
     } catch (e) {
       error(`SyncEngine error: ${e}`);
-      store.setSyncStatus("error");
+      this.broadcast("status", "error");
     } finally {
       this.isRunning = false;
     }
@@ -249,10 +327,8 @@ export default class SyncEngine {
       this.abortController.abort();
     }
     this.isRunning = false;
-    useSyncDashboardStore.getState().setSyncStatus("stopped");
-    useSyncDashboardStore
-      .getState()
-      .addSyncLog({ msg: "Synchronization stopped by user.", type: "wait" });
+    this.broadcast("status", "stopped");
+    this.broadcast("logs", { msg: "Synchronization stopped by user.", type: "wait" });
   }
 
   private async syncStock(stock: StockTableType, dates: string[]) {
@@ -266,14 +342,14 @@ export default class SyncEngine {
       `schoice:fetch:time:${stock.stock_id}`,
     );
 
-    // 如果資料缺失 (missing) 或是雖然有同步紀錄但資料未齊全，則強制重新同步
-    if (
-      snap && 
-      preFetchTime &&
-      preFetchTime.split(",")[0] === new Date().toLocaleDateString()
-    ) {
+    const today = String(dateFormat(new Date().getTime(), Mode.TimeStampToNumber));
+    const preFetchDate = preFetchTime ? String(dateFormat(new Date(preFetchTime).getTime(), Mode.TimeStampToNumber)) : null;
+
+    // 如果今天已經同步過 (DB 已有資料且 localStorage 也有今天紀錄)，則進行盤中判斷或跳過
+    if (snap && snap.last_date >= today && preFetchDate === today) {
       // 在非盤中時段且今日已同步過，跳過
-      if (!checkTimeRange(preFetchTime)) {
+      if (!checkTimeRange(preFetchTime || "")) {
+        this.broadcast("logs", { msg: `[Skip] ${stock.stock_id} already up-to-date in DB.`, type: "info" });
         return;
       }
     }
@@ -340,7 +416,6 @@ export default class SyncEngine {
     const response = await fetch(url, {
       method: "GET",
       signal: this.abortController?.signal,
-      headers: { "User-Agent": "Mozilla/5.0" },
     });
     if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
     const text = await response.text();
@@ -571,6 +646,33 @@ export default class SyncEngine {
       deals: deals.map((d) => ({ ...d, ts: d.t })),
       skills: skills.map((s) => ({ ...s, ts: s.t })),
     } as any;
+  }
+
+  private async waitForCoolDown() {
+    let remaining = getCoolDownRemainingMillis();
+    while (remaining > 0) {
+      if (this.abortController?.signal.aborted) return;
+      
+      const sec = Math.ceil(remaining / 1000);
+      this.broadcast("status", "cooling"); // 暫時切換狀態為 cooling
+      this.broadcast("logs", {
+        msg: `[安全冷卻中] 剩餘解鎖時間：${sec} 秒...`,
+        type: "wait",
+      });
+      
+      await new Promise((resolve) => setTimeout(resolve, 5000)); // 每 5 秒檢查一次
+      remaining = getCoolDownRemainingMillis();
+    }
+
+    // [優化] 只有第一個醒來的任務負責廣播恢復訊息，避免重複顯示
+    const store = useSyncDashboardStore.getState();
+    if (store.syncStatus === "cooling") {
+      this.broadcast("status", "syncing"); // 恢復為 syncing
+      this.broadcast("logs", {
+        msg: `冷卻結束，恢復同步任務。`,
+        type: "success",
+      });
+    }
   }
 
   private formatRemaining(seconds: number): string {

@@ -1,4 +1,4 @@
-import { Box, createTheme, styled, ThemeProvider } from "@mui/material";
+import { Box, createTheme, styled, ThemeProvider, Typography } from "@mui/material";
 import { listen } from "@tauri-apps/api/event";
 import { AnimatePresence, motion, Variants } from "framer-motion";
 import React, {
@@ -321,6 +321,7 @@ const FullscreenVerticalCarousel: React.FC = () => {
 
   // data
   const navigate = useNavigate();
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     // 监听股票添加事件
@@ -334,47 +335,90 @@ const FullscreenVerticalCarousel: React.FC = () => {
     };
   }, []);
 
-  const { data } = useSWR(
-    id === FutureIds.NASDAQ
-      ? `https://query1.finance.yahoo.com/v8/finance/chart/${
-          FutureIds.NASDAQ
-        }?interval=${
-          perd === UrlTaPerdOptions.Hour
-            ? "1h"
-            : perd === UrlTaPerdOptions.Week
-            ? "1wk"
-            : "1d"
-        }&range=${
-          perd === UrlTaPerdOptions.Hour
-            ? "730d"
-            : perd === UrlTaPerdOptions.Week
-            ? "5y"
-            : "10y"
-        }`
-      : generateDealDataDownloadUrl({
-          type: UrlType.Indicators,
-          id: encodeURIComponent(id as string),
-          perd,
-        }),
-    tauriFetcher
-  );
+  const swrKey = id === FutureIds.NASDAQ
+    ? `https://query1.finance.yahoo.com/v8/finance/chart/${
+        FutureIds.NASDAQ
+      }?interval=${
+        perd === UrlTaPerdOptions.Hour
+          ? "1h"
+          : perd === UrlTaPerdOptions.Week
+          ? "1wk"
+          : "1d"
+      }&range=${
+        perd === UrlTaPerdOptions.Hour
+          ? "730d"
+          : perd === UrlTaPerdOptions.Week
+          ? "5y"
+          : "10y"
+      }`
+    : generateDealDataDownloadUrl({
+        type: UrlType.Indicators,
+        id: encodeURIComponent(id as string),
+        perd,
+      });
+
+  const { data, error: swrError } = useSWR(swrKey, tauriFetcher, {
+    shouldRetryOnError: true,
+    errorRetryCount: 3,
+  });
 
   const deals = useMemo(() => {
     if (!data || !id || typeof data !== "string") return [];
-    return id === FutureIds.NASDAQ
-      ? analyzeNasdaqIndicatorsData(
-          data,
-          perd === UrlTaPerdOptions.Hour
-            ? IndicatorsDateTimeType.DateTime
-            : IndicatorsDateTimeType.Date
-        )
-      : analyzeIndicatorsData(
-          data,
-          perd === UrlTaPerdOptions.Hour
-            ? IndicatorsDateTimeType.DateTime
-            : IndicatorsDateTimeType.Date
-        );
+    try {
+      return id === FutureIds.NASDAQ
+        ? analyzeNasdaqIndicatorsData(
+            data,
+            perd === UrlTaPerdOptions.Hour
+              ? IndicatorsDateTimeType.DateTime
+              : IndicatorsDateTimeType.Date
+          )
+        : analyzeIndicatorsData(
+            data,
+            perd === UrlTaPerdOptions.Hour
+              ? IndicatorsDateTimeType.DateTime
+              : IndicatorsDateTimeType.Date
+          );
+    } catch (e) {
+      console.error("Data processing error:", e);
+      return [];
+    }
   }, [data, id, perd]);
+
+  if (swrError) {
+    return (
+      <Box
+        height="100vh"
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        sx={{ bgcolor: "#0f1214", color: "white", p: 4, textAlign: "center" }}
+      >
+        <Typography variant="h5" color="error" gutterBottom>
+          數據載入失敗
+        </Typography>
+        <Typography variant="body2" sx={{ mb: 3, opacity: 0.7 }}>
+          {swrError.message || "發生未知錯誤，請檢查網路連線或權限設定。"}
+        </Typography>
+        <Typography variant="caption" sx={{ mb: 4, display: "block", opacity: 0.5 }}>
+          URL: {swrKey.substring(0, 100)}...
+        </Typography>
+        <button 
+          onClick={() => window.location.reload()}
+          style={{
+            padding: "8px 24px",
+            backgroundColor: "#2196f3",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer"
+          }}
+        >
+          重新整理
+        </button>
+      </Box>
+    );
+  }
 
   return (
     <ThemeProvider theme={darkTheme}>

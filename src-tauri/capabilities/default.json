@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": ["main"],
+  "windows": ["main", "sync-worker", "detail"],
   "permissions": [
     "store:default",
     "core:default",
@@ -22,6 +22,8 @@
     "core:window:allow-set-always-on-top",
     "core:window:allow-set-focus",
     "core:window:allow-show",
+    "core:window:allow-close",
+    "core:window:allow-destroy",
     "process:default",
     "process:allow-restart",
     "clipboard-manager:allow-write-text",
@@ -35,6 +37,7 @@
       "identifier": "fs:allow-read",
       "scope": ["$RESOURCE/**"]
     },
+    "http:default",
     {
       "identifier": "http:default",
       "allow": [

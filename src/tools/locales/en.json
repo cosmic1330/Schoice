@@ -28,8 +28,12 @@
         "start": "Start Sync Engine",
         "stop": "Stop Engine",
         "resume": "Resume Sync",
-        "clearLogs": "Clear Logs"
+        "clearLogs": "Clear Logs",
+        "launchWorker": "Launch Sync Worker",
+        "openDashboard": "Open Sync Dashboard"
       },
+      "workerActive": "[ Remote Worker Active ]",
+      "description": "The synchronization engine is now decoupled. Run and monitor your data sync in a dedicated background window to ensure peak performance.",
       "terminal": {
         "title": "Engine Real-time Event Logs",
         "empty": "Engine not started yet"
@@ -44,6 +48,20 @@
           "error": "Error"
         }
       }
+    },
+    "SyncWorker": {
+      "title": "Schoice Sync Dashboard",
+      "overallProgress": "Overall Progress",
+      "heatmapVisualization": "Market Health Visualization",
+      "stats": {
+        "status": "STATUS:",
+        "speed": "SPEED:",
+        "eta": "ETA:"
+      },
+      "pendingList": "Pending Stocks List",
+      "noPendingStocks": "All data is up to date",
+      "pendingCount": "{{count}} stocks pending",
+      "searchPlaceholder": "Search ID or name..."
     },
     "Login": {
       "title": "Create your strategy",

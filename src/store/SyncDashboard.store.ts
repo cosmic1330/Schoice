@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { listen } from "@tauri-apps/api/event";
 
 export type SyncStatus = 'idle' | 'scanning' | 'syncing' | 'cooling' | 'paused' | 'stopped' | 'success' | 'error';
 
@@ -34,6 +35,7 @@ interface SyncDashboardState {
   updateHealthMap: (updates: Record<string, HealthStatus>) => void;
   resetHealthMap: () => void;
   setTotalCount: (total: number) => void;
+  setupSyncListeners: () => Promise<(() => void)>;
 }
 
 const useSyncDashboardStore = create<SyncDashboardState>((set) => ({
@@ -56,12 +58,12 @@ const useSyncDashboardStore = create<SyncDashboardState>((set) => ({
   addSyncLog: (log) =>
     set((state) => ({
       syncLogs: [
+        ...state.syncLogs.slice(-99), // Keep last 100, but take from end
         {
           ...log,
           id: Math.random().toString(36).substring(2, 9),
           time: new Date().toLocaleTimeString(),
         },
-        ...state.syncLogs.slice(0, 99), // Keep last 100
       ],
     })),
     
@@ -76,6 +78,30 @@ const useSyncDashboardStore = create<SyncDashboardState>((set) => ({
 
   setTotalCount: (total: number) => 
     set((state) => ({ syncStats: { ...state.syncStats, total } })),
+
+  setupSyncListeners: async () => {
+    const unlistens = await Promise.all([
+      listen<SyncStatus>("sync:status_change", (event) => {
+        useSyncDashboardStore.getState().setSyncStatus(event.payload);
+      }),
+      listen<SyncLog>("sync:log_added", (event) => {
+        useSyncDashboardStore.getState().addSyncLog(event.payload);
+      }),
+      listen<Partial<SyncStats>>("sync:stats_update", (event) => {
+        useSyncDashboardStore.getState().setSyncStats(event.payload);
+      }),
+      listen<Record<string, HealthStatus>>("sync:health_map_update", (event) => {
+        useSyncDashboardStore.getState().updateHealthMap(event.payload);
+      }),
+      listen<number>("sync:total_count_update", (event) => {
+        useSyncDashboardStore.getState().setTotalCount(event.payload);
+      }),
+    ]);
+
+    return () => {
+      unlistens.forEach((unlisten) => unlisten());
+    };
+  },
 }));
 
 export default useSyncDashboardStore;

@@ -20,12 +20,11 @@ import Register from "./pages/Register";
 import useSchoiceStore from "./store/Schoice.store";
 import { getTheme } from "./theme";
 import SyncCenter from "./pages/Schoice/SyncCenter";
+import SyncWorker from "./pages/Schoice/SyncWorker";
 import { DatabaseContext } from "./context/DatabaseContext";
 import useDatabase from "./hooks/useDatabase";
 import useDatabaseDates from "./hooks/useDatabaseDates";
 import { useEffect } from "react";
-import SyncEngine from "./classes/SyncEngine";
-import SyncDatabaseHelper from "./classes/SyncDatabaseHelper";
 
 const AppRoutes = () => {
   return (
@@ -35,6 +34,7 @@ const AppRoutes = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="detail/:id" element={<Detail />} />
+        <Route path="/sync-worker" element={<SyncWorker />} />
         
         <Route path="/schoice" element={<Schoice />}>
           <Route index element={<PromptList />} />
@@ -65,16 +65,6 @@ function App() {
 
   const { db, dbType, switchDatabase, isSwitching } = useDatabase();
   const { dates, fetchDates, isLoading } = useDatabaseDates(db);
-
-  // Initialize Sync Engine Globally
-  useEffect(() => {
-    if (db) {
-      console.log("[App] Initializing Sync Engine with database...");
-      const engine = SyncEngine.getInstance();
-      const helper = new SyncDatabaseHelper(db);
-      engine.setDbHelper(helper);
-    }
-  }, [db]);
 
   return (
     <UserProvider>

@@ -16,7 +16,7 @@
       },
       "status": {
         "idle": "閒置中",
-        "scanning": "正在掃描市場建康度...",
+        "scanning": "正在掃描市場健康度...",
         "syncing": "同步數據中",
         "cooling": "冷卻保護中...",
         "paused": "已暫停",
@@ -28,8 +28,12 @@
         "start": "啟動同步引擎",
         "stop": "停止引擎",
         "resume": "繼續同步",
-        "clearLogs": "清除日誌"
+        "clearLogs": "清除日誌",
+        "launchWorker": "啟動背景同步",
+        "openDashboard": "開啟同步看板"
       },
+      "workerActive": "[ 遠端背景執行中 ]",
+      "description": "同步引擎已解耦執行。請使用獨立背景視窗運行並監控資料同步，以確保主程式效能。",
       "terminal": {
         "title": "引擎即時事件日誌",
         "empty": "尚未啟動引擎"
@@ -44,6 +48,20 @@
           "error": "錯誤"
         }
       }
+    },
+    "SyncWorker": {
+      "title": "Schoice 數據同步看板",
+      "overallProgress": "整體進度預覽",
+      "heatmapVisualization": "市場數據健康度可視化",
+      "stats": {
+        "status": "狀態:",
+        "speed": "頻率:",
+        "eta": "預計:"
+      },
+      "pendingList": "待同步股票清單",
+      "noPendingStocks": "目前資料皆已齊全",
+      "pendingCount": "共有 {{count}} 檔待處理",
+      "searchPlaceholder": "搜尋代號或名稱..."
     },
     "Login": {
       "title": "建立屬於你的策略",
