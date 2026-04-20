@@ -358,15 +358,42 @@ export default class SyncEngine {
         )
       : null;
 
-    // 如果今天已經同步過 (DB 已有資料且 localStorage 也有今天紀錄)，則進行盤中判斷或跳過
+    const now = new Date();
+    const isMarketClosedToday = () => {
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      // 台灣市場 1:30 PM 收盤，1:45 PM 後資料通常已結算完成
+      return hours > 13 || (hours === 13 && minutes >= 45);
+    };
+
+    const wasLastFetchFinal = () => {
+      if (!preFetchTime) return false;
+      const lastFetch = new Date(preFetchTime);
+      const h = lastFetch.getHours();
+      const m = lastFetch.getMinutes();
+      // 如果上次同步是在 13:45 之後，視為已獲得最終數據
+      return h > 13 || (h === 13 && m >= 45);
+    };
+
+    // 如果今天已經同步過
     if (snap && snap.last_date >= today && preFetchDate === today) {
-      // 在非盤中時段且今日已同步過，跳過
-      if (!checkTimeRange(preFetchTime || "")) {
-        this.broadcast("logs", {
-          msg: `[Skip] ${stock.stock_id} already up-to-date in DB.`,
-          type: "info",
-        });
-        return;
+      if (isMarketClosedToday()) {
+        // 現在已收盤：只有當上次同步也是收盤後進行的，才跳過
+        if (wasLastFetchFinal()) {
+          this.broadcast("logs", {
+            msg: `[Skip] ${stock.stock_id} final data already in DB.`,
+            type: "info",
+          });
+          return;
+        }
+        // 否則（上次是盤中），現在收盤了，必須強制跑一次以獲取最終資料
+      } else {
+        // 現在是盤中或開盤前
+        // 如果上次同步也是今天，且在 1 小時內，則跳過以免頻繁存取
+        const lastSyncTs = preFetchTime ? new Date(preFetchTime).getTime() : 0;
+        if (Date.now() - lastSyncTs < 3600000) { // 1 小時緩衝
+           return;
+        }
       }
     }
 
@@ -400,21 +427,23 @@ export default class SyncEngine {
     if (daily.status === "fulfilled" && daily.value) {
       await this.processTA(
         stock,
-        daily.value,
+        daily.value.data,
         DealTableOptions.DailyDeal,
         SkillsTableOptions.DailySkills,
+        daily.value.perd,
       );
     }
     if (weekly.status === "fulfilled" && weekly.value) {
       await this.processTA(
         stock,
-        weekly.value,
+        weekly.value.data,
         DealTableOptions.WeeklyDeal,
         SkillsTableOptions.WeeklySkills,
+        weekly.value.perd,
       );
     }
     if (hourly.status === "fulfilled" && hourly.value) {
-      await this.processHourly(stock, hourly.value);
+      await this.processHourly(stock, hourly.value.data);
     }
 
     localStorage.setItem(
@@ -435,12 +464,14 @@ export default class SyncEngine {
     });
     if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
     const text = await response.text();
-    return analyzeIndicatorsData(
+    const ta = analyzeIndicatorsData(
       text,
       perd === UrlTaPerdOptions.Hour
         ? IndicatorsDateTimeType.DateTime
         : IndicatorsDateTimeType.Date,
     );
+    // [v10] Ensure we return the timeframe option alongside data for correct filtering
+    return { data: ta, perd };
   }
 
   private async processTA(
@@ -448,22 +479,38 @@ export default class SyncEngine {
     ta: TaListType,
     dealTable: DealTableOptions,
     skillTable: SkillsTableOptions,
+    perd: UrlTaPerdOptions,
   ) {
     if (!this.dbHelper || ta.length === 0) return;
+
+    const now = new Date();
+    const today = String(dateFormat(now.getTime(), Mode.TimeStampToNumber));
+    const isMarketOpen = now.getHours() < 13 || (now.getHours() === 13 && now.getMinutes() < 45);
 
     // Check missing dates (Corrected: Use specific tables for lookup)
     const existing = await this.dbHelper.getStockDates(stock.stock_id, dealTable, skillTable);
     
     // Logic: 
     // 1. Missing dates in DB
-    // 2. Any date >= the 3rd most recent date in DB (Safe buffer for settlement and adjustments)
+    // 2. Any date >= the 3rd most recent date in DB (Safe buffer)
+    // 3. [STRICT] If market is open, EXCLUDE today's data (and current week's data)
     const sortedExisting = Array.from(existing).sort();
     const thresholdT = sortedExisting.length >= 3 
       ? sortedExisting[sortedExisting.length - 3] 
       : (sortedExisting[0] || "");
 
-    const missing = ta.filter((item) => {
+    const missing = ta.filter((item, index) => {
       const tStr = String(item.t);
+      
+      // Strict Intraday Filter
+      if (isMarketOpen) {
+        if (perd === UrlTaPerdOptions.Day && tStr === today) return false;
+        if (perd === UrlTaPerdOptions.Week && index === ta.length - 1) {
+          // Assuming the last weekly candle in the payload is the current ongoing week
+          return false;
+        }
+      }
+
       return !existing.has(tStr) || (thresholdT !== "" && tStr >= thresholdT);
     });
 
@@ -483,6 +530,11 @@ export default class SyncEngine {
 
   private async processHourly(stock: StockTableType, ta: TaListType) {
     if (!this.dbHelper || ta.length === 0) return;
+
+    const now = new Date();
+    const today = String(dateFormat(now.getTime(), Mode.TimeStampToNumber));
+    const isMarketOpen = now.getHours() < 13 || (now.getHours() === 13 && now.getMinutes() < 45);
+
     const existing = await this.dbHelper.getStockHourlyTimestamps(
       stock.stock_id,
     );
@@ -493,6 +545,10 @@ export default class SyncEngine {
 
     const missing = ta.filter((item) => {
       const tStr = String(item.t);
+      
+      // Strict Intraday Filter for Hourly
+      if (isMarketOpen && tStr.startsWith(today)) return false;
+
       return !existing.has(tStr) || (thresholdTs !== "" && tStr >= thresholdTs);
     });
     if (missing.length === 0) return;
