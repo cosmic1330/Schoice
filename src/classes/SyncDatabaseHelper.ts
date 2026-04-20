@@ -242,14 +242,18 @@ export default class SyncDatabaseHelper {
     }
   }
 
-  async getStockDates(stockId: string): Promise<Set<string>> {
+  async getStockDates(
+    stockId: string,
+    dealTable: string = "daily_deal",
+    skillTable: string = "daily_skills",
+  ): Promise<Set<string>> {
     try {
       // Logic intersection: Only return dates where BOTH exist
       const result: Array<{ t: string }> = await this.db.select(
-        `SELECT d.t FROM daily_deal d
-         INNER JOIN daily_skills s ON d.stock_id = s.stock_id AND d.t = s.t
+        `SELECT d.t FROM ${dealTable} d
+         INNER JOIN ${skillTable} s ON d.stock_id = s.stock_id AND d.t = s.t
          WHERE d.stock_id = $1`,
-        [stockId]
+        [stockId],
       );
       return new Set(result.map((r) => r.t));
     } catch (e) {

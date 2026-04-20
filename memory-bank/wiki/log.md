@@ -3,6 +3,7 @@
 按時間順序記錄系統的重大變更與決策。
 
 ## 2026-04-20
+- [Sync] 修正並優化週交易資料更新邏輯：修復日期檢查表錯誤，並實施「強制更新最後兩筆 K 線」策略，確保週期交替時（如週五結算與下週一開盤）數據能被完全校準。
 - [UI/Chart] 將 `ResultTable` 的 `UltraTiny` 系列圖表（日、時、週）由折線圖替換為 K 線圖（Candlestick）。
 - [UI/Chart] 實現自定義 K 線渲染組件 `UltraTinyCandlestickChart`，整合 OHLC 影線與多重均線顯示。
 - [DB/Query] 更新日、時、週線查詢語句，獲取完整的 OHLC 數據。

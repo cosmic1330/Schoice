@@ -451,9 +451,19 @@ export default class SyncEngine {
   ) {
     if (!this.dbHelper || ta.length === 0) return;
 
-    // Check missing dates
-    const existing = await this.dbHelper.getStockDates(stock.stock_id);
-    const missing = ta.filter((item) => !existing.has(String(item.t)));
+    // Check missing dates (Corrected: Use specific tables for lookup)
+    const existing = await this.dbHelper.getStockDates(stock.stock_id, dealTable, skillTable);
+    
+    // Logic: 
+    // 1. Missing dates in DB
+    // 2. The last 2 items in ta (to ensure ongoing period and recently closed period are updated)
+    const recentTs = ta.slice(-2).map(item => String(item.t));
+    const recentSet = new Set(recentTs);
+    
+    const missing = ta.filter((item) => {
+      const tStr = String(item.t);
+      return !existing.has(tStr) || recentSet.has(tStr);
+    });
 
     if (missing.length === 0) return;
 
@@ -474,7 +484,13 @@ export default class SyncEngine {
     const existing = await this.dbHelper.getStockHourlyTimestamps(
       stock.stock_id,
     );
-    const missing = ta.filter((item) => !existing.has(String(item.t)));
+    const recentTs = ta.slice(-2).map(item => String(item.t));
+    const recentSet = new Set(recentTs);
+
+    const missing = ta.filter((item) => {
+      const tStr = String(item.t);
+      return !existing.has(tStr) || recentSet.has(tStr);
+    });
     if (missing.length === 0) return;
 
     const { deals, skills } = await this.calculateHourlyIndicators(
