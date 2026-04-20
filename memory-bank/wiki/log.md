@@ -2,6 +2,14 @@
 
 按時間順序記錄系統的重大變更與決策。
 
+## 2026-04-20
+- [Sync] 實現 Supabase 三大表格 (`recent_fundamental`, `investor_positions`, `financial_metric`) 同步至本地 SQLite (Migration v12)。
+- [Sync] 更新 `SyncDatabaseHelper` 以顯式欄位安全寫入數據。
+- [Sync] 重構 `fetchStockExtData` 採用的雙軌策略：優先抓取 Supabase，若數據缺漏則自動降級 (Fallback) 至 Yahoo 爬蟲。
+- [Scraper] 根據 n8n 參考強化 Yahoo 備援抓取器，實現三頁面並行抓取 (`/profile`, `/revenue`, `/major-holders`)，精確對齊 EPS、營收與籌碼面數據的映射邏輯。
+- [Query] 實作「本地優先，雲端備援」策略於 `StockFundamentalQueryBuilder`，顯著提升基本面選股掃描速度。
+- [Sync] 引入「過期資料判定」機制，解決舊資料阻礙備援抓取的問題（週籌碼 > 7天）。
+
 ## 2026-04-07
 - [System] 落實徹底的變更分離：建立 `constraints` 專用資料夾，賦予 `G-XXX` 絕對命名權限，並修改 `index.md` 與其 TL;DR。
 - [System] 升級為 Lazy Load Edition：重構 `.agent/rules`，並於 `index.md` 加入 TL;DR 及知識地圖，實現全預載轉動態按需讀取。

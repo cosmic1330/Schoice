@@ -7,10 +7,11 @@ import {
   Typography,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { stockFundamentalQueryBuilder } from "../../../classes/StockFundamentalQueryBuilder";
+import { DatabaseContext } from "../../../context/DatabaseContext";
 import { useUser } from "../../../context/UserContext";
 import useDatabaseQuery from "../../../hooks/useDatabaseQuery";
 import useCloudStore from "../../../store/Cloud.store";
@@ -24,6 +25,7 @@ export default function ConditionsListResult({
 }) {
   const { t } = useTranslation();
   const query = useDatabaseQuery();
+  const { db } = useContext(DatabaseContext);
   const [results, setResults] = useState<StockTableType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
@@ -36,6 +38,9 @@ export default function ConditionsListResult({
     setResults([]);
 
     const timer = setTimeout(() => {
+      if (db) {
+        stockFundamentalQueryBuilder.setDatabase(db);
+      }
       stockFundamentalQueryBuilder
         .getStocksByConditions({ conditions: prompts })
         .then((stockIds) => {
@@ -60,7 +65,7 @@ export default function ConditionsListResult({
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [prompts, query]);
+  }, [prompts, query, db]);
 
   const handleClick = useCallback(async () => {
     if (isLoading) return;

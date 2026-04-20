@@ -476,5 +476,81 @@ pub fn value() -> Vec<Migration> {
             ",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 12,
+            description: "add_fundamental_and_investor_tables",
+            sql: "
+                CREATE TABLE financial_metric (
+                  stock_id TEXT PRIMARY KEY,
+                  pe REAL,
+                  pb REAL,
+                  dividend_yield REAL,
+                  report_period TEXT,
+                  gross_profit_margin REAL,
+                  operating_margin REAL,
+                  pre_tax_profit_margin REAL,
+                  roa REAL,
+                  roe REAL,
+                  book_value_per_share REAL,
+                  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  CONSTRAINT fk_stock_financial FOREIGN KEY (stock_id) REFERENCES stock(stock_id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE recent_fundamental (
+                  stock_id TEXT PRIMARY KEY,
+                  revenue_recent_m1_mom REAL,
+                  revenue_recent_m1_yoy REAL,
+                  revenue_recent_m1_yoy_acc REAL,
+                  revenue_recent_m1_name TEXT,
+                  revenue_recent_m2_mom REAL,
+                  revenue_recent_m2_yoy REAL,
+                  revenue_recent_m2_yoy_acc REAL,
+                  revenue_recent_m2_name TEXT,
+                  revenue_recent_m3_mom REAL,
+                  revenue_recent_m3_yoy REAL,
+                  revenue_recent_m3_yoy_acc REAL,
+                  revenue_recent_m3_name TEXT,
+                  revenue_recent_m4_mom REAL,
+                  revenue_recent_m4_yoy REAL,
+                  revenue_recent_m4_yoy_acc REAL,
+                  revenue_recent_m4_name TEXT,
+                  eps_recent_q1 REAL,
+                  eps_recent_q1_name TEXT,
+                  eps_recent_q2 REAL,
+                  eps_recent_q2_name TEXT,
+                  eps_recent_q3 REAL,
+                  eps_recent_q3_name TEXT,
+                  eps_recent_q4 REAL,
+                  eps_recent_q4_name TEXT,
+                  eps_recent_y1 REAL,
+                  eps_recent_y1_name TEXT,
+                  eps_recent_y2 REAL,
+                  eps_recent_y2_name TEXT,
+                  eps_recent_y3 REAL,
+                  eps_recent_y3_name TEXT,
+                  eps_recent_y4 REAL,
+                  eps_recent_y4_name TEXT,
+                  CONSTRAINT fk_stock_fundamental FOREIGN KEY (stock_id) REFERENCES stock(stock_id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE investor_positions (
+                  stock_id TEXT PRIMARY KEY,
+                  recent_w1_foreign_ratio REAL,
+                  recent_w1_big_investor_ratio REAL,
+                  recent_w1_name TEXT,
+                  recent_w2_foreign_ratio REAL,
+                  recent_w2_big_investor_ratio REAL,
+                  recent_w2_name TEXT,
+                  recent_w3_foreign_ratio REAL,
+                  recent_w3_big_investor_ratio REAL,
+                  recent_w3_name TEXT,
+                  recent_w4_foreign_ratio REAL,
+                  recent_w4_big_investor_ratio REAL,
+                  recent_w4_name TEXT,
+                  CONSTRAINT fk_stock_investor FOREIGN KEY (stock_id) REFERENCES stock(stock_id) ON DELETE CASCADE
+                );
+            ",
+            kind: MigrationKind::Up,
+        },
     ]
 }

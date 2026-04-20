@@ -1,7 +1,10 @@
+import Database from "@tauri-apps/plugin-sql";
 import { supabase } from "../tools/supabase";
 import { FundamentalPrompts } from "../types";
 
 export class StockFundamentalQueryBuilder {
+  private db: Database | null = null;
+
   protected mapping: Record<string, { key: string; table: string }> = {
     本益比: { key: "pe", table: "financial_metric" },
     股價淨值比: { key: "pb", table: "financial_metric" },
@@ -13,6 +16,7 @@ export class StockFundamentalQueryBuilder {
     股東權益報酬率: { key: "roe", table: "financial_metric" },
     每股淨值: { key: "book_value_per_share", table: "financial_metric" },
     EPS近一季: { key: "eps_recent_q1", table: "recent_fundamental" },
+    // ... same mapping logic ... (I will keep the rest of the mapping to avoid bloat)
     EPS近二季: { key: "eps_recent_q2", table: "recent_fundamental" },
     EPS近三季: { key: "eps_recent_q3", table: "recent_fundamental" },
     EPS近四季: { key: "eps_recent_q4", table: "recent_fundamental" },
@@ -110,6 +114,10 @@ export class StockFundamentalQueryBuilder {
     小於等於: "<=",
   };
 
+  public setDatabase(db: Database) {
+    this.db = db;
+  }
+
   async getStocksByConditions({
     conditions,
     stockIds,
@@ -128,16 +136,33 @@ export class StockFundamentalQueryBuilder {
     }, {} as Record<string, FundamentalPrompts>);
 
     for (const [table, tableConditions] of Object.entries(groupedConditions)) {
-      let query = supabase.from(table).select("stock_id, *");
+      let filteredData: any[] = [];
+      let dataSource: "local" | "cloud" = "cloud";
 
-      // 先查出所有該 table 的資料
-      const { data: tableData, error: tableError } = await query;
-      if (tableError) {
-        console.error(`${table} 查詢失敗:`, tableError);
-        return [];
+      // 1. 優先嘗試從本地 SQLite 獲取資料
+      if (this.db) {
+        try {
+          const localData: any[] = await this.db.select(`SELECT * FROM ${table}`);
+          if (localData && localData.length > 0) {
+            filteredData = localData;
+            dataSource = "local";
+          }
+        } catch (e) {
+          console.warn(`[QueryBuilder] 本地表格 ${table} 查詢失敗，切換至雲端:`, e);
+        }
       }
-      let filteredData = tableData;
 
+      // 2. 如果本地沒有資料或未設定 DB，則從 Supabase 獲取
+      if (dataSource === "cloud") {
+        const { data, error } = await supabase.from(table).select("stock_id, *");
+        if (error) {
+          console.error(`[QueryBuilder] 雲端表格 ${table} 查詢失敗:`, error);
+          return [];
+        }
+        filteredData = data || [];
+      }
+
+      // 3. 執行條件過濾
       for (const condition of tableConditions) {
         const indicator = this.mapping[condition.indicator].key;
         const operator = this.operatorMapping[condition.operator];

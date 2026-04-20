@@ -186,31 +186,43 @@ export default class SyncDatabaseHelper {
     }
   }
 
-  /**
-   * Save Recent Fundamentals (EPS/Revenue history)
-   */
   async saveRecentFundamentals(data: any) {
     try {
-      // Logic would map the large schema in types.ts
-      // Simplified here to match user's need for "updated fundamental data"
-      const columns = Object.keys(data).join(", ");
-      const placeholders = Object.keys(data).map((_, i) => `$${i + 1}`).join(", ");
-      const sql = `INSERT OR REPLACE INTO recent_fundamental (${columns}) VALUES (${placeholders})`;
-      await this.db.execute(sql, Object.values(data));
+      const columns = [
+        "stock_id",
+        "revenue_recent_m1_mom", "revenue_recent_m1_yoy", "revenue_recent_m1_yoy_acc", "revenue_recent_m1_name",
+        "revenue_recent_m2_mom", "revenue_recent_m2_yoy", "revenue_recent_m2_yoy_acc", "revenue_recent_m2_name",
+        "revenue_recent_m3_mom", "revenue_recent_m3_yoy", "revenue_recent_m3_yoy_acc", "revenue_recent_m3_name",
+        "revenue_recent_m4_mom", "revenue_recent_m4_yoy", "revenue_recent_m4_yoy_acc", "revenue_recent_m4_name",
+        "eps_recent_q1", "eps_recent_q1_name", "eps_recent_q2", "eps_recent_q2_name", "eps_recent_q3", "eps_recent_q3_name", "eps_recent_q4", "eps_recent_q4_name",
+        "eps_recent_y1", "eps_recent_y1_name", "eps_recent_y2", "eps_recent_y2_name", "eps_recent_y3", "eps_recent_y3_name", "eps_recent_y4", "eps_recent_y4_name"
+      ];
+      
+      const values = columns.map(col => data[col] ?? null);
+      const placeholders = columns.map((_, i) => `$${i + 1}`).join(", ");
+      const sql = `INSERT OR REPLACE INTO recent_fundamental (${columns.join(", ")}) VALUES (${placeholders})`;
+      
+      await this.db.execute(sql, values);
     } catch (e) {
       error(`[SyncDB] SaveRecentFundamentals error: ${e}`);
     }
   }
 
-  /**
-   * Save Investor Positions
-   */
   async saveInvestorPositions(data: any) {
     try {
-      const columns = Object.keys(data).join(", ");
-      const placeholders = Object.keys(data).map((_, i) => `$${i + 1}`).join(", ");
-      const sql = `INSERT OR REPLACE INTO investor_positions (${columns}) VALUES (${placeholders})`;
-      await this.db.execute(sql, Object.values(data));
+      const columns = [
+        "stock_id",
+        "recent_w1_foreign_ratio", "recent_w1_big_investor_ratio", "recent_w1_name",
+        "recent_w2_foreign_ratio", "recent_w2_big_investor_ratio", "recent_w2_name",
+        "recent_w3_foreign_ratio", "recent_w3_big_investor_ratio", "recent_w3_name",
+        "recent_w4_foreign_ratio", "recent_w4_big_investor_ratio", "recent_w4_name"
+      ];
+      
+      const values = columns.map(col => data[col] ?? null);
+      const placeholders = columns.map((_, i) => `$${i + 1}`).join(", ");
+      const sql = `INSERT OR REPLACE INTO investor_positions (${columns.join(", ")}) VALUES (${placeholders})`;
+      
+      await this.db.execute(sql, values);
     } catch (e) {
       error(`[SyncDB] SaveInvestorPositions error: ${e}`);
     }
