@@ -456,13 +456,15 @@ export default class SyncEngine {
     
     // Logic: 
     // 1. Missing dates in DB
-    // 2. The last 2 items in ta (to ensure ongoing period and recently closed period are updated)
-    const recentTs = ta.slice(-2).map(item => String(item.t));
-    const recentSet = new Set(recentTs);
-    
+    // 2. Any date >= the 3rd most recent date in DB (Safe buffer for settlement and adjustments)
+    const sortedExisting = Array.from(existing).sort();
+    const thresholdT = sortedExisting.length >= 3 
+      ? sortedExisting[sortedExisting.length - 3] 
+      : (sortedExisting[0] || "");
+
     const missing = ta.filter((item) => {
       const tStr = String(item.t);
-      return !existing.has(tStr) || recentSet.has(tStr);
+      return !existing.has(tStr) || (thresholdT !== "" && tStr >= thresholdT);
     });
 
     if (missing.length === 0) return;
@@ -484,12 +486,14 @@ export default class SyncEngine {
     const existing = await this.dbHelper.getStockHourlyTimestamps(
       stock.stock_id,
     );
-    const recentTs = ta.slice(-2).map(item => String(item.t));
-    const recentSet = new Set(recentTs);
+    const sortedExisting = Array.from(existing).sort();
+    const thresholdTs = sortedExisting.length >= 3 
+      ? sortedExisting[sortedExisting.length - 3] 
+      : (sortedExisting[0] || "");
 
     const missing = ta.filter((item) => {
       const tStr = String(item.t);
-      return !existing.has(tStr) || recentSet.has(tStr);
+      return !existing.has(tStr) || (thresholdTs !== "" && tStr >= thresholdTs);
     });
     if (missing.length === 0) return;
 
