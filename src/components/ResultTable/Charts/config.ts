@@ -1,8 +1,8 @@
 import { IndicatorColorType } from "../types";
 
-export const daily_count = 25;
-export const weekly_count = 25;
-export const hourly_count = 25;
+export const daily_count = 20;
+export const weekly_count = 20;
+export const hourly_count = 20;
 
 export const BollIndicatorColor: IndicatorColorType[] = [
   {
@@ -50,10 +50,6 @@ export const ObvIndicatorColor: IndicatorColorType[] = [
 ];
 
 export const UltraTinyIndicatorColor: IndicatorColorType[] = [
-  {
-    key: "c",
-    color: "#777",
-  },
   {
     key: "ma5",
     color: "#589bf3",

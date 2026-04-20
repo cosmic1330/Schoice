@@ -36,3 +36,4 @@
 *(已完成的任務檔案已依據 Lean 規範刪除，內容併入主文檔)*
 - 🔵 REQ-001: 建立 Memory Bank (Completed)
 - 🔵 REQ-004: [Yahoo 同步抗性與自動修復 (BDD 實例)](../active-tasks/REQ-004_YahooSyncResilience.md) (Completed)
+- 🔵 REQ-005: 替換超小型線圖為 K 線圖 (Completed)

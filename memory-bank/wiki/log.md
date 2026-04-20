@@ -3,6 +3,9 @@
 按時間順序記錄系統的重大變更與決策。
 
 ## 2026-04-20
+- [UI/Chart] 將 `ResultTable` 的 `UltraTiny` 系列圖表（日、時、週）由折線圖替換為 K 線圖（Candlestick）。
+- [UI/Chart] 實現自定義 K 線渲染組件 `UltraTinyCandlestickChart`，整合 OHLC 影線與多重均線顯示。
+- [DB/Query] 更新日、時、週線查詢語句，獲取完整的 OHLC 數據。
 - [Sync] 實現 Supabase 三大表格 (`recent_fundamental`, `investor_positions`, `financial_metric`) 同步至本地 SQLite (Migration v12)。
 - [Sync] 更新 `SyncDatabaseHelper` 以顯式欄位安全寫入數據。
 - [Sync] 重構 `fetchStockExtData` 採用的雙軌策略：優先抓取 Supabase，若數據缺漏則自動降級 (Fallback) 至 Yahoo 爬蟲。
