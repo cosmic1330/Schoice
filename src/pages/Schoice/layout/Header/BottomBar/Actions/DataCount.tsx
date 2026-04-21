@@ -1,70 +1,104 @@
+import CloudIcon from "@mui/icons-material/Cloud";
 import BarChartIcon from "@mui/icons-material/BarChart";
-import { Box, Stack, Typography, alpha } from "@mui/material";
+import { Box, Stack, Tooltip, Typography, alpha } from "@mui/material";
 import { error } from "@tauri-apps/plugin-log";
 import { useContext, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import SqliteDataManager from "../../../../../../classes/SqliteDataManager";
 import { DatabaseContext } from "../../../../../../context/DatabaseContext";
+import { useSyncEngine } from "../../../../../../hooks/useSyncEngine";
 import useSchoiceStore from "../../../../../../store/Schoice.store";
 
 export default function DataCount() {
   const { t } = useTranslation();
   const { data_count, changeDataCount } = useSchoiceStore();
+  const { syncStatus } = useSyncEngine();
   const { db, dbType } = useContext(DatabaseContext);
+  const isCloud = dbType === "postgres";
 
   useEffect(() => {
     if (!db) return;
-    const sqliteDataManager = new SqliteDataManager(db);
-    sqliteDataManager
-      .getLatestDailyDealCount()
-      .then((result) => {
-        changeDataCount(result.count);
-      })
-      .catch((e) => {
-        error(`Error getting latest daily deal count: ${e}`);
-      });
-  }, [db]);
 
-  const sourceLabel = dbType === "postgres" ? "(Postgres)" : "(SQLite)";
+    const refreshCount = () => {
+      const sqliteDataManager = new SqliteDataManager(db);
+      sqliteDataManager
+        .getLatestDailyDealCount()
+        .then((result) => {
+          changeDataCount(result.count);
+        })
+        .catch((e: any) => {
+          error(`Error getting latest daily deal count: ${e}`);
+        });
+    };
+
+    // 初始抓取
+    refreshCount();
+
+    // 如果正在同步或掃描，每 10 秒刷新一次
+    let interval: any;
+    if (syncStatus === "syncing" || syncStatus === "scanning") {
+      interval = setInterval(refreshCount, 10000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [db, syncStatus, changeDataCount]);
+
+  const sourceLabel = isCloud ? "(Cloud)" : "(Local)";
 
   return (
-    <Stack
-      direction="row"
-      spacing={1.5}
-      alignItems="center"
-      sx={{
-        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05),
-        px: 2,
-        py: 0.8,
-        borderRadius: 2,
-        border: "1px solid",
-        borderColor: (theme) => alpha(theme.palette.primary.main, 0.1),
-      }}
-    >
-      <BarChartIcon sx={{ color: "primary.main", fontSize: 20 }} />
-      <Box>
-        <Typography
-          variant="caption"
-          sx={{
-            color: "text.secondary",
-            fontWeight: 600,
-            display: "block",
-            lineHeight: 1,
-          }}
-        >
-          {t("Pages.Schoice.Header.dataCount")} {sourceLabel}
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{
-            fontWeight: 800,
-            color: "primary.main",
-            lineHeight: 1.2,
-          }}
-        >
-          {data_count} {t("Pages.Schoice.Header.stockUnit")}
-        </Typography>
-      </Box>
-    </Stack>
+    <Tooltip title={`${t("Pages.Schoice.Header.dataCount")} ${sourceLabel}`} arrow>
+      <Stack
+        direction="row"
+        spacing={1}
+        alignItems="center"
+        sx={{
+          px: 1.2,
+          py: 0.4,
+          borderRadius: "8px",
+          transition: "all 0.2s ease",
+          "&:hover": {
+             bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+          },
+          border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.05)}`,
+          bgcolor: (theme) => isCloud ? alpha(theme.palette.primary.main, 0.05) : "transparent",
+        }}
+      >
+        {isCloud ? (
+          <CloudIcon sx={{ color: "primary.main", fontSize: 16 }} />
+        ) : (
+          <BarChartIcon sx={{ color: "text.secondary", fontSize: 16, opacity: 0.8 }} />
+        )}
+        <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5, whiteSpace: "nowrap", flexShrink: 0 }}>
+          <Typography
+            variant="body2"
+            noWrap
+            sx={{
+              fontWeight: 900,
+              color: "text.primary",
+              fontVariantNumeric: "tabular-nums",
+              fontSize: "0.85rem",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {data_count}
+          </Typography>
+          <Typography
+            variant="caption"
+            noWrap
+            sx={{
+              color: "text.secondary",
+              fontWeight: 600,
+              fontSize: "0.65rem",
+              opacity: 0.6,
+              whiteSpace: "nowrap",
+            }}
+          >
+             {t("Pages.Schoice.Header.stockUnit")}
+          </Typography>
+        </Box>
+      </Stack>
+    </Tooltip>
   );
 }

@@ -1,5 +1,5 @@
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
-import { Box, Button, Typography, alpha } from "@mui/material";
+import { Box, Button, Typography, alpha, Stack } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { useUser } from "../../../../../../context/UserContext";
@@ -28,39 +28,37 @@ export default function FilterSelect() {
     <Button
       size="small"
       onClick={handleClick}
-      startIcon={<BookmarkBorderIcon />}
+      startIcon={<BookmarkBorderIcon sx={{ fontSize: 18 }} />}
       sx={{
-        borderRadius: 2,
-        px: 2,
-        py: 0.8,
-        bgcolor: (theme) => alpha(theme.palette.secondary.main, 0.1),
+        borderRadius: "100px",
+        px: 1.5,
+        py: 0.5,
+        minWidth: "fit-content",
+        bgcolor: (theme) => alpha(theme.palette.secondary.main, 0.08),
         color: "secondary.main",
+        border: (theme) => `1px solid ${alpha(theme.palette.secondary.main, 0.15)}`,
+        textTransform: "none",
         "&:hover": {
-          bgcolor: (theme) => alpha(theme.palette.secondary.main, 0.2),
+          bgcolor: (theme) => alpha(theme.palette.secondary.main, 0.15),
+          borderColor: (theme) => alpha(theme.palette.secondary.main, 0.3),
         },
       }}
     >
-      <Box sx={{ textAlign: "left" }}>
-        <Typography
-          variant="caption"
-          sx={{
-            fontWeight: 600,
-            display: "block",
-            lineHeight: 1,
-          }}
-        >
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Typography variant="caption" sx={{ fontWeight: 800, whiteSpace: "nowrap" }}>
           {t("Pages.Schoice.Header.filterStocks")}
         </Typography>
-        <Typography
-          variant="body2"
-          sx={{
-            fontWeight: 800,
-            lineHeight: 1.2,
-          }}
-        >
-          {filterStocks.length} {t("Pages.Schoice.Header.stockUnit")}
-        </Typography>
-      </Box>
+        <Box sx={{ 
+          px: 0.8, 
+          py: 0.1, 
+          borderRadius: "4px", 
+          bgcolor: (theme) => alpha(theme.palette.secondary.main, 0.12),
+          fontSize: "0.7rem",
+          fontWeight: 900
+        }}>
+          {filterStocks.length}
+        </Box>
+      </Stack>
     </Button>
   );
 }

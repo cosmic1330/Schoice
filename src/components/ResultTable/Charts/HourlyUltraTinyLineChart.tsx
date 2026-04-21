@@ -1,9 +1,9 @@
 import { Box, Tooltip } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
-import { Line, LineChart, YAxis } from "recharts";
 import { DatabaseContext } from "../../../context/DatabaseContext";
 import ChartTooltip from "./ChartTooltip";
 import { hourly_count, UltraTinyIndicatorColor } from "./config";
+import UltraTinyCandlestickChart from "./UltraTinyCandlestickChart";
 
 const HourlyUltraTinyLineChart = ({
   stock_id,
@@ -16,7 +16,7 @@ const HourlyUltraTinyLineChart = ({
   const [data, setData] = useState<any[]>([]);
   useEffect(() => {
     if (!stock_id) return;
-    const sqlQuery = `SELECT hourly_deal.ts, ${UltraTinyIndicatorColor.map(
+    const sqlQuery = `SELECT hourly_deal.ts, o, h, l, c, ${UltraTinyIndicatorColor.map(
       (item) => item.key
     ).join(
       ","
@@ -27,24 +27,12 @@ const HourlyUltraTinyLineChart = ({
       const formatData = res.reverse();
       setData(formatData);
     });
-  }, [stock_id, t]);
+  }, [stock_id, t, db]);
 
   return (
     <Tooltip title={<ChartTooltip value={UltraTinyIndicatorColor} />} arrow>
-      <Box>
-        <LineChart data={data} width={80} height={60}>
-          <YAxis domain={["dataMin", "dataMax"]} hide />
-          {UltraTinyIndicatorColor.map((item, index) => (
-            <Line
-              key={index}
-              type="monotone"
-              dataKey={item.key}
-              stroke={item.color}
-              strokeWidth={1.5}
-              dot={false}
-            />
-          ))}
-        </LineChart>
+      <Box sx={{ width: 80, height: 60 }}>
+        <UltraTinyCandlestickChart data={data} />
       </Box>
     </Tooltip>
   );

@@ -1,5 +1,6 @@
 import { Box, Grid, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { DatabaseContext } from "../../../context/DatabaseContext";
 import { supabase } from "../../../tools/supabase";
 import {
   FinancialMetricTableType,
@@ -17,6 +18,7 @@ interface FundamentalTooltipProps {
 }
 
 export default function FundamentalTooltip({ row }: FundamentalTooltipProps) {
+  const { db } = useContext(DatabaseContext);
   const [financialMetrics, setFinancialMetrics] =
     useState<FinancialMetricTableType | null>(null);
   const [recentFundamental, setRecentFundamental] =
@@ -28,60 +30,57 @@ export default function FundamentalTooltip({ row }: FundamentalTooltipProps) {
     const fetchData = async () => {
       setLoading(true);
 
+      const fetchTable = async (table: string): Promise<any> => {
+        // 1. Try Local First
+        if (db) {
+          try {
+            const localData: any[] = await db.select(
+              `SELECT * FROM ${table} WHERE stock_id = ?`,
+              [row.stock_id]
+            );
+            if (localData && localData.length > 0) {
+              return localData[0];
+            }
+          } catch (e) {
+            console.warn(`[Tooltip] Local fetch failed for ${table}:`, e);
+          }
+        }
+
+        // 2. Fallback to Cloud
+        try {
+          const { data, error } = await supabase
+            .from(table)
+            .select("*")
+            .eq("stock_id", row.stock_id)
+            .maybeSingle();
+
+          if (error) throw error;
+          return data;
+        } catch (e) {
+          console.error(`[Tooltip] Cloud fetch failed for ${table}:`, e);
+          return null;
+        }
+      };
+
       try {
-        // 並行載入兩個表的資料
-        const [financialResult, recentResult, investorResult] = await Promise.all([
-          supabase
-            .from("financial_metric")
-            .select("*")
-            .eq("stock_id", row.stock_id)
-            .single(),
-          supabase
-            .from("recent_fundamental")
-            .select("*")
-            .eq("stock_id", row.stock_id)
-            .single(),
-          supabase
-            .from("investor_positions")
-            .select("*")
-            .eq("stock_id", row.stock_id)
-            .single(),
+        const [financialData, recentData, investorData] = await Promise.all([
+          fetchTable("financial_metric"),
+          fetchTable("recent_fundamental"),
+          fetchTable("investor_positions"),
         ]);
 
-        if (financialResult.error) {
-          console.error(
-            "Error fetching financial metrics:",
-            financialResult.error
-          );
-        } else {
-          setFinancialMetrics(financialResult.data);
-        }
-
-        if (recentResult.error) {
-          console.error(
-            "Error fetching recent fundamental data:",
-            recentResult.error
-          );
-        } else {
-          setRecentFundamental(recentResult.data);
-        }
-        if (investorResult.error) {
-          console.error(
-            "Error fetching investor positions data:",
-            investorResult.error
-          );
-        } else {
-          setInvestorPositions(investorResult.data);
-        }
+        setFinancialMetrics(financialData);
+        setRecentFundamental(recentData);
+        setInvestorPositions(investorData);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching tooltip data:", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [row.stock_id]);
+  }, [row.stock_id, db]);
 
   const hasData = financialMetrics || recentFundamental || investorPositions;
 

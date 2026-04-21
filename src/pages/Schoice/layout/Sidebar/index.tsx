@@ -9,6 +9,7 @@ import { Box, IconButton, Stack, styled, Tooltip } from "@mui/material";
 import { useNavigate } from "react-router";
 import { supabase } from "../../../../tools/supabase";
 import InsertRuleButton from "./InsertRuleButton";
+
 const GridItem = styled(Box)`
   width: 70px;
   height: 100vh;
@@ -25,8 +26,13 @@ const GridItem = styled(Box)`
   @media screen and (max-width: 600px) {
     width: 100%;
     height: 50px;
+    flex-direction: row;
+    position: relative;
+    padding: 0 1rem;
+    height: 60px;
   }
 `;
+
 export default function SideBar() {
   const navigate = useNavigate();
 
@@ -42,18 +48,22 @@ export default function SideBar() {
   return (
     <Box gridArea="sidebar">
       <GridItem>
-        <Stack spacing={2} alignItems="center">
+        <Stack
+          spacing={2}
+          alignItems="center"
+          direction={{ xs: "row", sm: "column" }}
+        >
           <img
             src="/schoice_icon.png"
             alt="logo"
             style={{ width: 50, height: 50 }}
           />
-          <Tooltip title="首頁" arrow placement="right">
+          <Tooltip title="策略清單" arrow placement="right">
             <IconButton onClick={() => navigate("/schoice")}>
               <HomeRoundedIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title="基本面塞選" arrow placement="right">
+          <Tooltip title="基本面篩選" arrow placement="right">
             <IconButton onClick={() => navigate("/schoice/fundamental")}>
               <SmartButtonIcon />
             </IconButton>

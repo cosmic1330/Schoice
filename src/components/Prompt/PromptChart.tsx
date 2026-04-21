@@ -416,11 +416,27 @@ export default function PromptChart({
           </>
         )}
       </Box>
-      <Box height={300} width="100%" mt={2}>
-        <ResponsiveContainer>
-          <ComposedChart data={list.slice(-160)}>
-            <XAxis dataKey="t" />
-            <YAxis domain={["dataMin", "dataMax"]} dataKey="l" />
+      <Box sx={{ flex: 1, minHeight: 0, width: "100%", mt: 1 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart 
+            data={list.slice(-180)} 
+            margin={{ top: 20, right: 30, left: 30, bottom: 20 }}
+          >
+            <XAxis 
+              dataKey="t" 
+              minTickGap={40} // 增加間距防止時間標籤重疊
+              tick={{ fontSize: 10, fill: '#666' }}
+            /> 
+            <YAxis 
+              domain={[
+                (dataMin: number) => Math.floor(dataMin * 0.98), // 稍微放寬緩衝至 2%
+                (dataMax: number) => Math.ceil(dataMax * 1.02)
+              ]} 
+              dataKey="l" 
+              width={80} // 增加寬度以適應大數值 (如指數或加密貨幣)
+              tick={{ fontSize: 10, fill: '#666' }}
+              tickFormatter={(val) => val.toLocaleString()} // 加入千分位格式化
+            />
             <ZAxis type="number" range={[10]} />
             <Tooltip
               offset={50}

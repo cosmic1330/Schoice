@@ -109,10 +109,16 @@ export default function useMarketAnalysis({
   }, [deals, perd]);
 
   const power = useMemo(() => {
-    if (deals.length === 0) return "?";
+    if (deals.length < 3) return "載入中...";
     const lastDeal = deals[deals.length - 1];
     const seclastDeal = deals[deals.length - 2];
     const thrlastDeal = deals[deals.length - 3];
+    
+    // 安全檢查：確保 osc 存在
+    if (lastDeal.osc === undefined || seclastDeal.osc === undefined || thrlastDeal.osc === undefined) {
+      return "計算中...";
+    }
+
     if (
       (lastDeal.osc < seclastDeal.osc || lastDeal.osc < thrlastDeal.osc) &&
       lastDeal.osc < 0

@@ -1,79 +1,109 @@
 import SyncIcon from "@mui/icons-material/Sync";
 import {
   alpha,
+  Box,
   Button,
   CircularProgress,
   Stack,
+  Tooltip,
   Typography,
+  useTheme,
 } from "@mui/material";
-import { useCallback, useContext } from "react";
 import { useTranslation } from "react-i18next";
-import { DatabaseContext } from "../../../../../../context/DatabaseContext";
-import useHighConcurrencyDeals, {
-  Status,
-} from "../../../../../../hooks/useHighConcurrencyDeals";
-import useSchoiceStore from "../../../../../../store/Schoice.store";
+import { useSyncLaunch } from "../../../../../../hooks/useSyncLaunch";
 
 export default function UpdateDeals() {
   const { t } = useTranslation();
-  const { update_progress } = useSchoiceStore();
-  const { run, status, stop } = useHighConcurrencyDeals();
-  const { dbType } = useContext(DatabaseContext);
+  const theme = useTheme();
+  const { launch, workerActive, syncStatus } = useSyncLaunch();
 
-  const handleClick = useCallback(async () => {
-    if (status === Status.Idle) {
-      sessionStorage.removeItem("schoice:update:stop");
-      run();
-    } else {
-      stop();
-    }
-  }, [status, run, stop]);
+  const isIdle = syncStatus === "idle";
+  const isSyncing = syncStatus === "syncing" || syncStatus === "scanning";
+  const isCooling = syncStatus === "cooling";
 
-  if (dbType === "postgres") {
-    return null;
-  }
+  const getStatusColor = () => {
+    if (isSyncing) return "primary";
+    if (isCooling) return "warning";
+    if (isIdle && workerActive) return "info";
+    return "primary";
+  };
 
-  const isIdle = status === Status.Idle;
+  const getStatusHex = () => {
+    const color = getStatusColor();
+    return (theme.palette as any)[color].main;
+  };
 
   return (
-    <Stack direction="row" alignItems="center" spacing={1.5}>
-      {!isIdle && update_progress > 0 && (
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <CircularProgress size={16} thickness={6} />
+    <Stack direction="row" alignItems="center" spacing={1}>
+      <Tooltip title={t("Pages.Schoice.Header.updateData")} arrow>
+        <Button
+          variant="contained"
+          onClick={launch}
+          size="small"
+          color={getStatusColor()}
+          sx={{
+            minWidth: 0,
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            p: 0,
+            boxShadow:
+              isSyncing || isCooling
+                ? `0 0 12px ${alpha(getStatusHex(), 0.4)}`
+                : "none",
+            bgcolor:
+              isSyncing || isCooling ? alpha(getStatusHex(), 0.1) : undefined,
+            color: isSyncing || isCooling ? getStatusHex() : undefined,
+            "&:hover": {
+              bgcolor:
+                isSyncing || isCooling
+                  ? alpha(getStatusHex(), 0.15)
+                  : undefined,
+              transform: "scale(1.05)",
+            },
+            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        >
+          {isSyncing || isCooling ? (
+            <CircularProgress
+              size={16}
+              thickness={6}
+              sx={{ color: getStatusHex() }}
+            />
+          ) : (
+            <SyncIcon sx={{ fontSize: 18 }} />
+          )}
+        </Button>
+      </Tooltip>
+
+      {(isSyncing || isCooling) && (
+        <Box
+          sx={{
+            px: 1,
+            py: 0.3,
+            borderRadius: "4px",
+            bgcolor: alpha(getStatusHex(), 0.08),
+            border: `1px solid ${alpha(getStatusHex(), 0.15)}`,
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
           <Typography
             variant="caption"
-            sx={{ fontWeight: 700, color: "primary.main" }}
+            noWrap
+            sx={{
+              fontWeight: 900,
+              color: getStatusHex(),
+              fontSize: "0.65rem",
+              letterSpacing: 0.5,
+              textTransform: "uppercase",
+              whiteSpace: "nowrap",
+            }}
           >
-            {t("Pages.Schoice.Header.updating")}: {update_progress}
+            {isCooling ? "🛡️ SAFE" : "SYNCING"}
           </Typography>
-        </Stack>
+        </Box>
       )}
-      <Button
-        variant="contained"
-        onClick={handleClick}
-        size="medium"
-        startIcon={isIdle ? <SyncIcon /> : undefined}
-        color={isIdle ? "primary" : "error"}
-        sx={{
-          borderRadius: "12px",
-          px: 3,
-          fontWeight: 800,
-          boxShadow: (theme) =>
-            isIdle
-              ? `0 4px 14px 0 ${alpha(theme.palette.primary.main, 0.39)}`
-              : `0 4px 14px 0 ${alpha(theme.palette.error.main, 0.39)}`,
-          "&:hover": {
-            boxShadow: (theme) =>
-              isIdle
-                ? `0 6px 20px 0 ${alpha(theme.palette.primary.main, 0.23)}`
-                : `0 6px 20px 0 ${alpha(theme.palette.error.main, 0.23)}`,
-          },
-        }}
-      >
-        {status === Status.Download
-          ? t("Pages.Schoice.Header.cancel")
-          : t("Pages.Schoice.Header.updateData")}
-      </Button>
     </Stack>
   );
 }

@@ -14,10 +14,13 @@ import Trash from "./pages/Schoice/Trash";
 
 import { Box, CssBaseline, ThemeProvider, useMediaQuery } from "@mui/material";
 import { useMemo } from "react";
-import "./App.css";
+import { DatabaseContext } from "./context/DatabaseContext";
+import useDatabase from "./hooks/useDatabase";
+import useDatabaseDates from "./hooks/useDatabaseDates";
 import Detail from "./pages/Detail";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import SyncWorker from "./pages/Schoice/SyncWorker";
 import useSchoiceStore from "./store/Schoice.store";
 import { getTheme } from "./theme";
 
@@ -29,6 +32,8 @@ const AppRoutes = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="detail/:id" element={<Detail />} />
+        <Route path="/sync-worker" element={<SyncWorker />} />
+
         <Route path="/schoice" element={<Schoice />}>
           <Route index element={<PromptList />} />
           <Route path="favorite" element={<Favorite />} />
@@ -55,26 +60,41 @@ function App() {
     return getTheme(mode);
   }, [theme, prefersDarkMode]);
 
+  const { db, dbType, switchDatabase, isSwitching } = useDatabase();
+  const { dates, fetchDates, isLoading } = useDatabaseDates(db);
+
   return (
     <UserProvider>
-      <ThemeProvider theme={themeConfig}>
-        <CssBaseline />
-        <Box sx={{ width: "100%" }}>
-          <AppRoutes />
-          <ToastContainer
-            position="top-right"
-            autoClose={5000}
-            hideProgressBar={false}
-            newestOnTop={false}
-            closeOnClick={false}
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme={themeConfig.palette.mode}
-          />
-        </Box>
-      </ThemeProvider>
+      <DatabaseContext.Provider
+        value={{
+          db,
+          dates,
+          fetchDates,
+          isLoading,
+          dbType,
+          switchDatabase,
+          isSwitching,
+        }}
+      >
+        <ThemeProvider theme={themeConfig}>
+          <CssBaseline />
+          <Box sx={{ width: "100%" }}>
+            <AppRoutes />
+            <ToastContainer
+              position="top-right"
+              autoClose={5000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick={false}
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme={themeConfig.palette.mode}
+            />
+          </Box>
+        </ThemeProvider>
+      </DatabaseContext.Provider>
     </UserProvider>
   );
 }

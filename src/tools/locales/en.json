@@ -1,5 +1,68 @@
 {
   "Pages": {
+    "SyncCenter": {
+      "title": "Data Sync Commander",
+      "subtitle": "Professional Market Data Sync & Health Monitoring System",
+      "stats": {
+        "rpm": "Requests Per Minute (RPM)",
+        "successRate": "Success Rate",
+        "progress": "Overall Progress",
+        "remaining": "Est. Time Remaining",
+        "totalStocks": "Total Stocks",
+        "engineVersion": "Engine Version"
+      },
+      "telemetry": {
+        "title": "Real-time Metrics"
+      },
+      "status": {
+        "idle": "Idle",
+        "scanning": "Scanning Market Health...",
+        "syncing": "Synchronizing Data",
+        "cooling": "Cooling Protection...",
+        "paused": "Paused",
+        "stopped": "Stopped",
+        "success": "Sync Completed",
+        "error": "Engine Error"
+      },
+      "actions": {
+        "start": "Start Sync Engine",
+        "stop": "Stop Engine",
+        "resume": "Resume Sync",
+        "clearLogs": "Clear Logs",
+        "launchWorker": "Launch Sync Worker",
+        "openDashboard": "Open Sync Dashboard"
+      },
+      "workerActive": "[ Remote Worker Active ]",
+      "description": "The synchronization engine is now decoupled. Run and monitor your data sync in a dedicated background window to ensure peak performance.",
+      "terminal": {
+        "title": "Engine Real-time Event Logs",
+        "empty": "Engine not started yet"
+      },
+      "heatmap": {
+        "title": "Data Freshness Map",
+        "legend": {
+          "fresh": "Fresh",
+          "stale": "Stale",
+          "missing": "Missing",
+          "syncing": "Syncing",
+          "error": "Error"
+        }
+      }
+    },
+    "SyncWorker": {
+      "title": "Schoice Sync Dashboard",
+      "overallProgress": "Overall Progress",
+      "heatmapVisualization": "Market Health Visualization",
+      "stats": {
+        "status": "STATUS:",
+        "speed": "SPEED:",
+        "eta": "ETA:"
+      },
+      "pendingList": "Pending Stocks List",
+      "noPendingStocks": "All data is up to date",
+      "pendingCount": "{{count}} stocks pending",
+      "searchPlaceholder": "Search ID or name..."
+    },
     "Login": {
       "title": "Create your strategy",
       "rememberMe": "Remember me",
