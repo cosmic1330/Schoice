@@ -19,7 +19,7 @@ import { SelectType, StockTableType } from "../../../../../../types";
 
 // --- Styled Components ---
 
-const GlassWrapper = styled(Box)(({ theme }) => ({
+const GlassWrapper = styled(Box)(() => ({
   width: "100%",
   position: "relative",
   minHeight: 300,

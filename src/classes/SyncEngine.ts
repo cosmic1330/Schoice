@@ -545,7 +545,7 @@ export default class SyncEngine {
           : sortedExisting[0];
     }
 
-    const missing = ta.filter((item, index) => {
+    const missing = ta.filter((item) => {
       const tStr = String(item.t);
 
       // Strict Intraday Filter
