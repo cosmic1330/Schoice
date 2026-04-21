@@ -1,28 +1,16 @@
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import CategoryIcon from "@mui/icons-material/Category";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import MyLocationIcon from "@mui/icons-material/MyLocation";
-import PrecisionManufacturingIcon from "@mui/icons-material/PrecisionManufacturing";
 import SearchIcon from "@mui/icons-material/Search";
-import {
-  AnimatePresence,
-  motion
-} from "framer-motion";
 import {
   Box,
   Button,
-  Chip,
   CircularProgress,
-  Container,
   Divider,
-  FormControlLabel,
-  Grid,
   IconButton,
   MenuItem,
   Paper,
   Select,
-  SelectChangeEvent,
   Stack,
   Switch,
   TextField,
@@ -30,7 +18,8 @@ import {
   Typography,
 } from "@mui/material";
 import { alpha, styled } from "@mui/material/styles";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { stockFundamentalQueryBuilder } from "../../../classes/StockFundamentalQueryBuilder";
@@ -40,15 +29,20 @@ import { useUser } from "../../../context/UserContext";
 import useDatabaseQuery from "../../../hooks/useDatabaseQuery";
 import useCloudStore from "../../../store/Cloud.store";
 import useSchoiceStore from "../../../store/Schoice.store";
-import { FundamentalPrompt, FundamentalPrompts, StockTableType } from "../../../types";
+import {
+  FundamentalPrompt,
+  FundamentalPrompts,
+  StockTableType,
+} from "../../../types";
 
 // --- Styled Components (Density Optimized) ---
 
 const PageWrapper = styled(Box)(({ theme }) => ({
   height: "100%",
-  background: theme.palette.mode === "dark" 
-    ? alpha(theme.palette.background.default, 0.95)
-    : theme.palette.background.default,
+  background:
+    theme.palette.mode === "dark"
+      ? alpha(theme.palette.background.default, 0.95)
+      : theme.palette.background.default,
   overflowY: "auto",
   "&::-webkit-scrollbar": { display: "none" },
   scrollbarWidth: "none",
@@ -94,11 +88,13 @@ const GradientButton = styled(Button)(({ theme }) => ({
 
 export default function Fundamental() {
   const { t } = useTranslation();
-  const { indicators, operators, valuesByIndicator } = stockFundamentalQueryBuilder.getOptions();
+  const { indicators, operators, valuesByIndicator } =
+    stockFundamentalQueryBuilder.getOptions();
   const query = useDatabaseQuery();
   const { db } = useContext(DatabaseContext);
   const { user } = useUser();
-  const { fundamentalCondition, reload, setFundamentalCondition } = useCloudStore();
+  const { fundamentalCondition, reload, setFundamentalCondition } =
+    useCloudStore();
   const { filterStocks, setFilterStocks } = useSchoiceStore();
 
   const [prompts, setPrompts] = useState<FundamentalPrompts>([]);
@@ -137,8 +133,9 @@ export default function Fundamental() {
           if (!stockIds || stockIds.length === 0) {
             setResults([]);
           } else {
-            query(`SELECT * FROM stock WHERE stock_id IN (${stockIds.map(id => `'${id}'`).join(",")})`)
-              .then((data: StockTableType[] | null) => setResults(data || []));
+            query(
+              `SELECT * FROM stock WHERE stock_id IN (${stockIds.map((id) => `'${id}'`).join(",")})`,
+            ).then((data: StockTableType[] | null) => setResults(data || []));
           }
         })
         .finally(() => setIsFetching(false));
@@ -148,7 +145,7 @@ export default function Fundamental() {
 
   const handleAdd = () => {
     if (!selects.indicator || !selects.operator || !selects.value) return;
-    setPrompts(prev => [...prev, selects]);
+    setPrompts((prev) => [...prev, selects]);
   };
 
   const handleExecute = async () => {
@@ -168,21 +165,28 @@ export default function Fundamental() {
   return (
     <PageWrapper>
       {/* --- Density Optimized Header & Builder --- */}
-      <Box sx={{ 
-        position: "sticky", 
-        top: 0, 
-        zIndex: 10, 
-        bgcolor: (theme) => alpha(theme.palette.background.default, 0.8),
-        backdropFilter: "blur(8px)",
-        borderBottom: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-        p: 1.5,
-        px: 3
-      }}>
+      <Box
+        sx={{
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          bgcolor: (theme) => alpha(theme.palette.background.default, 0.8),
+          backdropFilter: "blur(8px)",
+          borderBottom: (theme) =>
+            `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          p: 1.5,
+          px: 3,
+        }}
+      >
         <Stack direction="row" alignItems="center" spacing={3} sx={{ mb: 1.5 }}>
-          <Typography variant="h6" fontWeight={900} sx={{ letterSpacing: -0.5, color: "primary.main" }}>
+          <Typography
+            variant="h6"
+            fontWeight={900}
+            sx={{ letterSpacing: -0.5, color: "primary.main" }}
+          >
             {t("Pages.Schoice.Fundamental.title")}
           </Typography>
-          
+
           {/* Horizontal Builder Bar */}
           <CompactGlassBar elevation={0} sx={{ flex: 1 }}>
             <Stack direction="row" alignItems="center" spacing={2}>
@@ -191,58 +195,106 @@ export default function Fundamental() {
                   value={selects.indicator}
                   onChange={(e) => {
                     const val = e.target.value as string;
-                    setSelects(p => ({ 
-                      ...p, 
-                      indicator: val, 
-                      value: (valuesByIndicator[val] && valuesByIndicator[val][0]) || "1" 
+                    setSelects((p) => ({
+                      ...p,
+                      indicator: val,
+                      value:
+                        (valuesByIndicator[val] && valuesByIndicator[val][0]) ||
+                        "1",
                     }));
                   }}
-                  fullWidth size="small" variant="standard" disableUnderline
+                  fullWidth
+                  size="small"
+                  variant="standard"
+                  disableUnderline
                   sx={{ fontWeight: 700, fontSize: "0.875rem" }}
                 >
-                  {indicators.map(i => <MenuItem key={i} value={i}>{i}</MenuItem>)}
+                  {indicators.map((i) => (
+                    <MenuItem key={i} value={i}>
+                      {i}
+                    </MenuItem>
+                  ))}
                 </Select>
               </Box>
 
               <Box sx={{ flex: 1 }}>
                 <Select
                   value={selects.operator}
-                  onChange={(e) => setSelects(p => ({ ...p, operator: e.target.value }))}
-                  fullWidth size="small" variant="standard" disableUnderline
-                  sx={{ fontWeight: 800, color: "secondary.main", fontSize: "0.875rem" }}
+                  onChange={(e) =>
+                    setSelects((p) => ({ ...p, operator: e.target.value }))
+                  }
+                  fullWidth
+                  size="small"
+                  variant="standard"
+                  disableUnderline
+                  sx={{
+                    fontWeight: 800,
+                    color: "secondary.main",
+                    fontSize: "0.875rem",
+                  }}
                 >
-                  {operators.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+                  {operators.map((o) => (
+                    <MenuItem key={o} value={o}>
+                      {o}
+                    </MenuItem>
+                  ))}
                 </Select>
               </Box>
 
               <Box sx={{ flex: 1.5 }}>
                 {isCustomValue ? (
                   <TextField
-                    fullWidth size="small" variant="standard" type="number"
-                    value={selects.value} 
-                    onChange={(e) => setSelects(p => ({ ...p, value: e.target.value }))}
-                    InputProps={{ 
-                      disableUnderline: true, 
-                      style: { fontWeight: 800, fontSize: "0.875rem" } 
+                    fullWidth
+                    size="small"
+                    variant="standard"
+                    type="number"
+                    value={selects.value}
+                    onChange={(e) =>
+                      setSelects((p) => ({ ...p, value: e.target.value }))
+                    }
+                    InputProps={{
+                      disableUnderline: true,
+                      style: { fontWeight: 800, fontSize: "0.875rem" },
                     }}
                   />
                 ) : (
                   <Select
                     value={selects.value}
-                    onChange={(e) => setSelects(p => ({ ...p, value: e.target.value as string }))}
-                    fullWidth size="small" variant="standard" disableUnderline
+                    onChange={(e) =>
+                      setSelects((p) => ({
+                        ...p,
+                        value: e.target.value as string,
+                      }))
+                    }
+                    fullWidth
+                    size="small"
+                    variant="standard"
+                    disableUnderline
                     sx={{ fontWeight: 800, fontSize: "0.875rem" }}
                   >
-                    {(valuesByIndicator[selects.indicator] || []).map(v => <MenuItem key={v} value={v}>{v}</MenuItem>)}
+                    {(valuesByIndicator[selects.indicator] || []).map((v) => (
+                      <MenuItem key={v} value={v}>
+                        {v}
+                      </MenuItem>
+                    ))}
                   </Select>
                 )}
               </Box>
 
-              <Divider orientation="vertical" flexItem sx={{ height: 20, my: "auto" }} />
+              <Divider
+                orientation="vertical"
+                flexItem
+                sx={{ height: 20, my: "auto" }}
+              />
 
               <Stack direction="row" spacing={1} alignItems="center">
                 <Tooltip title={t("Pages.Schoice.Fundamental.setNumber")}>
-                  <Switch size="small" checked={isCustomValue} onChange={() => setIsCustomValue(!isCustomValue)} color="secondary" />
+                  <Switch
+                    size="small"
+                    checked={isCustomValue}
+                    onChange={() => setIsCustomValue(!isCustomValue)}
+                    color="secondary"
+                  />
                 </Tooltip>
                 <IconButton color="primary" onClick={handleAdd} size="small">
                   <AddCircleIcon />
@@ -253,17 +305,37 @@ export default function Fundamental() {
 
           <Stack direction="row" alignItems="center" spacing={2}>
             <Box sx={{ textAlign: "right", minWidth: 60 }}>
-              <Typography variant="h6" fontWeight={900} sx={{ lineHeight: 1, color: "primary.main" }}>
-                {isFetching ? <CircularProgress size={14} thickness={6} /> : results.length}
+              <Typography
+                variant="h6"
+                fontWeight={900}
+                sx={{ lineHeight: 1, color: "primary.main" }}
+              >
+                {isFetching ? (
+                  <CircularProgress size={14} thickness={6} />
+                ) : (
+                  results.length
+                )}
               </Typography>
-              <Typography variant="caption" color="text.secondary" fontWeight={700}>MATCHES</Typography>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                fontWeight={700}
+              >
+                MATCHES
+              </Typography>
             </Box>
-            <GradientButton 
+            <GradientButton
               disabled={results.length === 0 || isFetching || isConfirming}
               onClick={handleExecute}
               variant="contained"
               size="small"
-              startIcon={isConfirming ? <CircularProgress size={14} color="inherit" /> : <SearchIcon />}
+              startIcon={
+                isConfirming ? (
+                  <CircularProgress size={14} color="inherit" />
+                ) : (
+                  <SearchIcon />
+                )
+              }
             >
               FINALIZE
             </GradientButton>
@@ -281,18 +353,54 @@ export default function Fundamental() {
                 exit={{ opacity: 0, scale: 0.8 }}
                 layout
               >
-                <Typography variant="caption" fontWeight={800} color="primary.main">#{i+1}</Typography>
-                <Typography variant="caption" fontWeight={700}>{p.indicator}</Typography>
-                <Typography variant="caption" fontWeight={900} color="secondary.main">{p.operator}</Typography>
-                <Typography variant="caption" fontWeight={800}>{p.value}</Typography>
-                <Stack direction="row" spacing={0.5} sx={{ ml: 1, borderLeft: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`, pl: 1 }}>
-                  <IconButton size="small" sx={{ p: 0.2 }} onClick={() => {
-                    setSelects(p);
-                    setPrompts(prev => prev.filter((_, idx) => idx !== i));
-                  }}>
+                <Typography
+                  variant="caption"
+                  fontWeight={800}
+                  color="primary.main"
+                >
+                  #{i + 1}
+                </Typography>
+                <Typography variant="caption" fontWeight={700}>
+                  {p.indicator}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  fontWeight={900}
+                  color="secondary.main"
+                >
+                  {p.operator}
+                </Typography>
+                <Typography variant="caption" fontWeight={800}>
+                  {p.value}
+                </Typography>
+                <Stack
+                  direction="row"
+                  spacing={0.5}
+                  sx={{
+                    ml: 1,
+                    borderLeft: (theme) =>
+                      `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                    pl: 1,
+                  }}
+                >
+                  <IconButton
+                    size="small"
+                    sx={{ p: 0.2 }}
+                    onClick={() => {
+                      setSelects(p);
+                      setPrompts((prev) => prev.filter((_, idx) => idx !== i));
+                    }}
+                  >
                     <EditIcon sx={{ fontSize: 12 }} />
                   </IconButton>
-                  <IconButton size="small" color="error" sx={{ p: 0.2 }} onClick={() => setPrompts(prev => prev.filter((_, idx) => idx !== i))}>
+                  <IconButton
+                    size="small"
+                    color="error"
+                    sx={{ p: 0.2 }}
+                    onClick={() =>
+                      setPrompts((prev) => prev.filter((_, idx) => idx !== i))
+                    }
+                  >
                     <DeleteIcon sx={{ fontSize: 12 }} />
                   </IconButton>
                 </Stack>
@@ -305,26 +413,35 @@ export default function Fundamental() {
       {/* --- Main Result Table Area --- */}
       <Box sx={{ p: 2 }}>
         {filterStocks && filterStocks.length > 0 ? (
-          <Box sx={{ 
-            borderRadius: "16px", 
-            overflow: "hidden", 
-            border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.08)}`,
-            background: alpha("#fff", 0.02)
-          }}>
+          <Box
+            sx={{
+              borderRadius: "16px",
+              overflow: "hidden",
+              border: (theme) =>
+                `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+              background: alpha("#fff", 0.02),
+            }}
+          >
             <ResultTable result={filterStocks} />
           </Box>
         ) : (
-          <Box sx={{ 
-            height: "60vh", 
-            display: "flex", 
-            flexDirection: "column", 
-            alignItems: "center", 
-            justifyContent: "center",
-            opacity: 0.3
-          }}>
+          <Box
+            sx={{
+              height: "60vh",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: 0.3,
+            }}
+          >
             <SearchIcon sx={{ fontSize: 64, mb: 2 }} />
-            <Typography variant="h6" fontWeight={700}>START FILTERING</Typography>
-            <Typography variant="body2">Add conditions to see potential stock matches here</Typography>
+            <Typography variant="h6" fontWeight={700}>
+              START FILTERING
+            </Typography>
+            <Typography variant="body2">
+              Add conditions to see potential stock matches here
+            </Typography>
           </Box>
         )}
       </Box>

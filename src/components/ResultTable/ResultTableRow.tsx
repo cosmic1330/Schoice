@@ -94,9 +94,9 @@ export default memo(function ResultTableRow({
   // 回傳只有 TableCell（不包 TableRow），讓 Virtuoso 負責包裹 <tr>
   return (
     <Fragment>
-      <TableCell>{index + 1}.</TableCell>
-      <TableCell>{dates[todayDate]}</TableCell>
-      <TableCell>
+      <TableCell sx={{ width: 40 }}>{index + 1}.</TableCell>
+      <TableCell sx={{ width: 100 }}>{dates[todayDate]}</TableCell>
+      <TableCell sx={{ width: 80 }}>
         <Tooltip
           placement="top-start"
           title={
@@ -123,7 +123,7 @@ export default memo(function ResultTableRow({
           <span>{row.stock_id}</span>
         </Tooltip>
       </TableCell>
-      <TableCell>
+      <TableCell sx={{ width: 100 }}>
         <Tooltip
           placement="top-start"
           title={<FundamentalTooltip row={row} />}
@@ -141,13 +141,20 @@ export default memo(function ResultTableRow({
           <span>{row.stock_name}</span>
         </Tooltip>
       </TableCell>
-      <TableCell>
+      <TableCell sx={{ width: 80 }}>
         <ClosePrice row={row} t={dates[todayDate]} />
       </TableCell>
-      <TableCell>
+      <TableCell sx={{ width: 80 }}>
         <Suspense
           fallback={
-            <span style={{ display: "inline-block", width: 24, height: 12 }} />
+            <Box
+              sx={{
+                width: 80,
+                height: 60,
+                bgcolor: "action.hover",
+                borderRadius: 1,
+              }}
+            />
           }
         >
           <HourlyUltraTinyLineChart
@@ -156,10 +163,17 @@ export default memo(function ResultTableRow({
           />
         </Suspense>
       </TableCell>
-      <TableCell>
+      <TableCell sx={{ width: 80 }}>
         <Suspense
           fallback={
-            <span style={{ display: "inline-block", width: 48, height: 12 }} />
+            <Box
+              sx={{
+                width: 80,
+                height: 60,
+                bgcolor: "action.hover",
+                borderRadius: 1,
+              }}
+            />
           }
         >
           <DailyUltraTinyLineChart
@@ -168,10 +182,17 @@ export default memo(function ResultTableRow({
           />
         </Suspense>
       </TableCell>
-      <TableCell>
+      <TableCell sx={{ width: 80 }}>
         <Suspense
           fallback={
-            <span style={{ display: "inline-block", width: 24, height: 12 }} />
+            <Box
+              sx={{
+                width: 80,
+                height: 60,
+                bgcolor: "action.hover",
+                borderRadius: 1,
+              }}
+            />
           }
         >
           <WeeklyUltraTinyLineChart
@@ -180,16 +201,23 @@ export default memo(function ResultTableRow({
           />
         </Suspense>
       </TableCell>
-      <TableCell>
+      <TableCell sx={{ width: 80 }}>
         <Suspense
           fallback={
-            <span style={{ display: "inline-block", width: 48, height: 12 }} />
+            <Box
+              sx={{
+                width: 80,
+                height: 60,
+                bgcolor: "action.hover",
+                borderRadius: 1,
+              }}
+            />
           }
         >
           <RowChart row={row} t={dates[todayDate]} />
         </Suspense>
       </TableCell>
-      <TableCell>
+      <TableCell sx={{ width: 100 }}>
         <IconButton
           onClick={() =>
             open(

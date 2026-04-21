@@ -3,6 +3,7 @@
 按時間順序記錄系統的重大變更與決策。
 
 ## 2026-04-21
+- [UI/Perf] [REQ-008] 修復 `ResultTable` 抖動、搜尋延遲與動畫效能：重構資料抓取為批次 Join、同步 `Suspense` 尺寸並移除耗能的 `layout` 動畫。
 - [Scraper/Fix] [REQ-007] 強化 Fundamental 頁面資料讀取優先序：實作 SQLite 優先、Supabase 補充的合併策略，並補完缺失的指標 Mapping。
 - [Scraper/Fix] 修復 `financial_metric` 下載為 null 的問題。重構 Yahoo 爬蟲選擇器並修正缺失數據判定邏輯 (REQ-006)。
 

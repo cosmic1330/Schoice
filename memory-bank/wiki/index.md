@@ -39,3 +39,5 @@
 - 🔵 REQ-005: 替換超小型線圖為 K 線圖 (Completed)
 - 🔵 REQ-006: 修復 Financial Metric 下載數據為空的問題 (Completed)
 - 🟢 REQ-007: [強化 Fundamental 頁面資料讀取優先序](../active-tasks/REQ-007_FundamentalDataPriority.md) (Active)
+- 🔵 REQ-008: [修復 ResultTable 抖動問題](../active-tasks/REQ-008_FixResultTableJitter.md) (Completed)
+- 🔵 REQ-009: [Result UI 重新設計](../active-tasks/REQ-009_ResultUIDesign.md) (Completed)
