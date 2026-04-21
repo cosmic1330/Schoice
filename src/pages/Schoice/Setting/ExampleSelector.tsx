@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
-import { load as StoreLoad } from "@tauri-apps/plugin-store";
+import { getStore } from "../../../store/Setting.store";
 import { useEffect, useState } from "react";
 import useExampleData from "../../../hooks/useExampleData";
 import useSchoiceStore from "../../../store/Schoice.store";
@@ -28,7 +28,7 @@ export default function ExampleSelector() {
   );
 
   useEffect(() => {
-    StoreLoad("store.json", { autoSave: false }).then((store) => {
+    getStore().then((store) => {
       store.get("menu").then((menu) => {
         const menuList = (menu as StockTableType[]) || [];
         // 新增 enum FutureIds 的特殊選項（若尚未存在於 menu 中）

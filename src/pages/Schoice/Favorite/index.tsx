@@ -56,36 +56,48 @@ export default function Favorite() {
       setStocks([]);
       return;
     }
-    query(
-      `SELECT * FROM stock WHERE stock_id IN (${watchStocks
-        .map((data) => `'${data.stock_id}'`)
-        .join(",")})`,
-    ).then((data: StockTableType[] | null) => {
-      const dbStocks = data || [];
-      const dbStockMap = new Map(dbStocks.map((s) => [s.stock_id, s]));
 
-      // 確保所有 watchStocks 中的 ID 都會顯示，即使資料庫查不到元資料
-      // 按照加入時間新到舊排序
-      const mergedStocks = [...watchStocks]
-        .sort(
-          (a, b) =>
-            new Date(b.added_date).getTime() - new Date(a.added_date).getTime(),
-        )
-        .map((data) => {
-          return (
-            dbStockMap.get(data.stock_id) || {
-              stock_id: data.stock_id,
-              stock_name: t("Pages.Schoice.Favorite.unknownStock", {
-                id: data.stock_id,
-              }),
-              industry_group: "",
-              market_type: "",
-            }
-          );
+    import("../../../store/Setting.store").then(({ getStore }) => {
+      getStore().then((store) => {
+        store.get("menu").then((menuData) => {
+          const menuList = (menuData as StockTableType[]) || [];
+          const menuMap = new Map(menuList.map((s) => [s.stock_id, s]));
+
+          query(
+            `SELECT * FROM stock WHERE stock_id IN (${watchStocks
+              .map((data) => `'${data.stock_id}'`)
+              .join(",")})`,
+          ).then((data: StockTableType[] | null) => {
+            const dbStocks = data || [];
+            const dbStockMap = new Map(dbStocks.map((s) => [s.stock_id, s]));
+
+            // 確保所有 watchStocks 中的 ID 都會顯示，即使資料庫查不到元資料
+            // 按照加入時間新到舊排序，並優先向 SQLite 查，若無則查全局選單
+            const mergedStocks = [...watchStocks]
+              .sort(
+                (a, b) =>
+                  new Date(b.added_date).getTime() - new Date(a.added_date).getTime(),
+              )
+              .map((data) => {
+                const fallback = menuMap.get(data.stock_id);
+                return (
+                  dbStockMap.get(data.stock_id) ||
+                  fallback || {
+                    stock_id: data.stock_id,
+                    stock_name: t("Pages.Schoice.Favorite.unknownStock", {
+                      id: data.stock_id,
+                    }),
+                    industry_group: "",
+                    market_type: "",
+                  }
+                );
+              });
+            setStocks(mergedStocks);
+          });
         });
-      setStocks(mergedStocks);
+      });
     });
-  }, [watchStocks, query]);
+  }, [watchStocks, query, t]);
 
   return (
     <Box

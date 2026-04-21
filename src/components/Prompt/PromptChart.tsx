@@ -6,7 +6,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { load as StoreLoad } from "@tauri-apps/plugin-store";
+import { getStore } from "../../store/Setting.store";
 import { useEffect, useMemo, useState } from "react";
 import {
   ComposedChart,
@@ -114,7 +114,7 @@ export default function PromptChart({
   );
 
   useEffect(() => {
-    StoreLoad("store.json", { autoSave: false }).then((store) => {
+    getStore().then((store) => {
       store.get("menu").then((menu) => {
         const menuList = (menu as StockTableType[]) || [];
         const futureList: StockTableType[] = [
