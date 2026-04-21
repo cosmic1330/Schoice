@@ -41,3 +41,4 @@
 - 🟢 REQ-007: [強化 Fundamental 頁面資料讀取優先序](../active-tasks/REQ-007_FundamentalDataPriority.md) (Active)
 - 🔵 REQ-008: [修復 ResultTable 抖動問題](../active-tasks/REQ-008_FixResultTableJitter.md) (Completed)
 - 🔵 REQ-009: [Result UI 重新設計](../active-tasks/REQ-009_ResultUIDesign.md) (Completed)
+- 🟢 REQ-010: [修復週資料重複與盤中寫入異常](../active-tasks/REQ-010_FixWeeklyDataDuplication.md) (Active)

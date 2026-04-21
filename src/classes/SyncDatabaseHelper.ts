@@ -116,6 +116,22 @@ export default class SyncDatabaseHelper {
     }
   }
 
+  async deleteRecordsFromDate(stockId: string, date: string, dealTable: string, skillTable: string) {
+    try {
+      await this.db.execute(
+        `DELETE FROM ${dealTable} WHERE stock_id = $1 AND t >= $2`,
+        [stockId, date]
+      );
+      await this.db.execute(
+        `DELETE FROM ${skillTable} WHERE stock_id = $1 AND t >= $2`,
+        [stockId, date]
+      );
+      info(`[SyncDB] Cleaned up buffer range for ${stockId} from ${date}`);
+    } catch (e) {
+      error(`[SyncDB] DeleteRecordsFromDate error: ${e}`);
+    }
+  }
+
   /**
    * Save deal data in bulk.
    */

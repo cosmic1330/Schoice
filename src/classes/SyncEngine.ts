@@ -447,6 +447,46 @@ export default class SyncEngine {
     );
   }
 
+  private isMarketOpenNow() {
+    const now = new Date();
+    const day = now.getDay(); // 0 是週日, 6 是週六
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+
+    // 週末絕對不是開盤中
+    if (day === 0 || day === 6) return false;
+
+    // 平日 00:00 ~ 13:45 視為資料尚未定型的盤中時段 (包含開盤前)
+    return hours < 13 || (hours === 13 && minutes < 45);
+  }
+
+  private isWeekFinalizedNow() {
+    const now = new Date();
+    const day = now.getDay();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+
+    // 週六(6)、週日(0) 肯定已經定盤
+    if (day === 0 || day === 6) return true;
+
+    // 週五(5) 13:45 之後定盤
+    if (day === 5) {
+      return hours > 13 || (hours === 13 && minutes >= 45);
+    }
+
+    // 週一到週四，本週絕對還沒定型
+    return false;
+  }
+
+  private getThisWeekMonday(date: Date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    // 取得本週一的日期。getDay() 為 0 代表週日，調整為 -6 以取得上週一
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    d.setDate(diff);
+    return String(dateFormat(d.getTime(), Mode.TimeStampToNumber));
+  }
+
   private async fetchData(stock: StockTableType, perd: UrlTaPerdOptions) {
     const url = generateDealDataDownloadUrl({
       type: UrlType.Indicators,
@@ -480,8 +520,8 @@ export default class SyncEngine {
 
     const now = new Date();
     const today = String(dateFormat(now.getTime(), Mode.TimeStampToNumber));
-    const isMarketOpen =
-      now.getHours() < 13 || (now.getHours() === 13 && now.getMinutes() < 45);
+    const marketOpen = this.isMarketOpenNow();
+    const weekFinalized = this.isWeekFinalizedNow();
 
     // Check missing dates (Corrected: Use specific tables for lookup)
     const existing = await this.dbHelper.getStockDates(
@@ -492,14 +532,16 @@ export default class SyncEngine {
 
     // Logic:
     // 1. Missing dates in DB
-    // 2. Any date >= the 3rd most recent date in DB (Safe buffer)
-    // 3. [STRICT] If market is open, EXCLUDE today's data (and current week's data)
+    // 2. Any date >= the 5th most recent date in DB (Safe buffer)
+    // 3. [STRICT] Intraday Write Prevention
     let thresholdT = "";
+    const bufferSize = perd === UrlTaPerdOptions.Week ? 5 : 3;
+
     if (existing.size > 0) {
       const sortedExisting = Array.from(existing).sort();
       thresholdT =
-        sortedExisting.length >= 3
-          ? sortedExisting[sortedExisting.length - 3]
+        sortedExisting.length >= bufferSize
+          ? sortedExisting[sortedExisting.length - bufferSize]
           : sortedExisting[0];
     }
 
@@ -507,10 +549,12 @@ export default class SyncEngine {
       const tStr = String(item.t);
 
       // Strict Intraday Filter
-      if (isMarketOpen) {
-        if (perd === UrlTaPerdOptions.Day && tStr === today) return false;
-        if (perd === UrlTaPerdOptions.Week && index === ta.length - 1) {
-          // Assuming the last weekly candle in the payload is the current ongoing week
+      if (perd === UrlTaPerdOptions.Day) {
+        if (marketOpen && tStr === today) return false;
+      } else if (perd === UrlTaPerdOptions.Week) {
+        const thisWeekMonday = this.getThisWeekMonday(now);
+        if (tStr >= thisWeekMonday && !weekFinalized) {
+          // 如果該資料日期屬於「本週」，且本週尚未定盤 (未過週五 13:45)，跳過
           return false;
         }
       }
@@ -519,6 +563,20 @@ export default class SyncEngine {
     });
 
     if (missing.length === 0) return;
+
+    info(
+      `[Sync] ${stock.stock_id} (${perd}) processing ${missing.length} records. MarketOpen=${marketOpen}, WeekFinalized=${weekFinalized}`,
+    );
+
+    // [Cleanup] For Weekly data, physically delete records in the buffer range to remove ghost duplicates
+    if (perd === UrlTaPerdOptions.Week && thresholdT !== "") {
+      await this.dbHelper.deleteRecordsFromDate(
+        stock.stock_id,
+        thresholdT,
+        dealTable,
+        skillTable,
+      );
+    }
 
     // Calculate Indicators (Simplified for brevity, following original logic patterns)
     // In a real implementation, we'd use the full anysis calculators here
@@ -537,8 +595,7 @@ export default class SyncEngine {
 
     const now = new Date();
     const today = String(dateFormat(now.getTime(), Mode.TimeStampToNumber));
-    const isMarketOpen =
-      now.getHours() < 13 || (now.getHours() === 13 && now.getMinutes() < 45);
+    const marketOpen = this.isMarketOpenNow();
 
     const existing = await this.dbHelper.getStockHourlyTimestamps(
       stock.stock_id,
@@ -556,7 +613,7 @@ export default class SyncEngine {
       const tStr = String(item.t);
 
       // Strict Intraday Filter for Hourly
-      if (isMarketOpen && tStr.startsWith(today)) return false;
+      if (marketOpen && tStr.startsWith(today)) return false;
 
       return !existing.has(tStr) || (thresholdTs !== "" && tStr >= thresholdTs);
     });
