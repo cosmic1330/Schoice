@@ -160,29 +160,48 @@ async function scrapeYahooExtData(stockId: string) {
     // 遍歷所有包含文本的元素，尋找關鍵指標
     $profile("div, span").each((_i, el) => {
       const $el = $profile(el);
+      // [關鍵] 只處理葉子節點，避免抓到包含多個元素的容器導致文字聚合 (例如 label+value)
+      if ($el.children().length > 0) return;
+
       const text = $el.text().trim();
-      
+      if (!text) return;
+
       for (const [key, field] of Object.entries(metricsMap)) {
         if (text === key || (text.includes(key) && text.length < 15)) {
-          // 邏輯：在當前元素的父節點或後續節點找尋數值
-          // Yahoo 通常結構是 Label 同級或父級下的最後一個 div/span
-          let valStr = $el.parent().children().last().text().trim().replace(/,/g, "").replace(/%/g, "");
-          
-          // 如果拿到的跟 label 一樣，嘗試找 next sibling
-          if (valStr === text) {
-            valStr = $el.next().text().trim().replace(/,/g, "").replace(/%/g, "");
-          }
+          // 邏輯：在當前標籤的父節點下找尋最後一個節點作為數值
+          const valStr = $el
+            .parent()
+            .children()
+            .last()
+            .text()
+            .trim()
+            .replace(/,/g, "")
+            .replace(/%/g, "");
 
           const val = parseFloat(valStr);
-          if (!isNaN(val)) {
+          // 安全檢查：數值不應等於標籤文本 (避免標籤與數值在同一個 element)
+          if (!isNaN(val) && valStr !== text) {
             data.metrics[field] = Math.round(val * 100) / 100;
+          } else {
+            // 嘗試找下一個兄弟節點 (如果 Yahoo 結構是鄰近節點而非父子關係)
+            const nextValStr = $el
+              .next()
+              .text()
+              .trim()
+              .replace(/,/g, "")
+              .replace(/%/g, "");
+            const nextVal = parseFloat(nextValStr);
+            if (!isNaN(nextVal)) {
+              data.metrics[field] = Math.round(nextVal * 100) / 100;
+            }
           }
         }
       }
 
       // 特殊處理：財報季度 (Report Period)
       if (text.includes("財報季度")) {
-        const period = $el.parent().children().last().text().trim();
+        const periodNode = $el.parent().children().last();
+        const period = periodNode.text().trim();
         if (period && period !== text) data.metrics.report_period = period;
       }
     });
@@ -193,14 +212,28 @@ async function scrapeYahooExtData(stockId: string) {
 
     $profile("div, span").each((_i, el) => {
       const $el = $profile(el);
+      // [關鍵] 僅限葉子節點
+      if ($el.children().length > 0) return;
+
       const label = $el.text().trim();
-      
-      // 匹配 "2023 Q4" 或 "2023"
+
+      // 匹配 "2023 Q4" 或 "2023" (年份標籤)
       if (/\d{4} Q\d/.test(label) || /^\d{4}$/.test(label)) {
-        const valStr = $el.parent().find('div, span').last().text().trim().replace('元', '').replace(/,/g, '');
+        // 搜尋同層的所有子節點
+        const container = $el.parent();
+        const siblings = container.find("div, span");
+
+        // 數值通常位於容器內的最後一個節點
+        const valueNode = siblings.last();
+        const valStr = valueNode
+          .text()
+          .trim()
+          .replace("元", "")
+          .replace(/,/g, "");
         const val = parseFloat(valStr);
 
-        if (!isNaN(val)) {
+        // 安全檢查：1. 有效數字 2. 數值節點不等於標籤節點 3. 數值不等於標籤文字
+        if (!isNaN(val) && valueNode[0] !== el && valStr !== label) {
           if (label.includes("Q")) {
             quarterlyEPS.push({ name: label, value: val });
           } else {
