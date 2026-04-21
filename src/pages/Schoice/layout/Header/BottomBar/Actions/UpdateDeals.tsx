@@ -1,6 +1,7 @@
 import SyncIcon from "@mui/icons-material/Sync";
 import {
   alpha,
+  Box,
   Button,
   CircularProgress,
   Stack,
@@ -76,18 +77,32 @@ export default function UpdateDeals() {
       </Tooltip>
 
       {(isSyncing || isCooling) && (
-        <Typography
-          variant="caption"
+        <Box
           sx={{
-            fontWeight: 800,
-            color: getStatusHex(),
-            fontSize: "0.7rem",
-            letterSpacing: 0.5,
-            textTransform: "uppercase",
+            px: 1,
+            py: 0.3,
+            borderRadius: "4px",
+            bgcolor: alpha(getStatusHex(), 0.08),
+            border: `1px solid ${alpha(getStatusHex(), 0.15)}`,
+            display: "flex",
+            alignItems: "center",
           }}
         >
-          {isCooling ? "Cooling" : "Syncing"}
-        </Typography>
+          <Typography
+            variant="caption"
+            noWrap
+            sx={{
+              fontWeight: 900,
+              color: getStatusHex(),
+              fontSize: "0.65rem",
+              letterSpacing: 0.5,
+              textTransform: "uppercase",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {isCooling ? "🛡️ SAFE" : "SYNCING"}
+          </Typography>
+        </Box>
       )}
     </Stack>
   );

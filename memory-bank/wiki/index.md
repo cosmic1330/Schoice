@@ -37,3 +37,5 @@
 - 🔵 REQ-001: 建立 Memory Bank (Completed)
 - 🔵 REQ-004: [Yahoo 同步抗性與自動修復 (BDD 實例)](../active-tasks/REQ-004_YahooSyncResilience.md) (Completed)
 - 🔵 REQ-005: 替換超小型線圖為 K 線圖 (Completed)
+- 🔵 REQ-006: 修復 Financial Metric 下載數據為空的問題 (Completed)
+- 🟢 REQ-007: [強化 Fundamental 頁面資料讀取優先序](../active-tasks/REQ-007_FundamentalDataPriority.md) (Active)

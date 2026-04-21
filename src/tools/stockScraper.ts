@@ -80,9 +80,9 @@ export async function fetchStockExtData(stockId: string): Promise<{
     let data: any = await scrapeYahooExtData(stockId);
     
     // 檢查爬蟲是否抓到完整數據 (以 EPS 和 籌碼日期作為指標)
-    const isEpsMissing = !data || !data.fundamentals || data.fundamentals.eps_recent_q1 === null;
-    const isPositionsMissing = !data || !data.positions || data.positions.recent_w1_name === null;
-    const isMetricsMissing = !data || !data.metrics || data.metrics.pe === null;
+    const isEpsMissing = !data || !data.fundamentals || data.fundamentals.eps_recent_q1 == null;
+    const isPositionsMissing = !data || !data.positions || data.positions.recent_w1_name == null;
+    const isMetricsMissing = !data || !data.metrics || data.metrics.pe == null;
 
     // 2. [Fallback] If scraper fails or data is incomplete, try fetching from Supabase Cloud
     if (isEpsMissing || isPositionsMissing || isMetricsMissing) {
@@ -156,15 +156,34 @@ async function scrapeYahooExtData(stockId: string) {
       "殖利率": "dividend_yield",
     };
 
-    $profile(".table-grid .grid-item").each((_i, el) => {
-      const label = $profile(el).find("span").first().text().trim();
-      const valStr = $profile(el).children().last().text().trim().replace(/,/g, "").replace(/%/g, "");
+    // 1. Process Profile Page: Financial Metrics & Basic Info
+    // 遍歷所有包含文本的元素，尋找關鍵指標
+    $profile("div, span").each((_i, el) => {
+      const $el = $profile(el);
+      const text = $el.text().trim();
       
       for (const [key, field] of Object.entries(metricsMap)) {
-        if (label.includes(key)) {
+        if (text === key || (text.includes(key) && text.length < 15)) {
+          // 邏輯：在當前元素的父節點或後續節點找尋數值
+          // Yahoo 通常結構是 Label 同級或父級下的最後一個 div/span
+          let valStr = $el.parent().children().last().text().trim().replace(/,/g, "").replace(/%/g, "");
+          
+          // 如果拿到的跟 label 一樣，嘗試找 next sibling
+          if (valStr === text) {
+            valStr = $el.next().text().trim().replace(/,/g, "").replace(/%/g, "");
+          }
+
           const val = parseFloat(valStr);
-          if (!isNaN(val)) data.metrics[field] = Math.round(val * 100) / 100;
+          if (!isNaN(val)) {
+            data.metrics[field] = Math.round(val * 100) / 100;
+          }
         }
+      }
+
+      // 特殊處理：財報季度 (Report Period)
+      if (text.includes("財報季度")) {
+        const period = $el.parent().children().last().text().trim();
+        if (period && period !== text) data.metrics.report_period = period;
       }
     });
 
@@ -172,16 +191,21 @@ async function scrapeYahooExtData(stockId: string) {
     const quarterlyEPS: { name: string; value: number }[] = [];
     const yearlyEPS: { name: string; value: number }[] = [];
 
-    $profile(".table-grid .grid-item").each((_i, el) => {
-      const label = $profile(el).find('span[class*="As(st)"]').text().trim().replace(/\s+/g, ' ');
-      const valStr = $profile(el).find('div[class*="Py(8px)"]').text().trim().replace('元', '').replace(/,/g, '');
-      const val = parseFloat(valStr);
+    $profile("div, span").each((_i, el) => {
+      const $el = $profile(el);
+      const label = $el.text().trim();
+      
+      // 匹配 "2023 Q4" 或 "2023"
+      if (/\d{4} Q\d/.test(label) || /^\d{4}$/.test(label)) {
+        const valStr = $el.parent().find('div, span').last().text().trim().replace('元', '').replace(/,/g, '');
+        const val = parseFloat(valStr);
 
-      if (!isNaN(val) && label) {
-        if (/\d{4} Q\d/.test(label)) {
-          quarterlyEPS.push({ name: label, value: val });
-        } else if (/^\d{4}$/.test(label)) {
-          yearlyEPS.push({ name: label, value: val });
+        if (!isNaN(val)) {
+          if (label.includes("Q")) {
+            quarterlyEPS.push({ name: label, value: val });
+          } else {
+            yearlyEPS.push({ name: label, value: val });
+          }
         }
       }
     });
@@ -250,12 +274,16 @@ export async function fetchStockProfile(
     const $ = load(decodedText);
 
     const companyInfo: any = {};
-    $(".table-grid.row-fit-half .grid-item").each((_i, el) => {
-      const name = $(el).find("span > span").first().text().trim();
-      let value = $(el).find("div.Py\\(8px\\)").last().text().trim();
+    $(".D(f), .grid-item").each((_i, el) => {
+      const $el = $(el);
+      const text = $el.text().trim();
 
-      if (name.includes("已發行普通股數")) {
-        value = value.replace(/,/g, "");
+      if (text.includes("已發行普通股數")) {
+        let value = $el.find("div").last().text().trim().replace(/,/g, "");
+        if (!value || isNaN(parseFloat(value))) {
+           value = $el.children().last().text().trim().replace(/,/g, "");
+        }
+        
         const shares = parseFloat(value);
         if (!isNaN(shares)) {
           companyInfo.issued_shares = shares;

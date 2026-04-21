@@ -56,34 +56,20 @@ export default function Header() {
         px={2.5}
         sx={{ minHeight: 64 }}
       >
-        {/* 左側：導航路徑 */}
-        <Box sx={{ flex: 1, display: "flex", alignItems: "center" }}>
+        {/* 左側：導航路徑 (受限寬度以防擠壓) */}
+        <Box sx={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap:3 }}>
           <Breadcrumb />
-        </Box>
-
-        {/* 中間：核心行情脈搏 */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            px: 4,
-            borderLeft: (theme) =>
-              `1px solid ${alpha(theme.palette.divider, 0.05)}`,
-            borderRight: (theme) =>
-              `1px solid ${alpha(theme.palette.divider, 0.05)}`,
-          }}
-        >
           <MarketSentiment />
         </Box>
 
-        {/* 右側：工具與操作集群 */}
+        {/* 右側：工具與操作集群 (向右對齊且受限寬度) */}
         <Stack
           direction="row"
           alignItems="center"
           spacing={2}
-          sx={{ flex: 1, justifyContent: "flex-end" }}
+          sx={{ flex: 1, minWidth: 0, justifyContent: "flex-end" }}
         >
-          <Stack direction="row" alignItems="center" spacing={1.5}>
+          <Stack direction="row" alignItems="center" spacing={1.5} sx={{ display: { xs: "none", lg: "flex" } }}>
             <RollBack />
             <VerticalDivider />
             <LatestDate />

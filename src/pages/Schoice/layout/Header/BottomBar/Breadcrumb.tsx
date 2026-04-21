@@ -28,7 +28,9 @@ export default function Breadcrumb() {
         </Typography>
       }
       sx={{
-        "& .MuiBreadcrumbs-ol": { alignItems: "center" },
+        "& .MuiBreadcrumbs-ol": { alignItems: "center", flexWrap: "nowrap" },
+        maxWidth: { xs: "120px", sm: "200px", md: "400px" },
+        overflow: "hidden",
       }}
     >
       <Link
