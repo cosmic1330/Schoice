@@ -16,7 +16,6 @@ import {
 import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
 import { emit, listen } from "@tauri-apps/api/event";
 import { error, info } from "@tauri-apps/plugin-log";
-import pLimit from "p-limit";
 import useSyncDashboardStore, {
   HealthStatus,
 } from "../store/SyncDashboard.store";
@@ -37,7 +36,6 @@ import {
   analyzeIndicatorsData,
   IndicatorsDateTimeType,
 } from "../utils/analyzeIndicatorsData";
-import checkTimeRange from "../utils/checkTimeRange";
 import generateDealDataDownloadUrl from "../utils/generateDealDataDownloadUrl";
 import {
   fetchWithLog as fetch,
@@ -94,7 +92,7 @@ const yieldControl = () => new Promise((resolve) => setTimeout(resolve, 0));
 export default class SyncEngine {
   private static instance: SyncEngine;
   private dbHelper: SyncDatabaseHelper | null = null;
-  private limiter = new TokenBucket(10, 3); // 降低為每秒 3 請求，最高累積 10
+  private limiter = new TokenBucket(15, 5); // 稍微放寬限制以支持 batch=3 的併發感
   private abortController: AbortController | null = null;
   private isRunning = false;
 
@@ -242,74 +240,70 @@ export default class SyncEngine {
       let completed = 0;
       const startTime = Date.now();
 
-      // 3. Process with concurrency limit and token bucket
-      const limit = pLimit(1); // 併發數降為 1，極致穩定
+      // 3. Process in batches of 3 with random 1-4 minute security delay
+      for (let i = 0; i < workList.length; i += 3) {
+        if (this.abortController?.signal.aborted) break;
 
-      const tasks = workList.map((stock) =>
-        limit(async () => {
-          let retryCount = 0;
-          let success = false;
+        const batch = workList.slice(i, i + 3);
 
-          while (!success && retryCount < 3) {
-            // [v10] 預防性檢查：出發前先看是否處於冷卻期，如果是則原地等待
-            await this.waitForCoolDown();
+        // Run batch concurrently
+        await Promise.all(
+          batch.map(async (stock) => {
+            let retryCount = 0;
+            let success = false;
 
-            if (this.abortController?.signal.aborted) return;
+            while (!success && retryCount < 3) {
+              await this.waitForCoolDown();
+              if (this.abortController?.signal.aborted) return;
 
-            try {
-              this.broadcast("health", { [stock.stock_id]: "syncing" });
-              await this.syncStock(stock);
+              try {
+                this.broadcast("health", { [stock.stock_id]: "syncing" });
+                await this.syncStock(stock);
 
-              // 成功後處理統計與延遲
-              completed++;
-              const elapsed = Date.now() - startTime;
-              const rpm = Math.round(completed / (elapsed / 60000));
-              const remainingTime = Math.round(
-                ((elapsed / completed) * (workList.length - completed)) / 1000,
-              );
-
-              this.broadcast("stats", {
-                completed,
-                rpm,
-                remainingTime: this.formatRemaining(remainingTime),
-              });
-              this.broadcast("health", { [stock.stock_id]: "fresh" });
-
-              // 自發性隨機延遲 (500ms ~ 1500ms)
-              await new Promise((resolve) =>
-                setTimeout(resolve, 500 + Math.random() * 1000),
-              );
-              await yieldControl();
-
-              success = true;
-            } catch (e: any) {
-              const errorMsg = String(e);
-
-              // 只要目前處於冷卻期 (不論錯誤訊息為何)，就原地休眠
-              const remaining = getCoolDownRemainingMillis();
-              if (remaining > 0 || errorMsg.includes("[BLOCK]")) {
-                this.broadcast("logs", {
-                  msg: `偵測到伺服器封鎖，系統暫停任務並進入安全冷卻...`,
-                  type: "wait",
-                });
-                await this.waitForCoolDown();
-                // 冷卻期等待不計入重試次數
-                continue; // 重試同一支股票
+                completed++;
+                this.broadcast("health", { [stock.stock_id]: "fresh" });
+                success = true;
+              } catch (e: any) {
+                const errorMsg = String(e);
+                if (
+                  getCoolDownRemainingMillis() > 0 ||
+                  errorMsg.includes("[BLOCK]")
+                ) {
+                  await this.waitForCoolDown();
+                  continue;
+                }
+                error(`Failed to sync ${stock.stock_id}: ${errorMsg}`);
+                this.broadcast("health", { [stock.stock_id]: "error" });
+                success = true;
+                completed++; // Count as completed even if failed to keep progress moving
               }
-
-              error(`Failed to sync ${stock.stock_id}: ${errorMsg}`);
-              this.broadcast("health", { [stock.stock_id]: "error" });
-              this.broadcast("logs", {
-                msg: `Error syncing ${stock.stock_id}: ${e}`,
-                type: "error",
-              });
-              success = true; // 標記為完成以跳出循環 (雖然是報錯)
             }
-          }
-        }),
-      );
+          }),
+        );
 
-      await Promise.all(tasks);
+        // Update stats after batch
+        const elapsed = Date.now() - startTime;
+        const rpm =
+          completed > 0 ? Math.round(completed / (elapsed / 60000)) : 0;
+        const remainingTime =
+          completed > 0
+            ? Math.round(
+                ((elapsed / completed) * (workList.length - completed)) / 1000,
+              )
+            : 0;
+
+        this.broadcast("stats", {
+          completed,
+          rpm,
+          remainingTime: this.formatRemaining(remainingTime),
+        });
+
+        // Small polite delay (500ms-1500ms) between batches to maintain stability
+        await new Promise((resolve) =>
+          setTimeout(resolve, 500 + Math.random() * 1000),
+        );
+        await yieldControl();
+      }
 
       if (!this.abortController?.signal.aborted) {
         this.broadcast("status", "success");
@@ -391,8 +385,9 @@ export default class SyncEngine {
         // 現在是盤中或開盤前
         // 如果上次同步也是今天，且在 1 小時內，則跳過以免頻繁存取
         const lastSyncTs = preFetchTime ? new Date(preFetchTime).getTime() : 0;
-        if (Date.now() - lastSyncTs < 3600000) { // 1 小時緩衝
-           return;
+        if (Date.now() - lastSyncTs < 3600000) {
+          // 1 小時緩衝
+          return;
         }
       }
     }
@@ -485,23 +480,32 @@ export default class SyncEngine {
 
     const now = new Date();
     const today = String(dateFormat(now.getTime(), Mode.TimeStampToNumber));
-    const isMarketOpen = now.getHours() < 13 || (now.getHours() === 13 && now.getMinutes() < 45);
+    const isMarketOpen =
+      now.getHours() < 13 || (now.getHours() === 13 && now.getMinutes() < 45);
 
     // Check missing dates (Corrected: Use specific tables for lookup)
-    const existing = await this.dbHelper.getStockDates(stock.stock_id, dealTable, skillTable);
-    
-    // Logic: 
+    const existing = await this.dbHelper.getStockDates(
+      stock.stock_id,
+      dealTable,
+      skillTable,
+    );
+
+    // Logic:
     // 1. Missing dates in DB
     // 2. Any date >= the 3rd most recent date in DB (Safe buffer)
     // 3. [STRICT] If market is open, EXCLUDE today's data (and current week's data)
-    const sortedExisting = Array.from(existing).sort();
-    const thresholdT = sortedExisting.length >= 3 
-      ? sortedExisting[sortedExisting.length - 3] 
-      : (sortedExisting[0] || "");
+    let thresholdT = "";
+    if (existing.size > 0) {
+      const sortedExisting = Array.from(existing).sort();
+      thresholdT =
+        sortedExisting.length >= 3
+          ? sortedExisting[sortedExisting.length - 3]
+          : sortedExisting[0];
+    }
 
     const missing = ta.filter((item, index) => {
       const tStr = String(item.t);
-      
+
       // Strict Intraday Filter
       if (isMarketOpen) {
         if (perd === UrlTaPerdOptions.Day && tStr === today) return false;
@@ -533,19 +537,24 @@ export default class SyncEngine {
 
     const now = new Date();
     const today = String(dateFormat(now.getTime(), Mode.TimeStampToNumber));
-    const isMarketOpen = now.getHours() < 13 || (now.getHours() === 13 && now.getMinutes() < 45);
+    const isMarketOpen =
+      now.getHours() < 13 || (now.getHours() === 13 && now.getMinutes() < 45);
 
     const existing = await this.dbHelper.getStockHourlyTimestamps(
       stock.stock_id,
     );
-    const sortedExisting = Array.from(existing).sort();
-    const thresholdTs = sortedExisting.length >= 3 
-      ? sortedExisting[sortedExisting.length - 3] 
-      : (sortedExisting[0] || "");
+    let thresholdTs = "";
+    if (existing.size > 0) {
+      const sortedExisting = Array.from(existing).sort();
+      thresholdTs =
+        sortedExisting.length >= 3
+          ? sortedExisting[sortedExisting.length - 3]
+          : sortedExisting[0];
+    }
 
     const missing = ta.filter((item) => {
       const tStr = String(item.t);
-      
+
       // Strict Intraday Filter for Hourly
       if (isMarketOpen && tStr.startsWith(today)) return false;
 
