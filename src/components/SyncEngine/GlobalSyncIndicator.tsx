@@ -118,20 +118,6 @@ const GlobalSyncIndicator: React.FC = () => {
             {progress}%
           </Typography>
         )}
-
-        {!isSyncing && (
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 700,
-              fontSize: "0.7rem",
-              textTransform: "uppercase",
-              opacity: 0.8,
-            }}
-          >
-            {t(`Pages.SyncCenter.status.${syncStatus}`)}
-          </Typography>
-        )}
       </Stack>
     </Tooltip>
   );
