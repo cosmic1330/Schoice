@@ -31,11 +31,11 @@ export default class SyncDatabaseHelper {
    * If stockId is provided, returns info for that stock only.
    */
   async getHealthSnapshot(stockId?: string): Promise<
-    Record<string, { last_date: string; weekly_last_date: string; hourly_last_date: string; record_count: number; has_ext_data: boolean }>
+    Record<string, { last_date: string; weekly_last_date: string; hourly_last_date: string; revenue_last_month: string; record_count: number; has_ext_data: boolean }>
   > {
     try {
-      let sql = `SELECT stock_id, daily_last_date as last_date, weekly_last_date, hourly_last_date, daily_record_count as record_count, 
-                 (has_financials AND has_fundamentals AND has_positions) as has_ext_data
+      let sql = `SELECT stock_id, daily_last_date as last_date, weekly_last_date, hourly_last_date, revenue_last_month, daily_record_count as record_count, 
+                 (has_financials AND has_fundamentals AND has_revenue AND has_positions) as has_ext_data
                  FROM stock_health_view`;
       
       const params: any[] = [];
@@ -48,13 +48,14 @@ export default class SyncDatabaseHelper {
 
       const snapshot: Record<
         string,
-        { last_date: string; weekly_last_date: string; hourly_last_date: string; record_count: number; has_ext_data: boolean }
+        { last_date: string; weekly_last_date: string; hourly_last_date: string; revenue_last_month: string; record_count: number; has_ext_data: boolean }
       > = {};
       result.forEach((item) => {
         snapshot[item.stock_id] = {
           last_date: item.last_date || "0",
           weekly_last_date: item.weekly_last_date || "0",
           hourly_last_date: item.hourly_last_date || "0",
+          revenue_last_month: item.revenue_last_month || "0",
           record_count: item.record_count || 0,
           has_ext_data: Boolean(item.has_ext_data),
         };
