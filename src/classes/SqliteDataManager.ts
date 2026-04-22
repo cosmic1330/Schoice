@@ -61,7 +61,7 @@ export default class SqliteDataManager {
     t: string;
   }) {
     try {
-      const num = `'${t} 14:00:00'`;
+      const num = `'${t}1400'`;
       info(`刪除 ${stock_id}: ${num} 和 ${t} 之後的資料`);
       await this.db.execute(
         `DELETE FROM hourly_skills WHERE stock_id = '${stock_id}' AND ts > ${num};`,

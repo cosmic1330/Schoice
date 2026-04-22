@@ -93,7 +93,7 @@ export default class SyncDatabaseHelper {
    */
   async deletePartialData(stockId: string, date: string) {
     try {
-      const tsThreshold = `'${date} 14:00:00'`;
+      const tsThreshold = `'${date}1400'`;
       const tables = [
         ['hourly_skills', 'ts', tsThreshold],
         ['hourly_deal', 'ts', tsThreshold],
