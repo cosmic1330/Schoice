@@ -146,10 +146,10 @@ export default class SyncEngine {
 
   public async setupCommandListeners() {
     const unlistens = await Promise.all([
-      listen<{ menu: StockTableType[]; dates: string[] }>(
+      listen<{ menu: StockTableType[]; dates: string[]; forceExtData?: boolean }>(
         "sync:command_start",
         (event) => {
-          this.start(event.payload.menu, event.payload.dates);
+          this.start(event.payload.menu, event.payload.dates, event.payload.forceExtData || false);
         },
       ),
       listen("sync:command_stop", () => {
@@ -165,7 +165,7 @@ export default class SyncEngine {
   /**
    * Start the full synchronization process.
    */
-  public async start(menu: StockTableType[], dates: string[]) {
+  public async start(menu: StockTableType[], dates: string[], forceExtData: boolean = false) {
     console.log("[SyncEngine] Attempting to start sync...", {
       isRunning: this.isRunning,
       hasDbHelper: !!this.dbHelper,
@@ -209,7 +209,7 @@ export default class SyncEngine {
         const info = snapshot[stock.stock_id];
         if (!info) {
           healthMap[stock.stock_id] = "missing";
-        } else if (info.last_date < today) {
+        } else if (info.last_date < today || !info.has_ext_data || forceExtData) {
           healthMap[stock.stock_id] = "stale";
         } else {
           healthMap[stock.stock_id] = "fresh";
@@ -258,7 +258,7 @@ export default class SyncEngine {
 
               try {
                 this.broadcast("health", { [stock.stock_id]: "syncing" });
-                await this.syncStock(stock);
+                await this.syncStock(stock, forceExtData);
 
                 completed++;
                 this.broadcast("health", { [stock.stock_id]: "fresh" });
@@ -332,7 +332,7 @@ export default class SyncEngine {
     });
   }
 
-  private async syncStock(stock: StockTableType) {
+  private async syncStock(stock: StockTableType, forceExtData: boolean = false) {
     if (!this.dbHelper) return;
 
     // A. Check for partial data (market hours check)
@@ -369,13 +369,28 @@ export default class SyncEngine {
       return h > 13 || (h === 13 && m >= 45);
     };
 
-    // 如果今天已經同步過
-    if (snap && snap.last_date >= today && preFetchDate === today) {
+    // Calculate thisWeekMonday
+    const d = new Date(now);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    d.setDate(diff);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const thisWeekMonday = `${yyyy}${mm}${dd}`;
+
+    const isHourlyComplete = snap && snap.hourly_last_date && snap.hourly_last_date.substring(0, 8) === today;
+    const isWeeklyComplete = snap && snap.weekly_last_date && snap.weekly_last_date >= thisWeekMonday;
+
+    const isTaDataFresh = snap && snap.last_date >= today && isHourlyComplete && isWeeklyComplete;
+
+    // 如果今天已經同步過且所有資料 (基本面、小時線、週線) 都齊全
+    if (!forceExtData && snap && snap.last_date >= today && preFetchDate === today && snap.has_ext_data && isHourlyComplete && isWeeklyComplete) {
       if (isMarketClosedToday()) {
         // 現在已收盤：只有當上次同步也是收盤後進行的，才跳過
         if (wasLastFetchFinal()) {
           this.broadcast("logs", {
-            msg: `[Skip] ${stock.stock_id} final data already in DB.`,
+            msg: `[Skip] ${stock.stock_id} final data already in DB and extData is complete.`,
             type: "info",
           });
           return;
@@ -395,27 +410,71 @@ export default class SyncEngine {
     // B. Fetch Data (with Rate Limiting)
     await this.limiter.consume(1); // One token per stock process
 
+    const skipTaFetch = forceExtData;
+    if (skipTaFetch) {
+      this.broadcast("logs", {
+        msg: `[Force] ${stock.stock_id} forcing extData. Skipping TA fetched already.`,
+        type: "info",
+      });
+    }
+
     const [daily, weekly, hourly, profile, extData] = await Promise.allSettled([
-      this.fetchData(stock, UrlTaPerdOptions.Day),
-      this.fetchData(stock, UrlTaPerdOptions.Week),
-      this.fetchData(stock, UrlTaPerdOptions.Hour),
+      skipTaFetch ? Promise.resolve(null as any) : this.fetchData(stock, UrlTaPerdOptions.Day),
+      skipTaFetch ? Promise.resolve(null as any) : this.fetchData(stock, UrlTaPerdOptions.Week),
+      skipTaFetch ? Promise.resolve(null as any) : this.fetchData(stock, UrlTaPerdOptions.Hour),
       fetchStockProfile(stock.stock_id),
       fetchStockExtData(stock.stock_id), // New detailed fetcher
     ]);
 
     // C. Update Profile & Fundamentals
+    let dbShares: number | undefined;
+    if (this.dbHelper) {
+      const dbStock = await this.dbHelper.getStockInfo(stock.stock_id);
+      dbShares = dbStock?.issued_shares;
+    }
+
     if (profile.status === "fulfilled" && profile.value?.issued_shares) {
       stock.issued_shares = profile.value.issued_shares;
-      await this.dbHelper.saveStock(stock);
+    } else if (dbShares) {
+      stock.issued_shares = dbShares;
     }
+    
+    // [CRITICAL] Always ensure stock exists in local DB before saving relations
+    // This prevents Foreign Key constraint failures for new stocks.
+    await this.dbHelper.saveStock(stock);
 
     if (extData.status === "fulfilled" && extData.value) {
       const { metrics, fundamentals, positions } = extData.value;
-      if (metrics) await this.dbHelper.saveFinancialMetrics(metrics);
-      if (fundamentals)
+      let count = 0;
+      
+      // Validation: Object should have more than just stock_id to be worth saving
+      const hasData = (obj: any) => obj && Object.keys(obj).length > 1;
+
+      if (hasData(metrics)) {
+        await this.dbHelper.saveFinancialMetrics(metrics);
+        count++;
+      }
+      if (hasData(fundamentals)) {
         await this.dbHelper.saveRecentFundamentals(fundamentals);
-      if (positions) await this.dbHelper.saveInvestorPositions(positions);
-      info(`[Sync] Saved ext data for ${stock.stock_id}`);
+        count++;
+      }
+      if (hasData(positions)) {
+        await this.dbHelper.saveInvestorPositions(positions);
+        count++;
+      }
+      
+      if (count > 0) {
+        this.broadcast("logs", {
+          msg: `[Sync] Saved ext data for ${stock.stock_id} (${count}/3 fields)`,
+          type: "info",
+        });
+      }
+      info(`[Sync] Saved ext data for ${stock.stock_id}: metrics:${!!metrics}, fund:${!!fundamentals}, pos:${!!positions}`);
+    } else {
+      this.broadcast("logs", {
+        msg: `[Warning] Ext data fetch failed for ${stock.stock_id}`,
+        type: "warning",
+      });
     }
 
     // D. Process TA Data (Intersectional check logic is internal to processTA/dbHelper)

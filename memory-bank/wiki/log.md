@@ -2,6 +2,10 @@
 
 按時間順序記錄系統的重大變更與決策。
 
+## 2026-04-22
+- [Sync/Architectural] 重構同步掃描邏輯，引入 SQLite View (`stock_health_view`) 以匯總檢視該股票的日線進度以及基本面、籌碼面的齊全度。當基本面或籌碼數據 (`has_ext_data` 為 false) 不全時，引擎將自動拒絕將該股票標記為滿血 (`fresh`)，防堵過往忽略了基本面未確實更新的漏網之魚現象。
+- [Sync/Fix] 修復週轉率為 0 的問題：當 Yahoo Profile 爬蟲失敗或無回應時，優先將 `SyncEngine` 中計算用的 `issued_shares` 屬性映射自資料庫備份，避免週轉率公式除以為零。
+
 ## 2026-04-21
 - [UI/Perf] [REQ-008] 修復 `ResultTable` 抖動、搜尋延遲與動畫效能：重構資料抓取為批次 Join、同步 `Suspense` 尺寸並移除耗能的 `layout` 動畫。
 - [Scraper/Fix] [REQ-007] 強化 Fundamental 頁面資料讀取優先序：實作 SQLite 優先、Supabase 補充的合併策略，並補完缺失的指標 Mapping。

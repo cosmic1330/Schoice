@@ -31,35 +31,32 @@ export default class SyncDatabaseHelper {
    * If stockId is provided, returns info for that stock only.
    */
   async getHealthSnapshot(stockId?: string): Promise<
-    Record<string, { last_date: string; record_count: number }>
+    Record<string, { last_date: string; weekly_last_date: string; hourly_last_date: string; record_count: number; has_ext_data: boolean }>
   > {
     try {
-      let sql = `SELECT d.stock_id, MAX(d.t) as last_date, COUNT(*) as record_count 
-                 FROM daily_deal d
-                 INNER JOIN daily_skills s ON d.stock_id = s.stock_id AND d.t = s.t`;
+      let sql = `SELECT stock_id, daily_last_date as last_date, weekly_last_date, hourly_last_date, daily_record_count as record_count, 
+                 (has_financials AND has_fundamentals AND has_positions) as has_ext_data
+                 FROM stock_health_view`;
       
       const params: any[] = [];
       if (stockId) {
-        sql += ` WHERE d.stock_id = $1`;
+        sql += ` WHERE stock_id = $1`;
         params.push(stockId);
       }
       
-      sql += ` GROUP BY d.stock_id;`;
-
-      const result: Array<{
-        stock_id: string;
-        last_date: string;
-        record_count: number;
-      }> = await this.db.select(sql, params);
+      const result: Array<any> = await this.db.select(sql, params);
 
       const snapshot: Record<
         string,
-        { last_date: string; record_count: number }
+        { last_date: string; weekly_last_date: string; hourly_last_date: string; record_count: number; has_ext_data: boolean }
       > = {};
       result.forEach((item) => {
         snapshot[item.stock_id] = {
-          last_date: item.last_date,
-          record_count: item.record_count,
+          last_date: item.last_date || "0",
+          weekly_last_date: item.weekly_last_date || "0",
+          hourly_last_date: item.hourly_last_date || "0",
+          record_count: item.record_count || 0,
+          has_ext_data: Boolean(item.has_ext_data),
         };
       });
       return snapshot;
@@ -256,6 +253,21 @@ export default class SyncDatabaseHelper {
     } catch (e) {
       error(`[SyncDB] SaveStock error for ${stock.stock_id}: ${e}`);
     }
+  }
+
+  async getStockInfo(stockId: string): Promise<{ issued_shares?: number }> {
+    try {
+      const result: Array<{ issued_shares: number }> = await this.db.select(
+        "SELECT issued_shares FROM stock WHERE stock_id = $1",
+        [stockId],
+      );
+      if (result.length > 0 && result[0].issued_shares) {
+        return { issued_shares: result[0].issued_shares };
+      }
+    } catch (e) {
+      error(`[SyncDB] getStockInfo error for ${stockId}: ${e}`);
+    }
+    return {};
   }
 
   async getStockDates(

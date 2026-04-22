@@ -9,6 +9,7 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
+import StorageIcon from "@mui/icons-material/Storage";
 import { useTranslation } from "react-i18next";
 import { useSyncLaunch } from "../../../../../../hooks/useSyncLaunch";
 
@@ -38,7 +39,7 @@ export default function UpdateDeals() {
       <Tooltip title={t("Pages.Schoice.Header.updateData")} arrow>
         <Button
           variant="contained"
-          onClick={launch}
+          onClick={() => launch(false)}
           size="small"
           color={getStatusColor()}
           sx={{
@@ -73,6 +74,33 @@ export default function UpdateDeals() {
           ) : (
             <SyncIcon sx={{ fontSize: 18 }} />
           )}
+        </Button>
+      </Tooltip>
+
+      <Tooltip title="強制更新基本面與財報 (Force ExtData)" arrow>
+        <Button
+          variant="contained"
+          onClick={() => launch(true)}
+          disabled={isSyncing || isCooling}
+          size="small"
+          color="secondary"
+          sx={{
+            minWidth: 0,
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            p: 0,
+            bgcolor: (theme) => alpha(theme.palette.secondary.main, 0.1),
+            color: "secondary.main",
+            boxShadow: "none",
+            "&:hover": {
+              bgcolor: (theme) => alpha(theme.palette.secondary.main, 0.2),
+              transform: "scale(1.05)",
+            },
+            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        >
+          <StorageIcon sx={{ fontSize: 16 }} />
         </Button>
       </Tooltip>
 

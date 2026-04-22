@@ -29,7 +29,7 @@ export const useSyncLaunch = () => {
     };
   }, []);
 
-  const launch = useCallback(async () => {
+  const launch = useCallback(async (forceExtData: boolean = false) => {
     try {
       const label = "sync-worker";
       let workerWin = await WebviewWindow.getByLabel(label);
@@ -68,7 +68,7 @@ export const useSyncLaunch = () => {
       }
 
       // 觸發同步引擎啟動
-      start();
+      start(forceExtData);
     } catch (e) {
       console.error("Failed to launch sync worker", e);
     }

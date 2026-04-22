@@ -48,12 +48,12 @@ export const useSyncEngine = () => {
     };
   }, []);
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (forceExtData?: boolean) => {
     const settingsStore = await getStore();
     const menu = (await settingsStore.get("menu")) as StockTableType[];
     if (menu) {
       // Emit command to worker instead of local execution
-      await emit("sync:command_start", { menu, dates });
+      await emit("sync:command_start", { menu, dates, forceExtData });
     }
   }, [dates]);
 

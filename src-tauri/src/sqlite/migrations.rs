@@ -552,5 +552,26 @@ pub fn value() -> Vec<Migration> {
             ",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 13,
+            description: "add_stock_health_view",
+            sql: "
+                CREATE VIEW IF NOT EXISTS stock_health_view AS
+                SELECT 
+                    s.stock_id,
+                    (SELECT MAX(t) FROM daily_deal d WHERE d.stock_id = s.stock_id) as daily_last_date,
+                    (SELECT COUNT(*) FROM daily_deal d WHERE d.stock_id = s.stock_id) as daily_record_count,
+                    (SELECT MAX(t) FROM weekly_deal w WHERE w.stock_id = s.stock_id) as weekly_last_date,
+                    (SELECT MAX(ts) FROM hourly_deal h WHERE h.stock_id = s.stock_id) as hourly_last_date,
+                    (f.pe IS NOT NULL AND f.pe != '') as has_financials,
+                    (r.eps_recent_q1_name IS NOT NULL AND r.eps_recent_q1_name != '') as has_fundamentals,
+                    (p.recent_w1_name IS NOT NULL AND p.recent_w1_name != '') as has_positions
+                FROM stock s
+                LEFT JOIN financial_metric f ON s.stock_id = f.stock_id
+                LEFT JOIN recent_fundamental r ON s.stock_id = r.stock_id
+                LEFT JOIN investor_positions p ON s.stock_id = p.stock_id;
+            ",
+            kind: MigrationKind::Up,
+        },
     ]
 }

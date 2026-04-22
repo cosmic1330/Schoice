@@ -94,7 +94,11 @@ export async function fetchStockExtData(stockId: string): Promise<{
       ]);
 
       if (!data) {
-        data = { metrics: {}, fundamentals: {}, positions: {} };
+        data = { 
+          metrics: { stock_id: stockId }, 
+          fundamentals: { stock_id: stockId }, 
+          positions: { stock_id: stockId } 
+        };
       }
 
       // Merge strategy: Keep Yahoo data if present, otherwise use Supabase
@@ -120,16 +124,25 @@ async function scrapeYahooExtData(stockId: string) {
     const revenueUrl = `https://tw.stock.yahoo.com/quote/${stockId}.TW/revenue`;
     const holdersUrl = `https://tw.stock.yahoo.com/quote/${stockId}.TW/major-holders`;
 
-    const [profileBuffer, revenueBuffer, holdersBuffer] = await Promise.all([
+    const results = await Promise.allSettled([
       tauriFetcher(profileUrl, TauriFetcherType.ArrayBuffer),
       tauriFetcher(revenueUrl, TauriFetcherType.ArrayBuffer),
       tauriFetcher(holdersUrl, TauriFetcherType.ArrayBuffer),
     ]);
 
     const decoder = new TextDecoder("utf-8");
-    const $profile = load(decoder.decode(profileBuffer as ArrayBuffer));
-    const $revenue = load(decoder.decode(revenueBuffer as ArrayBuffer));
-    const $holders = load(decoder.decode(holdersBuffer as ArrayBuffer));
+    const profileRes = results[0].status === "fulfilled" ? results[0].value : null;
+    const revenueRes = results[1].status === "fulfilled" ? results[1].value : null;
+    const holdersRes = results[2].status === "fulfilled" ? results[2].value : null;
+
+    if (!profileRes && !revenueRes && !holdersRes) {
+      error(`All 3 extension data pages failed to fetch for ${stockId}`);
+      return null;
+    }
+
+    const $profile = profileRes ? load(decoder.decode(profileRes as ArrayBuffer)) : null;
+    const $revenue = revenueRes ? load(decoder.decode(revenueRes as ArrayBuffer)) : null;
+    const $holders = holdersRes ? load(decoder.decode(holdersRes as ArrayBuffer)) : null;
 
     const data: any = { 
       metrics: { stock_id: stockId }, 
@@ -157,91 +170,101 @@ async function scrapeYahooExtData(stockId: string) {
     };
 
     // 1. Process Profile Page: Financial Metrics & Basic Info
-    // 遍歷所有包含文本的元素，尋找關鍵指標
-    $profile("div, span").each((_i, el) => {
-      const $el = $profile(el);
-      // [關鍵] 只處理葉子節點，避免抓到包含多個元素的容器導致文字聚合 (例如 label+value)
-      if ($el.children().length > 0) return;
+    if ($profile) {
+      $profile("div, span").each((_i, el) => {
+        const $el = $profile(el);
+        // 只處理葉子節點
+        if ($el.children().length > 0) return;
 
-      const text = $el.text().trim();
-      if (!text) return;
+        const text = $el.text().trim();
+        if (!text) return;
 
-      for (const [key, field] of Object.entries(metricsMap)) {
-        if (text === key || (text.includes(key) && text.length < 15)) {
-          // 邏輯：在當前標籤的父節點下找尋最後一個節點作為數值
-          const valStr = $el
-            .parent()
-            .children()
-            .last()
-            .text()
-            .trim()
-            .replace(/,/g, "")
-            .replace(/%/g, "");
+        for (const [key, field] of Object.entries(metricsMap)) {
+          if (text === key || (text.includes(key) && text.length < 15)) {
+            // 策略 A: 嘗試取父節點的最後一個子節點 (傳統結構：[Label, Value])
+            const lastChild = $el.parent().children().last();
+            const lastChildText = lastChild.text().trim().replace(/,/g, "").replace(/%/g, "");
+            let val = parseFloat(lastChildText);
 
-          const val = parseFloat(valStr);
-          // 安全檢查：數值不應等於標籤文本 (避免標籤與數值在同一個 element)
-          if (!isNaN(val) && valStr !== text) {
-            data.metrics[field] = Math.round(val * 100) / 100;
-          } else {
-            // 嘗試找下一個兄弟節點 (如果 Yahoo 結構是鄰近節點而非父子關係)
-            const nextValStr = $el
-              .next()
-              .text()
-              .trim()
-              .replace(/,/g, "")
-              .replace(/%/g, "");
-            const nextVal = parseFloat(nextValStr);
-            if (!isNaN(nextVal)) {
-              data.metrics[field] = Math.round(nextVal * 100) / 100;
+            // 策略 B: 嘗試取「標籤」上方的數值 (垂直結構：[Value, Label])
+            if (isNaN(val) || lastChildText === text) {
+              const firstChild = $el.parent().children().first();
+              const firstChildText = firstChild.text().trim().replace(/,/g, "").replace(/%/g, "");
+              val = parseFloat(firstChildText);
+              
+              // 安全檢查：數值不應等於標籤文本
+              if (isNaN(val) || firstChildText === text) {
+                // 策略 C: 嘗試取下一個兄弟節點
+                const nextText = $el.next().text().trim().replace(/,/g, "").replace(/%/g, "");
+                val = parseFloat(nextText);
+              }
+            }
+
+            if (!isNaN(val)) {
+              data.metrics[field] = Math.round(val * 100) / 100;
+              info(`[Scraper] Found ${key} for ${stockId}: ${val}`);
             }
           }
         }
-      }
 
-      // 特殊處理：財報季度 (Report Period)
-      if (text.includes("財報季度")) {
-        const periodNode = $el.parent().children().last();
-        const period = periodNode.text().trim();
-        if (period && period !== text) data.metrics.report_period = period;
+        // 特殊處理：財報季度 (Report Period)
+        if (text.includes("財報季度")) {
+          const periodNodes = $el.parent().children();
+          const period = periodNodes.last().text().trim();
+          if (period && period !== text) {
+             data.metrics.report_period = period;
+          } else {
+             const firstPeriod = periodNodes.first().text().trim();
+             if (firstPeriod && firstPeriod !== text) data.metrics.report_period = firstPeriod;
+          }
+        }
+      });
+    }
+
+    // 2. Process Profile Page: EPS (Quarterly & Yearly)
+    if ($profile) {
+      const quarterlyEPS: { name: string; value: number }[] = [];
+      const yearlyEPS: { name: string; value: number }[] = [];
+
+    const epsLabels: string[] = [];
+    const epsValues: string[] = [];
+
+    $profile('.table-grid .grid-item span').each((_i, el) => {
+      const cls = $profile(el).attr('class') || '';
+      if (cls.includes('As(st)')) {
+        epsLabels.push($profile(el).text());
+      }
+    });
+    
+    $profile('.table-grid .grid-item div').each((_i, el) => {
+      const cls = $profile(el).attr('class') || '';
+      if (cls.includes('Py(8px)')) {
+        epsValues.push($profile(el).text());
       }
     });
 
-    // 2. Process Profile Page: EPS (Quarterly & Yearly)
-    const quarterlyEPS: { name: string; value: number }[] = [];
-    const yearlyEPS: { name: string; value: number }[] = [];
+    epsLabels.forEach((labelRaw, i) => {
+      const valueRaw = epsValues[i] || "";
+      const label = labelRaw.trim().replace(/\s+/g, ' ');
+      const valStr = valueRaw.replace('元', '').replace(/,/g, '').trim();
+      const val = parseFloat(valStr);
 
-    $profile("div, span").each((_i, el) => {
-      const $el = $profile(el);
-      // [關鍵] 僅限葉子節點
-      if ($el.children().length > 0) return;
+      if (isNaN(val)) return;
 
-      const label = $el.text().trim();
-
-      // 匹配 "2023 Q4" 或 "2023" (年份標籤)
-      if (/\d{4} Q\d/.test(label) || /^\d{4}$/.test(label)) {
-        // 搜尋同層的所有子節點
-        const container = $el.parent();
-        const siblings = container.find("div, span");
-
-        // 數值通常位於容器內的最後一個節點
-        const valueNode = siblings.last();
-        const valStr = valueNode
-          .text()
-          .trim()
-          .replace("元", "")
-          .replace(/,/g, "");
-        const val = parseFloat(valStr);
-
-        // 安全檢查：1. 有效數字 2. 數值節點不等於標籤節點 3. 數值不等於標籤文字
-        if (!isNaN(val) && valueNode[0] !== el && valStr !== label) {
-          if (label.includes("Q")) {
-            quarterlyEPS.push({ name: label, value: val });
-          } else {
-            yearlyEPS.push({ name: label, value: val });
-          }
+      // Ensure we don't insert duplicate names 
+      if (/\d{4} Q\d/.test(label)) {
+        if (!quarterlyEPS.some(e => e.name === label)) {
+          quarterlyEPS.push({ name: label, value: val });
+        }
+      } else if (/^\d{4}$/.test(label)) {
+        if (!yearlyEPS.some(e => e.name === label)) {
+          yearlyEPS.push({ name: label, value: val });
         }
       }
     });
+    
+    console.log(`[ExtData Scraper] Extracted quarterly EPS for ${stockId}:`, quarterlyEPS);
+    console.log(`[ExtData Scraper] Extracted yearly EPS for ${stockId}:`, yearlyEPS);
 
     quarterlyEPS.sort((a, b) => {
       const [aY, aQ] = a.name.split(' ');
@@ -258,28 +281,55 @@ async function scrapeYahooExtData(stockId: string) {
       data.fundamentals[`eps_recent_y${i + 1}_name`] = yearlyEPS[i]?.name ?? null;
     }
 
-    // 3. Process Revenue Page
-    const revNames = $revenue("div.table-body li.List\\(n\\) div.W\\(65px\\)").map((_, el) => $revenue(el).text().trim()).get();
-    const revMoms = $revenue("div.table-body li.List\\(n\\) div.table-row > div:nth-child(2) li:nth-child(2) span").map((_, el) => $revenue(el).text().trim()).get();
-    const revYoys = $revenue("div.table-body li.List\\(n\\) div.table-row > div:nth-child(2) li:nth-child(4) span").map((_, el) => $revenue(el).text().trim()).get();
-    const revYoyAccs = $revenue("div.table-body li.List\\(n\\) div.table-row > div:nth-child(3) li:nth-child(3) span").map((_, el) => $revenue(el).text().trim()).get();
+      for (let i = 0; i < 4; i++) {
+        data.fundamentals[`eps_recent_q${i + 1}`] = quarterlyEPS[i]?.value ?? null;
+        data.fundamentals[`eps_recent_q${i + 1}_name`] = quarterlyEPS[i]?.name ?? null;
+        data.fundamentals[`eps_recent_y${i + 1}`] = yearlyEPS[i]?.value ?? null;
+        data.fundamentals[`eps_recent_y${i + 1}_name`] = yearlyEPS[i]?.name ?? null;
+      }
+    }
 
-    for (let i = 0; i < 4; i++) {
-        data.fundamentals[`revenue_recent_m${i + 1}_name`] = revNames[i] || null;
-        data.fundamentals[`revenue_recent_m${i + 1}_mom`] = pf(revMoms[i]);
-        data.fundamentals[`revenue_recent_m${i + 1}_yoy`] = pf(revYoys[i]);
-        data.fundamentals[`revenue_recent_m${i + 1}_yoy_acc`] = pf(revYoyAccs[i]);
+    // 3. Process Revenue Page
+    if ($revenue) {
+      const revValues: string[] = [];
+
+      $revenue('.table-grid .grid-item div').each((_i, el) => {
+        const cls = $revenue(el).attr('class') || '';
+        if (cls.includes('Py(8px)')) revValues.push($revenue(el).text().trim());
+      });
+
+      // Revenue grid: 8 items per row
+      // 0: Month Name, 1: Rev, 2: MoM, 3: NetRev, 4: YoY, 5: AccRev, 6: AccMoM, 7: YoY_Acc
+      for (let i = 0; i < 4; i++) {
+          const base = i * 8;
+          if (base + 7 >= revValues.length) break;
+          
+          data.fundamentals[`revenue_recent_m${i + 1}_name`] = revValues[base + 0];
+          data.fundamentals[`revenue_recent_m${i + 1}_mom`] = pf(revValues[base + 2]);
+          data.fundamentals[`revenue_recent_m${i + 1}_yoy`] = pf(revValues[base + 4]);
+          data.fundamentals[`revenue_recent_m${i + 1}_yoy_acc`] = pf(revValues[base + 7]);
+      }
     }
 
     // 4. Process Investor Positions (Major Holders) Page
-    const holderNames = $holders("div.table-body li.List\\(n\\) div.W\\(112px\\)").map((_, el) => $holders(el).text().trim()).get();
-    const foreignRatios = $holders("div.table-body li.List\\(n\\) div.table-row > div:nth-child(2)").map((_, el) => $holders(el).text().trim()).get();
-    const bigInvestorRatios = $holders("div.table-body li.List\\(n\\) div.table-row > div:nth-child(3)").map((_, el) => $holders(el).text().trim()).get();
+    if ($holders) {
+      const holderValues: string[] = [];
 
-    for (let i = 0; i < 4; i++) {
-        data.positions[`recent_w${i + 1}_name`] = holderNames[i] || null;
-        data.positions[`recent_w${i + 1}_foreign_ratio`] = pf(foreignRatios[i]);
-        data.positions[`recent_w${i + 1}_big_investor_ratio`] = pf(bigInvestorRatios[i]);
+      $holders('.table-grid .grid-item div').each((_i, el) => {
+        const cls = $holders(el).attr('class') || '';
+        if (cls.includes('Py(8px)')) holderValues.push($holders(el).text().trim());
+      });
+
+      // Holders grid: 5 items per row
+      // 0: Date(Label), 1: Foreign, 2: BigInvestor(1000+), 3: Dir/Sup, 4: Price
+      for (let i = 0; i < 4; i++) {
+          const base = i * 5;
+          if (base + 2 >= holderValues.length) break;
+          
+          data.positions[`recent_w${i + 1}_name`] = holderValues[base + 0];
+          data.positions[`recent_w${i + 1}_foreign_ratio`] = pf(holderValues[base + 1]);
+          data.positions[`recent_w${i + 1}_big_investor_ratio`] = pf(holderValues[base + 2]);
+      }
     }
 
     return data;
@@ -307,24 +357,38 @@ export async function fetchStockProfile(
     const $ = load(decodedText);
 
     const companyInfo: any = {};
-    $(".D(f), .grid-item").each((_i, el) => {
+    $(".D(f), .grid-item, div, span").each((_i, el) => {
       const $el = $(el);
+      // Skip if has children to avoid capturing container text
+      if ($el.children().length > 0) return;
+
       const text = $el.text().trim();
 
       if (text.includes("已發行普通股數")) {
-        let value = $el.find("div").last().text().trim().replace(/,/g, "");
-        if (!value || isNaN(parseFloat(value))) {
-           value = $el.children().last().text().trim().replace(/,/g, "");
+        // 策略 A: 找父節點下最後一個子節點
+        let valueStr = $el.parent().children().last().text().trim().replace(/,/g, "");
+        let shares = parseFloat(valueStr);
+        
+        // 策略 B: 找父節點下第一個子節點 (垂直佈局)
+        if (isNaN(shares) || valueStr === text) {
+           valueStr = $el.parent().children().first().text().trim().replace(/,/g, "");
+           shares = parseFloat(valueStr);
+        }
+
+        // 策略 C: 找下一個兄弟節點
+        if (isNaN(shares) || valueStr === text) {
+           valueStr = $el.next().text().trim().replace(/,/g, "");
+           shares = parseFloat(valueStr);
         }
         
-        const shares = parseFloat(value);
         if (!isNaN(shares)) {
           companyInfo.issued_shares = shares;
+          info(`[Scraper] Found issued_shares for ${stockId}: ${shares}`);
         }
       }
     });
 
-    return Object.keys(companyInfo).length > 0 ? companyInfo : null;
+    return companyInfo.issued_shares ? companyInfo : null;
   } catch (e) {
     error(`Error fetching Yahoo profile for ${stockId}: ${e}`);
     return null;
