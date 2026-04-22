@@ -247,6 +247,7 @@ export default class SyncDatabaseHelper {
    */
   async saveStock(stock: StockTableType) {
     try {
+      info(`[SyncDB] Saving stock ${stock.stock_id}: name=${stock.stock_name}, shares=${stock.issued_shares}`);
       await this.db.execute(
         "INSERT OR REPLACE INTO stock (stock_id, stock_name, industry_group, market_type, issued_shares) VALUES ($1, $2, $3, $4, $5)",
         [stock.stock_id, stock.stock_name, stock.industry_group, stock.market_type, stock.issued_shares || null]
