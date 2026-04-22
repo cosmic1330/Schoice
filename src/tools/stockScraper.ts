@@ -345,8 +345,8 @@ async function scrapeYahooExtData(stockId: string) {
 export async function fetchStockProfile(
   stockId: string,
 ): Promise<{ issued_shares?: number } | null> {
-  try {
-    const url = `https://tw.stock.yahoo.com/quote/${stockId}.TW/profile`;
+  const tryFetch = async (idWithSuffix: string) => {
+    const url = `https://tw.stock.yahoo.com/quote/${idWithSuffix}/profile`;
     const arrayBuffer = (await tauriFetcher(
       url,
       TauriFetcherType.ArrayBuffer,
@@ -354,43 +354,80 @@ export async function fetchStockProfile(
 
     const decoder = new TextDecoder("utf-8");
     const decodedText = decoder.decode(arrayBuffer);
+    return decodedText;
+  };
+
+  try {
+    let decodedText = await tryFetch(`${stockId}.TW`);
+    
+    // If .TW doesn't contain the label, try .TWO (OTC)
+    if (!decodedText.includes("已發行普通股數")) {
+      info(`[Scraper] Label not found with .TW, trying .TWO for ${stockId}`);
+      decodedText = await tryFetch(`${stockId}.TWO`);
+    }
+
+    // Diagnostic log
+    info(`[Scraper] Fetched HTML for ${stockId}, length: ${decodedText.length}`);
+
     const $ = load(decodedText);
-
     const companyInfo: any = {};
-    $(".D(f), .grid-item, div, span").each((_i, el) => {
-      const $el = $(el);
-      // Skip if has children to avoid capturing container text
-      if ($el.children().length > 0) return;
 
+    $(".table-grid .grid-item, .grid-item, div, span, li").each((_i, el) => {
+      const $el = $(el);
       const text = $el.text().trim();
 
       if (text.includes("已發行普通股數")) {
-        // 策略 A: 找父節點下最後一個子節點
-        let valueStr = $el.parent().children().last().text().trim().replace(/,/g, "");
-        let shares = parseFloat(valueStr);
+        let valueStr = "";
+        let shares = NaN;
+
+        // Strategy 1: Newline split (as seen in n8n reference)
+        if (text.includes("\n")) {
+          const parts = text.split("\n");
+          // label is parts[0], value is parts[1] (or combined parts after 0)
+          valueStr = parts.slice(1).join(" ").trim().replace(/,/g, "");
+          shares = parseFloat(valueStr);
+          if (!isNaN(shares)) {
+             info(`[Scraper] Strategy 1 (Newline) matched: ${shares}`);
+          }
+        }
+
+        // Strategy 2: Check parent's last child (Horizontal layout)
+        if (isNaN(shares)) {
+          valueStr = $el.parent().children().last().text().trim().replace(/,/g, "");
+          shares = parseFloat(valueStr);
+          if (!isNaN(shares)) info(`[Scraper] Strategy 2 (Parent Last Child) matched: ${shares}`);
+        }
         
-        // 策略 B: 找父節點下第一個子節點 (垂直佈局)
+        // Strategy 3: Check parent's first child (Vertical layout)
         if (isNaN(shares) || valueStr === text) {
            valueStr = $el.parent().children().first().text().trim().replace(/,/g, "");
            shares = parseFloat(valueStr);
+           if (!isNaN(shares)) info(`[Scraper] Strategy 3 (Parent First Child) matched: ${shares}`);
         }
 
-        // 策略 C: 找下一個兄弟節點
+        // Strategy 4: Check next sibling
         if (isNaN(shares) || valueStr === text) {
            valueStr = $el.next().text().trim().replace(/,/g, "");
            shares = parseFloat(valueStr);
+           if (!isNaN(shares)) info(`[Scraper] Strategy 4 (Next Sibling) matched: ${shares}`);
         }
         
-        if (!isNaN(shares)) {
+        if (!isNaN(shares) && shares > 0) {
           companyInfo.issued_shares = shares;
-          info(`[Scraper] Found issued_shares for ${stockId}: ${shares}`);
+          info(`[Scraper] Success: Found issued_shares for ${stockId}: ${shares}`);
+        } else {
+          info(`[Scraper] Warning: Found label for ${stockId} but failed to parse value: "${text.replace(/\n/g, "\\n")}"`);
         }
       }
     });
 
+    if (!companyInfo.issued_shares) {
+      info(`[Scraper] Failed to find issued_shares for ${stockId} on profile page.`);
+    }
+
     return companyInfo.issued_shares ? companyInfo : null;
   } catch (e) {
-    error(`Error fetching Yahoo profile for ${stockId}: ${e}`);
+    error(`[Scraper] Error fetching Yahoo profile for ${stockId}: ${e}`);
     return null;
   }
 }

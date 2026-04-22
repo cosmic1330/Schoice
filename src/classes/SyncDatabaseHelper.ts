@@ -271,6 +271,21 @@ export default class SyncDatabaseHelper {
     return {};
   }
 
+  async getStockInfoFull(stockId: string): Promise<Partial<StockTableType>> {
+    try {
+      const result: Array<StockTableType> = await this.db.select(
+        "SELECT * FROM stock WHERE stock_id = $1",
+        [stockId],
+      );
+      if (result.length > 0) {
+        return result[0];
+      }
+    } catch (e) {
+      error(`[SyncDB] getStockInfoFull error for ${stockId}: ${e}`);
+    }
+    return {};
+  }
+
   async getStockDates(
     stockId: string,
     dealTable: string = "daily_deal",

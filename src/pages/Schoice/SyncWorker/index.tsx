@@ -104,7 +104,7 @@ export default function SyncWorker() {
   // Fetch Stock Names for the list
   useEffect(() => {
     if (db) {
-      db.select<any[]>("SELECT stock_id, stock_name FROM stocks").then(
+      db.select<any[]>("SELECT stock_id, stock_name FROM stock").then(
         (rows) => {
           const map: Record<string, string> = {};
           rows.forEach((r) => (map[r.stock_id] = r.stock_name));
@@ -295,7 +295,7 @@ export default function SyncWorker() {
                 <PlayArrowIcon />
               )
             }
-            onClick={start}
+            onClick={() => start()}
             disabled={
               !db || syncStatus === "syncing" || syncStatus === "scanning"
             }

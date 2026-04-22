@@ -410,6 +410,33 @@ export default class SyncEngine {
     // B. Fetch Data (with Rate Limiting)
     await this.limiter.consume(1); // One token per stock process
 
+    // [v15] Priority: Ensure issued_shares is available before calculating TA indicators
+    // If database is new, we MUST fetch this first.
+    let currentShares = stock.issued_shares;
+    if (!currentShares && this.dbHelper) {
+      const dbStock = await this.dbHelper.getStockInfo(stock.stock_id);
+      currentShares = dbStock?.issued_shares;
+    }
+
+    if (!currentShares) {
+      info(`[Sync] ${stock.stock_id} issued_shares is missing (memory:${stock.issued_shares}, db:${currentShares}). Fetching from Yahoo...`);
+      try {
+        const profileData = await fetchStockProfile(stock.stock_id);
+        if (profileData?.issued_shares) {
+          currentShares = profileData.issued_shares;
+          stock.issued_shares = currentShares;
+          await this.dbHelper.saveStock(stock); // Persist immediately
+          info(`[Sync] ${stock.stock_id} issued_shares updated to ${currentShares} and saved to DB.`);
+        } else {
+          info(`[Sync] ${stock.stock_id} Yahoo fetch returned no shares.`);
+        }
+      } catch (e) {
+        error(`[Sync] Basic profile fetch failed for ${stock.stock_id}: ${e}`);
+      }
+    } else {
+      info(`[Sync] ${stock.stock_id} already has issued_shares: ${currentShares}`);
+    }
+
     const skipTaFetch = forceExtData;
     if (skipTaFetch) {
       this.broadcast("logs", {
@@ -418,30 +445,18 @@ export default class SyncEngine {
       });
     }
 
-    const [daily, weekly, hourly, profile, extData] = await Promise.allSettled([
+    const [daily, weekly, hourly, extData] = await Promise.allSettled([
       skipTaFetch ? Promise.resolve(null as any) : this.fetchData(stock, UrlTaPerdOptions.Day),
       skipTaFetch ? Promise.resolve(null as any) : this.fetchData(stock, UrlTaPerdOptions.Week),
       skipTaFetch ? Promise.resolve(null as any) : this.fetchData(stock, UrlTaPerdOptions.Hour),
-      fetchStockProfile(stock.stock_id),
       fetchStockExtData(stock.stock_id), // New detailed fetcher
     ]);
 
-    // C. Update Profile & Fundamentals
-    let dbShares: number | undefined;
-    if (this.dbHelper) {
-      const dbStock = await this.dbHelper.getStockInfo(stock.stock_id);
-      dbShares = dbStock?.issued_shares;
-    }
-
-    if (profile.status === "fulfilled" && profile.value?.issued_shares) {
-      stock.issued_shares = profile.value.issued_shares;
-    } else if (dbShares) {
-      stock.issued_shares = dbShares;
-    }
-    
     // [CRITICAL] Always ensure stock exists in local DB before saving relations
-    // This prevents Foreign Key constraint failures for new stocks.
-    await this.dbHelper.saveStock(stock);
+    // Fetch latest from DB again to avoid overwriting fields if our local 'stock' object is partial
+    const existingStock = await this.dbHelper.getStockInfoFull(stock.stock_id);
+    const mergedStock = { ...existingStock, ...stock };
+    await this.dbHelper.saveStock(mergedStock);
 
     if (extData.status === "fulfilled" && extData.value) {
       const { metrics, fundamentals, positions } = extData.value;
