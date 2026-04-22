@@ -442,6 +442,9 @@ export default class SyncEngine {
     if (!currentShares && this.dbHelper) {
       const dbStock = await this.dbHelper.getStockInfo(stock.stock_id);
       currentShares = dbStock?.issued_shares;
+      if (currentShares) {
+        stock.issued_shares = currentShares;
+      }
     }
 
     if (!currentShares) {

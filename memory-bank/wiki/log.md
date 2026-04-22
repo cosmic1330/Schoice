@@ -6,7 +6,7 @@
 - **2026-04-22**: 完成 REQ-011，將月營收狀態整合至 `stock_health_view` 並新增 Migration v14。
 - **2026-04-22**: 修正 Sync Data 持久化失敗問題 (Conversation d487c047)
 - [Sync/Architectural] 重構同步掃描邏輯，引入 SQLite View (`stock_health_view`) 以匯總檢視該股票的日線進度以及基本面、籌碼面的齊全度。當基本面或籌碼數據 (`has_ext_data` 為 false) 不全時，引擎將自動拒絕將該股票標記為滿血 (`fresh`)，防堵過往忽略了基本面未確實更新的漏網之魚現象。
-- [Sync/Fix] 修復週轉率為 0 的問題：當 Yahoo Profile 爬蟲失敗或無回應時，優先將 `SyncEngine` 中計算用的 `issued_shares` 屬性映射自資料庫備份，避免週轉率公式除以為零。
+- [Sync/Fix] 修復週轉率為 0 的問題：修正 `SyncEngine` 中 `issued_shares` 從資料庫讀取後未正確賦值回 `stock` 物件的漏洞，確保計算公式能讀取到正確股本。 (REQ-012)
 
 ## 2026-04-21
 - [UI/Perf] [REQ-008] 修復 `ResultTable` 抖動、搜尋延遲與動畫效能：重構資料抓取為批次 Join、同步 `Suspense` 尺寸並移除耗能的 `layout` 動畫。
