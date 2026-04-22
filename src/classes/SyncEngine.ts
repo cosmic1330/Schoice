@@ -146,12 +146,17 @@ export default class SyncEngine {
 
   public async setupCommandListeners() {
     const unlistens = await Promise.all([
-      listen<{ menu: StockTableType[]; dates: string[]; forceExtData?: boolean }>(
-        "sync:command_start",
-        (event) => {
-          this.start(event.payload.menu, event.payload.dates, event.payload.forceExtData || false);
-        },
-      ),
+      listen<{
+        menu: StockTableType[];
+        dates: string[];
+        forceExtData?: boolean;
+      }>("sync:command_start", (event) => {
+        this.start(
+          event.payload.menu,
+          event.payload.dates,
+          event.payload.forceExtData || false,
+        );
+      }),
       listen("sync:command_stop", () => {
         this.stop();
       }),
@@ -165,7 +170,11 @@ export default class SyncEngine {
   /**
    * Start the full synchronization process.
    */
-  public async start(menu: StockTableType[], dates: string[], forceExtData: boolean = false) {
+  public async start(
+    menu: StockTableType[],
+    dates: string[],
+    forceExtData: boolean = false,
+  ) {
     console.log("[SyncEngine] Attempting to start sync...", {
       isRunning: this.isRunning,
       hasDbHelper: !!this.dbHelper,
@@ -209,7 +218,11 @@ export default class SyncEngine {
         const info = snapshot[stock.stock_id];
         if (!info) {
           healthMap[stock.stock_id] = "missing";
-        } else if (info.last_date < today || !info.has_ext_data || forceExtData) {
+        } else if (
+          info.last_date < today ||
+          !info.has_ext_data ||
+          forceExtData
+        ) {
           healthMap[stock.stock_id] = "stale";
         } else {
           healthMap[stock.stock_id] = "fresh";
@@ -332,7 +345,10 @@ export default class SyncEngine {
     });
   }
 
-  private async syncStock(stock: StockTableType, forceExtData: boolean = false) {
+  private async syncStock(
+    stock: StockTableType,
+    forceExtData: boolean = false,
+  ) {
     if (!this.dbHelper) return;
 
     // A. Check for partial data (market hours check)
@@ -375,17 +391,27 @@ export default class SyncEngine {
     const diff = d.getDate() - day + (day === 0 ? -6 : 1);
     d.setDate(diff);
     const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
     const thisWeekMonday = `${yyyy}${mm}${dd}`;
 
-    const isHourlyComplete = snap && snap.hourly_last_date && snap.hourly_last_date.substring(0, 8) === today;
-    const isWeeklyComplete = snap && snap.weekly_last_date && snap.weekly_last_date >= thisWeekMonday;
-
-    const isTaDataFresh = snap && snap.last_date >= today && isHourlyComplete && isWeeklyComplete;
+    const isHourlyComplete =
+      snap &&
+      snap.hourly_last_date &&
+      snap.hourly_last_date.substring(0, 8) === today;
+    const isWeeklyComplete =
+      snap && snap.weekly_last_date && snap.weekly_last_date >= thisWeekMonday;
 
     // 如果今天已經同步過且所有資料 (基本面、小時線、週線) 都齊全
-    if (!forceExtData && snap && snap.last_date >= today && preFetchDate === today && snap.has_ext_data && isHourlyComplete && isWeeklyComplete) {
+    if (
+      !forceExtData &&
+      snap &&
+      snap.last_date >= today &&
+      preFetchDate === today &&
+      snap.has_ext_data &&
+      isHourlyComplete &&
+      isWeeklyComplete
+    ) {
       if (isMarketClosedToday()) {
         // 現在已收盤：只有當上次同步也是收盤後進行的，才跳過
         if (wasLastFetchFinal()) {
@@ -419,14 +445,18 @@ export default class SyncEngine {
     }
 
     if (!currentShares) {
-      info(`[Sync] ${stock.stock_id} issued_shares is missing (memory:${stock.issued_shares}, db:${currentShares}). Fetching from Yahoo...`);
+      info(
+        `[Sync] ${stock.stock_id} issued_shares is missing (memory:${stock.issued_shares}, db:${currentShares}). Fetching from Yahoo...`,
+      );
       try {
         const profileData = await fetchStockProfile(stock.stock_id);
         if (profileData?.issued_shares) {
           currentShares = profileData.issued_shares;
           stock.issued_shares = currentShares;
           await this.dbHelper.saveStock(stock); // Persist immediately
-          info(`[Sync] ${stock.stock_id} issued_shares updated to ${currentShares} and saved to DB.`);
+          info(
+            `[Sync] ${stock.stock_id} issued_shares updated to ${currentShares} and saved to DB.`,
+          );
         } else {
           info(`[Sync] ${stock.stock_id} Yahoo fetch returned no shares.`);
         }
@@ -434,7 +464,9 @@ export default class SyncEngine {
         error(`[Sync] Basic profile fetch failed for ${stock.stock_id}: ${e}`);
       }
     } else {
-      info(`[Sync] ${stock.stock_id} already has issued_shares: ${currentShares}`);
+      info(
+        `[Sync] ${stock.stock_id} already has issued_shares: ${currentShares}`,
+      );
     }
 
     const skipTaFetch = forceExtData;
@@ -446,9 +478,15 @@ export default class SyncEngine {
     }
 
     const [daily, weekly, hourly, extData] = await Promise.allSettled([
-      skipTaFetch ? Promise.resolve(null as any) : this.fetchData(stock, UrlTaPerdOptions.Day),
-      skipTaFetch ? Promise.resolve(null as any) : this.fetchData(stock, UrlTaPerdOptions.Week),
-      skipTaFetch ? Promise.resolve(null as any) : this.fetchData(stock, UrlTaPerdOptions.Hour),
+      skipTaFetch
+        ? Promise.resolve(null as any)
+        : this.fetchData(stock, UrlTaPerdOptions.Day),
+      skipTaFetch
+        ? Promise.resolve(null as any)
+        : this.fetchData(stock, UrlTaPerdOptions.Week),
+      skipTaFetch
+        ? Promise.resolve(null as any)
+        : this.fetchData(stock, UrlTaPerdOptions.Hour),
       fetchStockExtData(stock.stock_id), // New detailed fetcher
     ]);
 
@@ -461,7 +499,7 @@ export default class SyncEngine {
     if (extData.status === "fulfilled" && extData.value) {
       const { metrics, fundamentals, positions } = extData.value;
       let count = 0;
-      
+
       // Validation: Object should have more than just stock_id to be worth saving
       const hasData = (obj: any) => obj && Object.keys(obj).length > 1;
 
@@ -477,14 +515,16 @@ export default class SyncEngine {
         await this.dbHelper.saveInvestorPositions(positions);
         count++;
       }
-      
+
       if (count > 0) {
         this.broadcast("logs", {
           msg: `[Sync] Saved ext data for ${stock.stock_id} (${count}/3 fields)`,
           type: "info",
         });
       }
-      info(`[Sync] Saved ext data for ${stock.stock_id}: metrics:${!!metrics}, fund:${!!fundamentals}, pos:${!!positions}`);
+      info(
+        `[Sync] Saved ext data for ${stock.stock_id}: metrics:${!!metrics}, fund:${!!fundamentals}, pos:${!!positions}`,
+      );
     } else {
       this.broadcast("logs", {
         msg: `[Warning] Ext data fetch failed for ${stock.stock_id}`,
