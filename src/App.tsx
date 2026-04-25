@@ -61,7 +61,7 @@ function App() {
   }, [theme, prefersDarkMode]);
 
   const { db, dbType, switchDatabase, isSwitching } = useDatabase();
-  const { dates, fetchDates, isLoading } = useDatabaseDates(db);
+  const { dates, weekDates, fetchDates, isLoading } = useDatabaseDates(db);
 
   return (
     <UserProvider>
@@ -69,6 +69,7 @@ function App() {
         value={{
           db,
           dates,
+          weekDates,
           fetchDates,
           isLoading,
           dbType,

@@ -29,6 +29,11 @@ const WeeklyKdLineChart = ({
     let cancelled = false;
     db.select(sqlQuery).then((res: any) => {
       if (cancelled) return;
+      if (!res || res.length === 0) {
+        setData([]);
+        return;
+      }
+
       const formatData = res.reverse();
       const prev = prevRef.current;
       const changed =

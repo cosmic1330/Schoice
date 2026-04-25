@@ -48,7 +48,7 @@ export default memo(function ResultTableRow({
   options?: Map<string, WatchStockItem>;
 }) {
   const { t } = useTranslation();
-  const { dates } = useContext(DatabaseContext);
+  const { dates, weekDates } = useContext(DatabaseContext);
   const { openDetailWindow } = useDetailWebviewWindow({
     id: row.stock_id,
     name: row.stock_name,
@@ -59,7 +59,9 @@ export default memo(function ResultTableRow({
   const removeFromWatchList = useCloudStore(
     (state) => state.removeFromWatchList,
   );
-  const todayDate = useSchoiceStore((state) => state.todayDate);
+  const dateIndex = useSchoiceStore((state) => state.dateIndex);
+  const weekIndex = useSchoiceStore((state) => state.weekIndex);
+  
   const [addLoading, setAddLoading] = useState(false);
   const [removeLoading, setRemoveLoading] = useState(false);
 
@@ -95,7 +97,7 @@ export default memo(function ResultTableRow({
   return (
     <Fragment>
       <TableCell sx={{ width: 40 }}>{index + 1}.</TableCell>
-      <TableCell sx={{ width: 100 }}>{dates[todayDate]}</TableCell>
+      <TableCell sx={{ width: 100 }}>{dates[dateIndex]}</TableCell>
       <TableCell sx={{ width: 80 }}>
         <Tooltip
           placement="top-start"
@@ -142,7 +144,7 @@ export default memo(function ResultTableRow({
         </Tooltip>
       </TableCell>
       <TableCell sx={{ width: 80 }}>
-        <ClosePrice row={row} t={dates[todayDate]} />
+        <ClosePrice row={row} t={dates[dateIndex]} />
       </TableCell>
       <TableCell sx={{ width: 80 }}>
         <Suspense
@@ -159,7 +161,7 @@ export default memo(function ResultTableRow({
         >
           <HourlyUltraTinyLineChart
             stock_id={row.stock_id}
-            t={dates[todayDate]}
+            t={dates[dateIndex]}
           />
         </Suspense>
       </TableCell>
@@ -178,7 +180,7 @@ export default memo(function ResultTableRow({
         >
           <DailyUltraTinyLineChart
             stock_id={row.stock_id}
-            t={dates[todayDate]}
+            t={dates[dateIndex]}
           />
         </Suspense>
       </TableCell>
@@ -197,7 +199,7 @@ export default memo(function ResultTableRow({
         >
           <WeeklyUltraTinyLineChart
             stock_id={row.stock_id}
-            t={dates[todayDate]}
+            t={weekDates[weekIndex] || dates[dateIndex]}
           />
         </Suspense>
       </TableCell>
@@ -214,7 +216,7 @@ export default memo(function ResultTableRow({
             />
           }
         >
-          <RowChart row={row} t={dates[todayDate]} />
+          <RowChart row={row} t={dates[dateIndex]} />
         </Suspense>
       </TableCell>
       <TableCell sx={{ width: 100 }}>

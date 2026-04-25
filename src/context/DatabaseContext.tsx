@@ -4,6 +4,7 @@ import { createContext } from "react";
 type DbContextType = {
   db: Database | null;
   dates: string[];
+  weekDates: string[];
   fetchDates?: () => Promise<void>;
   isLoading?: boolean;
   dbType: "sqlite" | "postgres";
@@ -14,6 +15,7 @@ type DbContextType = {
 export const DatabaseContext = createContext<DbContextType>({
   db: null,
   dates: [],
+  weekDates: [],
   isLoading: false,
   dbType: "sqlite",
   switchDatabase: async () => {},

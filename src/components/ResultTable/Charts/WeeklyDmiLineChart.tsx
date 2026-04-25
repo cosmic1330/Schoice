@@ -24,11 +24,16 @@ const WeeklyDmiLineChart = ({
 
     if (!db) return;
 
-    db?.select(sqlQuery).then((res: any) => {
+    db.select(sqlQuery).then((res: any) => {
+      if (!res || res.length === 0) {
+        setData([]);
+        return;
+      }
+
       const formatData = res.reverse();
       setData(formatData);
     });
-  }, [stock_id, t]);
+  }, [stock_id, t, db]);
   return (
     <Tooltip title={<ChartTooltip value={DmiIndicatorColor} />} arrow>
       <Box>

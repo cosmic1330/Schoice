@@ -2,6 +2,10 @@
 
 按時間順序記錄系統的重大變更與決策。
 
+## 2026-04-25
+- [Query/Fix] [REQ-013] 修正週資料回測選擇邏輯：實作「週日基準日」過濾，確保回測日期在週中時能正確對齊當週週五資料，同時防止誤用未來週資料。
+- [Architectural/Perf] [REQ-014] 重構 `weekDate` 為 `weekIndex`：將週線對齊邏輯由字串改為索引模式，大幅簡化多週數據處理邏輯，並移除 `useFindStocksByPrompt` 中冗餘的資料庫查詢，提升選股執行效能。
+
 ## 2026-04-22
 - **2026-04-22**: 完成 REQ-011，將月營收狀態整合至 `stock_health_view` 並新增 Migration v14。
 - **2026-04-22**: 修正 Sync Data 持久化失敗問題 (Conversation d487c047)

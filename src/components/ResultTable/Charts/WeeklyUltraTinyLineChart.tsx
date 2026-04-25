@@ -30,27 +30,7 @@ const WeeklyUltraTinyLineChart = ({
         return;
       }
 
-      // [防禦性修復] 過濾重複或過於接近的週資料點（防止 SQL 存入多筆同週資料導致 K 棒異常）
-      const dedupedData: any[] = [];
-      let lastTs = 0;
-
-      // res 已經由 SQL 按 t DESC 排序
-      for (const item of res) {
-        const itemDate = new Date(
-          `${String(item.t).slice(0, 4)}-${String(item.t).slice(
-            4,
-            6,
-          )}-${String(item.t).slice(6, 8)}`,
-        );
-        const itemTs = itemDate.getTime();
-
-        if (lastTs === 0 || lastTs - itemTs >= 4 * 24 * 60 * 60 * 1000) {
-          dedupedData.push(item);
-          lastTs = itemTs;
-        }
-      }
-
-      const formatData = dedupedData.reverse();
+      const formatData = res.reverse();
       setData(formatData);
     });
   }, [stock_id, t, db]);

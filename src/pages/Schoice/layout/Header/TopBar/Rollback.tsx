@@ -3,25 +3,23 @@ import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import { Box, IconButton, Stack, Typography, alpha } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import useSchoiceStore from "../../../../../store/Schoice.store";
+import useSyncWeekDate from "../../../../../hooks/useSyncWeekDate";
 
 export default function RollBack() {
   const { t } = useTranslation();
-  const { todayDate, changeTodayDate } = useSchoiceStore();
+  const { dateIndex, changedateIndex } = useSchoiceStore();
+  useSyncWeekDate();
 
   const handleBackward = () => {
-    if (todayDate <= 0) return;
-    changeTodayDate(todayDate - 1);
+    if (dateIndex <= 0) return;
+    changedateIndex(dateIndex - 1);
   };
   const handleForward = () => {
-    changeTodayDate(todayDate + 1);
+    changedateIndex(dateIndex + 1);
   };
 
   return (
-    <Stack
-      direction="row"
-      alignItems="center"
-      spacing={0.5}
-    >
+    <Stack direction="row" alignItems="center" spacing={0.5}>
       <Typography
         variant="caption"
         noWrap
@@ -38,7 +36,7 @@ export default function RollBack() {
       >
         {t("Pages.Schoice.Header.backtestDay")}
       </Typography>
-      
+
       <Box
         sx={{
           display: "flex",
@@ -51,16 +49,18 @@ export default function RollBack() {
         <IconButton
           onClick={handleBackward}
           size="small"
-          sx={{ 
-            width: 22, 
+          sx={{
+            width: 22,
             height: 22,
-            "&:hover": { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1) } 
+            "&:hover": {
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+            },
           }}
-          disabled={todayDate <= 0}
+          disabled={dateIndex <= 0}
         >
           <ArrowBackIosNewIcon sx={{ fontSize: 10 }} />
         </IconButton>
-        
+
         <Typography
           variant="body2"
           sx={{
@@ -72,17 +72,19 @@ export default function RollBack() {
             fontVariantNumeric: "tabular-nums",
           }}
         >
-          {todayDate}
+          {dateIndex}
         </Typography>
 
-        <IconButton 
-            onClick={handleForward} 
-            size="small" 
-            sx={{ 
-                width: 22, 
-                height: 22,
-                "&:hover": { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1) }
-            }}
+        <IconButton
+          onClick={handleForward}
+          size="small"
+          sx={{
+            width: 22,
+            height: 22,
+            "&:hover": {
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+            },
+          }}
         >
           <ArrowForwardIosIcon sx={{ fontSize: 10 }} />
         </IconButton>

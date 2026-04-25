@@ -69,7 +69,7 @@ const indicatorFields = useMemo(() => {
 const getOneDateDailyDataByStockId = useCallback(/* ... */, [query]);
 
 // ResultTableRow.tsx
-const fetchDailyData = useCallback(/* ... */, [dates[todayDate], row.stock_id, getOneDateDailyDataByStockId]);
+const fetchDailyData = useCallback(/* ... */, [dates[dateIndex], row.stock_id, getOneDateDailyDataByStockId]);
 ```
 
 ### 4. 數組和對象穩定化
@@ -80,7 +80,7 @@ const columns = useMemo(
   () => [
     /* ... */
   ],
-  []
+  [],
 ); // 移出組件外部或使用 useMemo
 ```
 
@@ -151,17 +151,14 @@ import { FixedSizeList as List } from "react-window";
 ## 📈 **性能測量方法**
 
 1. **使用 React DevTools Profiler**
-
    - 測量組件渲染時間
    - 檢查渲染原因
 
 2. **監控資料庫查詢**
-
    - 使用現有的 DatabasePerformanceMonitor
    - 檢查查詢重複率
 
 3. **記憶體使用監控**
-
    - Chrome DevTools Memory tab
    - 檢查記憶體洩漏
 

@@ -43,4 +43,6 @@
 - 🔵 REQ-009: [Result UI 重新設計](../active-tasks/REQ-009_ResultUIDesign.md) (Completed)
 - 🟢 REQ-010: [修復週資料重複與盤中寫入異常](../active-tasks/REQ-010_FixWeeklyDataDuplication.md) (Active)
 - 🔵 REQ-011: [將月營收狀態加入 stock_health_view](../active-tasks/REQ-011_AddMonthlyRevenueToHealthView.md) (Completed)
-46: - 🔵 REQ-012: [修復週轉率計算異常](../active-tasks/REQ-012_FixTurnoverRateZero.md) (Completed)
+- 🔵 REQ-012: [修復週轉率計算異常](../active-tasks/REQ-012_FixTurnoverRateZero.md) (Completed)
+- 🔵 REQ-013: [修正回測週資料選擇邏輯](../active-tasks/REQ-013_FixBacktestWeeklyDataSelection.md) (Completed)
+- 🔵 REQ-014: [重構 weekDate 為 weekIndex](../active-tasks/REQ-014_RefactorWeekDateToWeekIndex.md) (Completed)

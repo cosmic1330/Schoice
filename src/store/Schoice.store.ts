@@ -28,13 +28,15 @@ export enum ChartType {
 interface SchoiceState {
   data_count: number;
   using: PromptType;
-  todayDate: number;
+  dateIndex: number;
   select: SelectType | null;
   theme: string;
   chartType: ChartType;
   filterStocks: StockTableType[] | null;
   backtestPersent: number;
   exampleChartId: string;
+  weekIndex: number; // 新增：週線對齊索引
+  setWeekIndex: (index: number) => void;
   setFilterStocks: (stocks: StockTableType[] | null) => void;
   setBacktestPersent: (persent: number) => void;
   changeChartType: (type: ChartType) => void;
@@ -49,14 +51,14 @@ interface SchoiceState {
     prompt_id: string;
     type: PromptType;
   }) => void;
-  changeTodayDate: (date: number) => void;
+  changedateIndex: (date: number) => void;
   setExampleChartId: (id: string) => void;
 }
 
 const useSchoiceStore = create<SchoiceState>((set) => ({
   data_count: 0,
   using: PromptType.BULL,
-  todayDate: 0,
+  dateIndex: 0,
   theme: localStorage.getItem("slitenting-theme") || "",
   select: null,
   chartType:
@@ -67,6 +69,10 @@ const useSchoiceStore = create<SchoiceState>((set) => ({
   exampleChartId:
     (localStorage.getItem("slitenting-example-chart-id") as string) ||
     FutureIds.WTX,
+  weekIndex: 0,
+  setWeekIndex: (index: number) => {
+    set({ weekIndex: index });
+  },
   setFilterStocks: (stocks: StockTableType[] | null) => {
     set({ filterStocks: stocks });
   },
@@ -112,8 +118,8 @@ const useSchoiceStore = create<SchoiceState>((set) => ({
         break;
     }
   },
-  changeTodayDate: (date: number) => {
-    set({ todayDate: date });
+  changedateIndex: (date: number) => {
+    set({ dateIndex: date });
   },
   setExampleChartId: (id: string) => {
     localStorage.setItem("slitenting-example-chart-id", id);

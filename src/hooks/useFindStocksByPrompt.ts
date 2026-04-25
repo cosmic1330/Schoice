@@ -8,57 +8,26 @@ import { PromptItem } from "../types";
 import useDatabaseQuery from "./useDatabaseQuery";
 
 export default function useFindStocksByPrompt() {
-  const { dates } = useContext(DatabaseContext);
-  const todayDate = useSchoiceStore((state) => state.todayDate);
+  const { dates, weekDates } = useContext(DatabaseContext);
+  const dateIndex = useSchoiceStore((state) => state.dateIndex);
   const filterStocks = useSchoiceStore((state) => state.filterStocks);
+  const weekIndex = useSchoiceStore((state) => state.weekIndex);
   const query = useDatabaseQuery();
 
-  const getWeekDates = useCallback(
-    async (date: string) => {
-      try {
-        // 查詢週線數據的實際日期，按照週的間隔來選取
-        const queryWeekDate = `
-        SELECT DISTINCT t
-        FROM weekly_deal
-        WHERE t <= '${date}'
-        ORDER BY t DESC
-        LIMIT 20;
-      `;
-        const allWeeklyDates = await query(queryWeekDate);
+  const getWeekDates = useCallback(() => {
+    try {
+      if (weekIndex < 0 || weekIndex >= weekDates.length) return [];
 
-        if (!allWeeklyDates || allWeeklyDates.length === 0) {
-          return [];
-        }
+      // 直接從 Context 中的 weekDates 陣列切片取得最近 4 週的日期
+      // weekDates 已是 DESC 排序，所以索引增加代表日期往回推
+      const selectedDates = weekDates.slice(weekIndex, weekIndex + 4);
 
-        // 從所有週線日期中選取符合週間隔的日期
-        // 通常週線數據是每週五或每週最後交易日，間隔約7天
-        const selectedDates = [];
-        const dates = allWeeklyDates.map((item: any) => item.t);
-
-        selectedDates.push(dates[0]); // 最近的一週
-
-        let lastSelectedDate = new Date(dates[0]);
-        for (let i = 1; i < dates.length && selectedDates.length < 4; i++) {
-          const currentDate = new Date(dates[i]);
-          const daysDiff =
-            (lastSelectedDate.getTime() - currentDate.getTime()) /
-            (1000 * 60 * 60 * 24);
-
-          // 如果日期間隔大於等於6天，認為是不同的週
-          if (daysDiff >= 6) {
-            selectedDates.push(dates[i]);
-            lastSelectedDate = currentDate;
-          }
-        }
-
-        return selectedDates.map((date) => ({ t: date }));
-      } catch (error) {
-        console.error("getWeekDates error", error);
-        return [];
-      }
-    },
-    [query],
-  );
+      return selectedDates.map((date) => ({ t: date }));
+    } catch (error) {
+      console.error("getWeekDates error", error);
+      return [];
+    }
+  }, [weekDates, weekIndex]);
 
   const getHourDates = useCallback(
     async (date: string) => {
@@ -99,7 +68,7 @@ export default function useFindStocksByPrompt() {
         );
         const sqlDailyQuery = stockDailyQueryBuilder.generateSqlQuery({
           conditions: customDailyConditions,
-          dates: dates.filter((_, index) => index >= todayDate),
+          dates: dates.filter((_, index) => index >= dateIndex),
           stockIds,
         });
         dailySQL = sqlDailyQuery;
@@ -111,7 +80,7 @@ export default function useFindStocksByPrompt() {
           stockWeeklyQueryBuilder.generateExpression(prompt).join(" "),
         );
 
-        const weeklyDateResults = await getWeekDates(dates[todayDate]);
+        const weeklyDateResults = await getWeekDates();
 
         if (weeklyDateResults && weeklyDateResults.length > 0) {
           const sqlWeeklyQuery = stockWeeklyQueryBuilder.generateSqlQuery({
@@ -127,7 +96,7 @@ export default function useFindStocksByPrompt() {
         const customHourlyConditions = select.conditions.hourly.map((prompt) =>
           stockHourlyQueryBuilder.generateExpression(prompt).join(" "),
         );
-        const hourlyDateResults = await getHourDates(dates[todayDate]);
+        const hourlyDateResults = await getHourDates(dates[dateIndex]);
         if (hourlyDateResults) {
           const sqlHourlyQuery = stockHourlyQueryBuilder.generateSqlQuery({
             conditions: customHourlyConditions,
@@ -140,7 +109,7 @@ export default function useFindStocksByPrompt() {
 
       return [dailySQL, weeklySQL, hourlySQL];
     },
-    [dates, todayDate, filterStocks, getWeekDates, getHourDates],
+    [dates, dateIndex, filterStocks, getWeekDates, getHourDates, weekIndex],
   );
 
   const getCombinedSqlScript = useCallback((sqls: string[]) => {

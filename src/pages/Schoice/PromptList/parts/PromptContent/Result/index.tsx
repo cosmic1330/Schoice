@@ -1,12 +1,6 @@
 import AnalyticsIcon from "@mui/icons-material/Analytics";
 import SearchOffIcon from "@mui/icons-material/SearchOff";
-import {
-  Box,
-  CircularProgress,
-  Paper,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, CircularProgress, Paper, Stack, Typography } from "@mui/material";
 import { alpha, styled } from "@mui/material/styles";
 import { AnimatePresence, motion } from "framer-motion";
 import useSWR from "swr";
@@ -72,7 +66,7 @@ export default function Result({ select }: { select: SelectType }) {
   const { getPromptSqlScripts, getCombinedSqlScript } = useFindStocksByPrompt();
   const bulls = useCloudStore((state) => state.bulls);
   const bears = useCloudStore((state) => state.bears);
-  const todayDate = useSchoiceStore((state) => state.todayDate);
+  const dateIndex = useSchoiceStore((state) => state.dateIndex);
   const filterStocks = useSchoiceStore((state) => state.filterStocks);
   const query = useDatabaseQuery();
 
@@ -81,7 +75,7 @@ export default function Result({ select }: { select: SelectType }) {
     [
       "search",
       select.prompt_id,
-      todayDate,
+      dateIndex,
       filterStocks?.length,
       Object.keys(bulls).length,
       Object.keys(bears).length,
@@ -207,10 +201,19 @@ export default function Result({ select }: { select: SelectType }) {
           <Stack direction="row" spacing={1.5} alignItems="center">
             <AnalyticsIcon color="primary" />
             <Box>
-              <Typography variant="h6" fontWeight={800} letterSpacing={-0.5} sx={{ lineHeight: 1.2 }}>
+              <Typography
+                variant="h6"
+                fontWeight={800}
+                letterSpacing={-0.5}
+                sx={{ lineHeight: 1.2 }}
+              >
                 分析結果演算法
               </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: -0.5 }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block", mt: -0.5 }}
+              >
                 {strategyName || "未命名策略"}
               </Typography>
             </Box>
@@ -291,12 +294,19 @@ export default function Result({ select }: { select: SelectType }) {
                       mt: 2,
                       p: 1.5,
                       borderRadius: "8px",
-                      bgcolor: (theme) => alpha(theme.palette.warning.main, 0.05),
-                      border: (theme) => `1px dashed ${alpha(theme.palette.warning.main, 0.3)}`,
+                      bgcolor: (theme) =>
+                        alpha(theme.palette.warning.main, 0.05),
+                      border: (theme) =>
+                        `1px dashed ${alpha(theme.palette.warning.main, 0.3)}`,
                     }}
                   >
-                    <Typography variant="caption" color="warning.main" fontWeight={700}>
-                      💡 提示：目前已啟用 Fundamental 財務篩選器 (共 {filterStocks.length} 筆目標)，搜尋結果僅限於這些股票中。
+                    <Typography
+                      variant="caption"
+                      color="warning.main"
+                      fontWeight={700}
+                    >
+                      💡 提示：目前已啟用 Fundamental 財務篩選器 (共{" "}
+                      {filterStocks.length} 筆目標)，搜尋結果僅限於這些股票中。
                     </Typography>
                   </Box>
                 )}
