@@ -102,6 +102,12 @@ const transformSqlForPostgres = (sql: string): string => {
     }
   }
 
+  // 3. Fix date-time format for Postgres (e.g., 2024-04-021400 -> 2024-04-02 14:00:00)
+  processedSql = processedSql.replace(
+    /(\d{4}-\d{2}-\d{2})1400/g,
+    "$1 14:00:00",
+  );
+
   return processedSql;
 };
 

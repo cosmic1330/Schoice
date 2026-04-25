@@ -36,6 +36,7 @@ export default function useSyncWeekDate() {
       if (target) {
         const targetIndex = weekDates.indexOf(target);
         if (targetIndex !== -1) {
+          console.log("[useSyncWeekDate] date", currentDailyDate, "week date", weekDates[targetIndex]);
           setWeekIndex(targetIndex);
         }
       }

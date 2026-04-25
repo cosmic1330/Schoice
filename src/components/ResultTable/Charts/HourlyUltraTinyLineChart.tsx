@@ -12,22 +12,24 @@ const HourlyUltraTinyLineChart = ({
   stock_id: string;
   t: string;
 }) => {
-  const { db } = useContext(DatabaseContext);
+  const { db, dbType } = useContext(DatabaseContext);
   const [data, setData] = useState<any[]>([]);
   useEffect(() => {
     if (!stock_id) return;
+    const num = dbType === "postgres" ? `${t} 14:00:00` : `${t}1400`;
+
     const sqlQuery = `SELECT hourly_deal.ts, o, h, l, c, ${UltraTinyIndicatorColor.map(
       (item) => item.key
     ).join(
       ","
-    )} FROM hourly_deal LEFT JOIN hourly_skills ON hourly_deal.ts = hourly_skills.ts AND hourly_deal.stock_id = hourly_skills.stock_id WHERE hourly_deal.stock_id = '${stock_id}' AND hourly_deal.ts < '${t}1400' ORDER BY hourly_deal.ts DESC LIMIT ${hourly_count}`;
+    )} FROM hourly_deal LEFT JOIN hourly_skills ON hourly_deal.ts = hourly_skills.ts AND hourly_deal.stock_id = hourly_skills.stock_id WHERE hourly_deal.stock_id = '${stock_id}' AND hourly_deal.ts < '${num}' ORDER BY hourly_deal.ts DESC LIMIT ${hourly_count}`;
     if (!db) return;
 
-    db?.select(sqlQuery).then((res: any) => {
+    db.select(sqlQuery).then((res: any) => {
       const formatData = res.reverse();
       setData(formatData);
     });
-  }, [stock_id, t, db]);
+  }, [stock_id, t, db, dbType]);
 
   return (
     <Tooltip title={<ChartTooltip value={UltraTinyIndicatorColor} />} arrow>

@@ -12,23 +12,25 @@ const HourlyRsiLineChart = ({
   stock_id: string;
   t: string;
 }) => {
-  const { db } = useContext(DatabaseContext);
+  const { db, dbType } = useContext(DatabaseContext);
   const [data, setData] = useState<any[]>([]);
   useEffect(() => {
     if (!stock_id) return;
+    const num = dbType === "postgres" ? `${t} 14:00:00` : `${t}1400`;
+
     const sqlQuery = `SELECT hourly_skills.ts, ${RsiIndicatorColor.map(
       (item) => item.key
     ).join(
       ","
-    )} FROM hourly_skills JOIN hourly_deal ON hourly_skills.ts = hourly_deal.ts AND hourly_skills.stock_id = hourly_deal.stock_id WHERE hourly_skills.stock_id = '${stock_id}' AND hourly_skills.ts <=  '${t}1400' ORDER BY hourly_skills.ts DESC LIMIT ${hourly_count}`;
+    )} FROM hourly_skills JOIN hourly_deal ON hourly_skills.ts = hourly_deal.ts AND hourly_skills.stock_id = hourly_deal.stock_id WHERE hourly_skills.stock_id = '${stock_id}' AND hourly_skills.ts <= '${num}' ORDER BY hourly_skills.ts DESC LIMIT ${hourly_count}`;
 
     if (!db) return;
 
-    db?.select(sqlQuery).then((res: any) => {
+    db.select(sqlQuery).then((res: any) => {
       const formatData = res.reverse();
       setData(formatData);
     });
-  }, [stock_id, t]);
+  }, [stock_id, t, db, dbType]);
   return (
     <Tooltip title={<ChartTooltip value={RsiIndicatorColor} />} arrow>
       <Box>
