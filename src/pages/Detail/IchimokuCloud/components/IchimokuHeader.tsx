@@ -1,7 +1,5 @@
 import {
   Box,
-  Chip,
-  Divider,
   Stack,
   Step,
   StepButton,
@@ -12,16 +10,12 @@ import {
 import React from "react";
 
 interface IchimokuHeaderProps {
-  score: number;
-  recommendation: string;
   activeStep: number;
   steps: { label: string }[];
   onStepChange: (step: number) => void;
 }
 
 const IchimokuHeader: React.FC<IchimokuHeaderProps> = ({
-  score,
-  recommendation,
   activeStep,
   steps,
   onStepChange,
@@ -60,14 +54,6 @@ const IchimokuHeader: React.FC<IchimokuHeaderProps> = ({
         </Typography>
       </Tooltip>
 
-      <Chip
-        label={`${score}分 - ${recommendation}`}
-        color={score >= 60 ? "success" : "error"}
-        variant="outlined"
-        size="small"
-      />
-
-      <Divider orientation="vertical" flexItem />
 
       <Box sx={{ flexGrow: 1 }}>
         <Stepper nonLinear activeStep={activeStep}>

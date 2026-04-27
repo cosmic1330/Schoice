@@ -1,21 +1,11 @@
-import CancelIcon from "@mui/icons-material/Cancel";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import {
   Box,
-  Card,
-  CardContent,
-  Chip,
   CircularProgress,
   Container,
-  Divider,
   Stack,
-  Step,
-  StepButton,
-  Stepper,
   Typography,
 } from "@mui/material";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef } from "react";
 import {
   Area,
   Bar,
@@ -33,6 +23,7 @@ import {
 import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
 import { DealsContext } from "../../../context/DealsContext";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
+import { UrlTaPerdOptions } from "../../../types";
 import { calculateIndicators } from "../../../utils/indicatorUtils";
 import ChartTooltip from "../Tooltip/ChartTooltip";
 
@@ -55,25 +46,15 @@ interface MrChartData extends Partial<{
   negativeOsc: number | null;
 }
 
-type CheckStatus = "pass" | "fail" | "manual";
-
-interface StepCheck {
-  label: string;
-  status: CheckStatus;
-}
-
-interface MrStep {
-  label: string;
-  description: string;
-  checks: StepCheck[];
-}
 
 export default function MR({
+  perd,
   visibleCount,
   setVisibleCount,
   rightOffset,
   setRightOffset,
 }: {
+  perd?: UrlTaPerdOptions;
   visibleCount: number;
   setVisibleCount: React.Dispatch<React.SetStateAction<number>>;
   rightOffset: number;
@@ -81,16 +62,6 @@ export default function MR({
 }) {
   const deals = useContext(DealsContext);
   const { settings } = useIndicatorSettings();
-  const [activeStep, setActiveStep] = useState(0);
-
-  useEffect(() => {
-    const handleSwitchStep = () => {
-      setActiveStep((prev) => (prev + 1) % 4); // 4 steps total
-    };
-    window.addEventListener("detail-switch-step", handleSwitchStep);
-    return () =>
-      window.removeEventListener("detail-switch-step", handleSwitchStep);
-  }, []);
 
   // Zoom & Pan Control
   // const [visibleCount, setVisibleCount] = useState(160);
@@ -201,8 +172,10 @@ export default function MR({
       const curr = chartData[i];
       const prev = chartData[i - 1];
 
-      const currLong = (curr.rsi || 0) > 50 && (curr.osc || 0) > 0;
-      const prevLong = (prev.rsi || 0) > 50 && (prev.osc || 0) > 0;
+      const currLong =
+        (curr.rsi || 0) > 50 && (curr.rsi || 0) < 75 && (curr.osc || 0) > 0;
+      const prevLong =
+        (prev.rsi || 0) > 50 && (prev.rsi || 0) < 75 && (prev.osc || 0) > 0;
 
       const currShort = (curr.rsi || 0) < 50 && (curr.osc || 0) < 0;
       const prevShort = (prev.rsi || 0) < 50 && (prev.osc || 0) < 0;
@@ -212,131 +185,19 @@ export default function MR({
       } else if (currShort && !prevShort) {
         result.push({ t: curr.t, type: "entry_short", price: curr.c });
       }
+
+      // Weekly Oversold Signal (RSI < 25)
+      if (
+        perd === UrlTaPerdOptions.Week &&
+        (curr.rsi || 100) < 25 &&
+        (prev.rsi || 0) >= 25
+      ) {
+        result.push({ t: curr.t, type: "oversold", price: curr.l });
+      }
     }
     return result;
-  }, [chartData]);
+  }, [chartData, perd]);
 
-  const { steps, score, recommendation } = useMemo(() => {
-    if (chartData.length === 0)
-      return { steps: [], score: 0, recommendation: "" };
-
-    const current = chartData[chartData.length - 1];
-    const prev = chartData[chartData.length - 2] || current;
-
-    const isNum = (n: any): n is number => typeof n === "number";
-
-    const price = current.c;
-    const rsiVal = current.rsi;
-    const osc = current.osc;
-    const bollMa = current.bollMa;
-
-    if (!isNum(price) || !isNum(rsiVal) || !isNum(osc) || !isNum(bollMa)) {
-      return { steps: [], score: 0, recommendation: "Data Error" };
-    }
-
-    const isLongZone = rsiVal > 50 && osc > 0;
-    const isShortZone = rsiVal < 50 && osc < 0;
-    const trendUp = price > bollMa;
-    const rsiRising = rsiVal > (prev.rsi || 0);
-    const oscRising = osc > (prev.osc || 0);
-
-    // Scoring
-    let totalScore = 0;
-
-    // 1. Zone Status (40)
-    if (isLongZone) totalScore += 40;
-    else if (rsiVal > 50 || osc > 0) totalScore += 20; // Partial bull
-    if (isShortZone) totalScore -= 40;
-
-    // 2. Trend (20)
-    if (trendUp) totalScore += 20;
-
-    // 3. Momentum (40)
-    if (rsiRising) totalScore += 20;
-    if (oscRising) totalScore += 20;
-
-    if (totalScore < 0) totalScore = 0;
-    if (totalScore > 100) totalScore = 100;
-
-    let rec = "Neutral";
-    if (totalScore >= 80) rec = "Strong Buy";
-    else if (totalScore >= 60) rec = "Buy";
-    else if (totalScore <= 20) rec = "Sell";
-    else rec = "Hold";
-
-    const mrSteps: MrStep[] = [
-      {
-        label: "I. 綜合評估",
-        description: `得分: ${totalScore} - ${rec}`,
-        checks: [
-          {
-            label: `目前建議: ${rec}`,
-            status: totalScore >= 60 ? "pass" : "manual",
-          },
-        ],
-      },
-      {
-        label: "II. 指標狀態",
-        description: "MR 雙指標 (RSI & MACD)",
-        checks: [
-          {
-            label: `RSI(5) > 50: ${rsiVal.toFixed(1)}`,
-            status: rsiVal > 50 ? "pass" : "fail",
-          },
-          {
-            label: `MACD Osc > 0: ${osc.toFixed(2)}`,
-            status: osc > 0 ? "pass" : "fail",
-          },
-        ],
-      },
-      {
-        label: "III. 訊號判定",
-        description: "多空區域確認",
-        checks: [
-          {
-            label: `多方共振 (RSI>50 & Osc>0): ${isLongZone ? "Yes" : "No"}`,
-            status: isLongZone ? "pass" : "fail",
-          },
-          {
-            label: `空方共振 (RSI<50 & Osc<0): ${isShortZone ? "Yes" : "No"}`,
-            status: isShortZone ? "fail" : "pass",
-          },
-        ],
-      },
-      {
-        label: "IV. 趨勢與動能",
-        description: "MA20 與 動能方向",
-        checks: [
-          {
-            label: `價格 > 中軌: ${trendUp ? "Yes" : "No"}`,
-            status: trendUp ? "pass" : "fail",
-          },
-          {
-            label: `RSI 上升中: ${rsiRising ? "Yes" : "No"}`,
-            status: rsiRising ? "pass" : "fail",
-          },
-        ],
-      },
-    ];
-
-    return { steps: mrSteps, score: totalScore, recommendation: rec };
-  }, [chartData]);
-
-  const handleStep = (step: number) => () => {
-    setActiveStep(step);
-  };
-
-  const getStatusIcon = (status: CheckStatus) => {
-    switch (status) {
-      case "pass":
-        return <CheckCircleIcon fontSize="small" color="success" />;
-      case "fail":
-        return <CancelIcon fontSize="small" color="error" />;
-      case "manual":
-      default:
-        return <HelpOutlineIcon fontSize="small" color="disabled" />;
-    }
-  };
 
   if (chartData.length === 0) {
     return (
@@ -365,62 +226,11 @@ export default function MR({
       }}
     >
       <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="h6" component="div" color="white">
+        <Typography variant="h6" component="div" color="white" sx={{ mr: 2 }}>
           MR
         </Typography>
-
-        <Chip
-          label={`${score}分 - ${recommendation}`}
-          color={score >= 80 ? "success" : score >= 60 ? "warning" : "error"}
-          variant="outlined"
-          size="small"
-        />
-
-        <Divider orientation="vertical" flexItem />
-        <Box sx={{ flexGrow: 1 }}>
-          <Stepper nonLinear activeStep={activeStep}>
-            {steps.map((step, index) => (
-              <Step key={step.label}>
-                <StepButton color="inherit" onClick={handleStep(index)}>
-                  {step.label}
-                </StepButton>
-              </Step>
-            ))}
-          </Stepper>
-        </Box>
       </Stack>
 
-      <Card variant="outlined" sx={{ mb: 1, bgcolor: "background.default" }}>
-        <CardContent sx={{ py: 1, "&:last-child": { pb: 1 } }}>
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={1}
-            alignItems="center"
-          >
-            <Typography variant="subtitle2" color="primary" fontWeight="bold">
-              {steps[activeStep]?.description}
-            </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              {steps[activeStep]?.checks.map((check, idx) => (
-                <Chip
-                  key={idx}
-                  icon={getStatusIcon(check.status)}
-                  label={check.label}
-                  variant="outlined"
-                  color={
-                    check.status === "pass"
-                      ? "success"
-                      : check.status === "fail"
-                        ? "error"
-                        : "default"
-                  }
-                  size="small"
-                />
-              ))}
-            </Stack>
-          </Stack>
-        </CardContent>
-      </Card>
 
       <Box
         ref={chartContainerRef}
@@ -541,8 +351,17 @@ export default function MR({
             {/* Entry Signal Markers */}
             {signals.map((signal) => {
               const isLong = signal.type === "entry_long";
-              const yPos = isLong ? signal.price! * 0.99 : signal.price! * 1.01;
-              const color = isLong ? "#f44336" : "#4caf50";
+              const isOversold = signal.type === "oversold";
+
+              let color = isLong ? "#f44336" : "#4caf50";
+              let label = isLong ? "買進" : "賣出";
+              let yPos = isLong ? signal.price! * 0.99 : signal.price! * 1.01;
+
+              if (isOversold) {
+                color = "#2196f3";
+                label = "超賣";
+                yPos = signal.price! * 0.97;
+              }
 
               return (
                 <ReferenceDot
@@ -557,8 +376,8 @@ export default function MR({
 
                     return (
                       <g>
-                        {isLong ? (
-                          // Long Entry
+                        {isLong || isOversold ? (
+                          // Long Entry or Oversold
                           <>
                             <path
                               d={`M${cx - 5},${cy + 10} L${cx + 5},${
@@ -574,7 +393,7 @@ export default function MR({
                               fontSize={11}
                               fontWeight="bold"
                             >
-                              買進
+                              {label}
                             </text>
                           </>
                         ) : (
@@ -594,7 +413,7 @@ export default function MR({
                               fontSize={11}
                               fontWeight="bold"
                             >
-                              賣出
+                              {label}
                             </text>
                           </>
                         )}
@@ -617,21 +436,25 @@ export default function MR({
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
             <XAxis dataKey="t" hide />
 
-            {/* Left Axis for MACD Osc */}
+            {/* Left Axis for RSI (0-100) */}
             <YAxis
               yAxisId="left"
               orientation="left"
+              domain={[0, 100]}
+              ticks={[0, 25, 50, 75, 100]}
               stroke="#888"
               fontSize={10}
             />
 
-            {/* Right Axis for RSI (0-100) */}
+            {/* Right Axis for MACD Osc */}
             <YAxis
               yAxisId="right"
               orientation="right"
-              domain={[0, 100]}
-              ticks={[0, 25, 50, 75, 100]}
-              stroke="#2196f3"
+              domain={([dataMin, dataMax]) => {
+                const absMax = Math.max(Math.abs(dataMin), Math.abs(dataMax));
+                return [-absMax, absMax];
+              }}
+              stroke="#888"
               fontSize={10}
               width={0}
             />
@@ -641,34 +464,48 @@ export default function MR({
               offset={50}
             />
 
-            <ReferenceLine y={0} yAxisId="left" stroke="#666" opacity={0.5} />
+            <ReferenceLine y={0} yAxisId="right" stroke="#666" opacity={0.5} />
             <ReferenceLine
               y={50}
-              yAxisId="right"
+              yAxisId="left"
               stroke="#666"
               strokeDasharray="3 3"
               opacity={0.5}
             />
-
-            {/* MACD Bars (Left Axis) */}
-            <Bar
+            <ReferenceLine
+              y={75}
               yAxisId="left"
+              stroke="#f44336"
+              strokeDasharray="3 3"
+              label={{ value: "Overbought", fill: "#f44336", fontSize: 10 }}
+            />
+            <ReferenceLine
+              y={25}
+              yAxisId="left"
+              stroke="#4caf50"
+              strokeDasharray="3 3"
+              label={{ value: "Oversold", fill: "#4caf50", fontSize: 10 }}
+            />
+
+            {/* MACD Bars (Right Axis) */}
+            <Bar
+              yAxisId="right"
               dataKey="positiveOsc"
               fill="#f44336"
               barSize={3}
               name="Osc +"
             />
             <Bar
-              yAxisId="left"
+              yAxisId="right"
               dataKey="negativeOsc"
               fill="#4caf50"
               barSize={3}
               name="Osc -"
             />
 
-            {/* RSI Zones (Right Axis) */}
+            {/* RSI Zones (Left Axis) */}
             <Area
-              yAxisId="right"
+              yAxisId="left"
               type="monotone"
               dataKey="longZone"
               fill="#ffcdd2"
@@ -677,7 +514,7 @@ export default function MR({
               opacity={0.3}
             />
             <Area
-              yAxisId="right"
+              yAxisId="left"
               type="monotone"
               dataKey="shortZone"
               fill="#c8e6c9"
@@ -686,12 +523,12 @@ export default function MR({
               opacity={0.3}
             />
             <Line
-              yAxisId="right"
+              yAxisId="left"
               dataKey="rsi"
               stroke="#2196f3"
               dot={false}
               strokeWidth={2}
-              name="RSI (5)"
+              name={`RSI (${settings.rsi})`}
             />
           </ComposedChart>
         </ResponsiveContainer>

@@ -136,31 +136,63 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
       const futureData = mergedData.slice(todayIdx + 1);
       if (futureData.length === 0) return null;
 
-      const lastBar = futureData[futureData.length - 1];
-      if (lastBar.senkouA === null || lastBar.senkouB === null) return null;
+      let hasTwist = false;
+      let maxThickness = 0;
+      let sumThickness = 0;
+      let bullCount = 0;
 
-      const isBull = lastBar.senkouA > lastBar.senkouB;
-      const thickness = Math.abs(lastBar.senkouA - lastBar.senkouB);
+      for (let i = 0; i < futureData.length; i++) {
+        const d = futureData[i];
+        if (d.senkouA === null || d.senkouB === null) continue;
 
-      // Estimate "Thick" vs "Thin" based on relative price %
-      let sumPrice = 0;
-      let count = 0;
-      mergedData.forEach((d) => {
-        if (d.c) {
-          sumPrice += d.c;
-          count++;
+        const currentBull = d.senkouA > d.senkouB;
+        if (currentBull) bullCount++;
+
+        // 檢查翻轉 (Kumo Twist)
+        if (i > 0) {
+          const prev = futureData[i - 1];
+          if (prev.senkouA !== null && prev.senkouB !== null) {
+            const prevBull = prev.senkouA > prev.senkouB;
+            if (currentBull !== prevBull) hasTwist = true;
+          }
         }
-      });
-      const avgPrice = sumPrice / (count || 1);
-      const thicknessRatio = thickness / (avgPrice || 1);
+
+        const thickness = Math.abs(d.senkouA - d.senkouB);
+        sumThickness += thickness;
+        if (thickness > maxThickness) maxThickness = thickness;
+      }
+
+      const lastBar = futureData[futureData.length - 1];
+      if (!lastBar || lastBar.senkouA === null || lastBar.senkouB === null)
+        return null;
+
+      // 判斷未來主要趨勢：以「最後一根預測」為準，這最符合視覺直覺
+      const isLastBull = lastBar.senkouA > lastBar.senkouB;
+      const trendSymbol = isLastBull ? "看漲(有支撐)" : "看跌(遇壓力)";
+
+      // 使用 MaxThickness 來判斷未來最大的助力/支撐力道
+      const maxThicknessRatio = maxThickness / (avgPrice || 1);
+      const isStrongStructure = maxThicknessRatio > 0.02;
+
+      let structureStr = "";
+      if (isLastBull) {
+        structureStr = isStrongStructure ? "底部支撐強勁" : "底部支撐薄弱";
+      } else {
+        structureStr = isStrongStructure ? "上方壓力沉重" : "上方壓力較輕";
+      }
+
+      if (hasTwist) {
+        structureStr = `★近期可能變盤 | ${structureStr}`;
+      }
 
       return {
-        isBull,
-        trendSymbol: isBull ? "📈" : "📉",
-        structureSymbol: thicknessRatio > 0.02 ? "🧱" : "☁️",
-        trend: isBull ? "未來趨勢：偏多 (陽雲)" : "未來趨勢：偏空 (陰雲)",
-        structure:
-          thicknessRatio > 0.02 ? "厚雲位 (強支撐/阻力)" : "薄雲位 (易突破)",
+        isBull: isLastBull,
+        trendSymbol,
+        structureSymbol: structureStr,
+        trend: isLastBull
+          ? "未來趨勢：樂觀 (支撐雲帶)"
+          : "未來趨勢：悲觀 (壓力雲帶)",
+        structure: structureStr,
         lastBarT: lastBar.t,
         lastBarY: (lastBar.senkouA + lastBar.senkouB) / 2,
         midBarT: futureData[Math.floor(futureData.length / 2)]?.t || lastBar.t,
@@ -171,7 +203,7 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
         futureStart: futureData[0].t,
         futureEnd: lastBar.t,
       };
-    }, [mergedData, todayBarT]);
+    }, [mergedData, todayBarT, avgPrice]);
 
     // Calculate max absolute value for CMF y-axis to center 0
     const cmfDomain = useMemo(() => {
@@ -343,29 +375,70 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
                   stroke="rgba(255,255,255,0.2)"
                   strokeDasharray="2 2"
                 />
-                {/* Symbols restored using ReferenceDot with larger offsets to avoid covering the cloud */}
                 <ReferenceDot
                   x={futureAnalysis.midBarT}
                   y={futureAnalysis.midBarY}
                   r={0}
-                  label={{
-                    value: `${futureAnalysis.trendSymbol} ${futureAnalysis.structureSymbol}`,
-                    position: "top",
-                    fill: "#fff",
-                    fontSize: 20,
-                    offset: 20, // Reduced from 30
-                  }}
-                />
-                <ReferenceDot
-                  x={futureAnalysis.midBarT}
-                  y={futureAnalysis.midBarY}
-                  r={0}
-                  label={{
-                    value: "未來趨勢預估",
-                    position: "bottom",
-                    fill: "rgba(255,255,255,0.5)",
-                    fontSize: 9,
-                    offset: 15, // Reduced from 20
+                  // 使用自訂 SVG g 元素來精準控制多行文字與排版
+                  shape={(props: any) => {
+                    const { cx, cy } = props;
+                    const structureParts =
+                      futureAnalysis.structureSymbol.split(" | ");
+
+                    return (
+                      <g>
+                        {/* 1. 趨勢狀態 (例：看漲(有支撐)) */}
+                        <text
+                          x={cx}
+                          y={cy}
+                          dy={-35}
+                          textAnchor="middle"
+                          fill="#fff"
+                          fontSize={14}
+                          fontWeight="bold"
+                        >
+                          {futureAnalysis.trendSymbol}
+                        </text>
+
+                        {/* 2. 結構與力道 (例：★近期可能變盤) */}
+                        {structureParts.length > 1 && (
+                          <text
+                            x={cx}
+                            y={cy}
+                            dy={-15}
+                            textAnchor="middle"
+                            fill="#ffeb3b"
+                            fontSize={12}
+                          >
+                            {structureParts[0]}
+                          </text>
+                        )}
+
+                        {/* 3. 結構與力道 (例：底部支撐強勁) */}
+                        <text
+                          x={cx}
+                          y={cy}
+                          dy={structureParts.length > 1 ? 5 : -15}
+                          textAnchor="middle"
+                          fill="#ffeb3b"
+                          fontSize={12}
+                        >
+                          {structureParts[structureParts.length - 1]}
+                        </text>
+
+                        {/* 4. 底部標註小字 */}
+                        <text
+                          x={cx}
+                          y={cy}
+                          dy={25}
+                          textAnchor="middle"
+                          fill="rgba(255,255,255,0.4)"
+                          fontSize={10}
+                        >
+                          - 未來趨勢預估 -
+                        </text>
+                      </g>
+                    );
                   }}
                 />
               </>

@@ -1,10 +1,4 @@
-import {
-  Box,
-  createTheme,
-  styled,
-  ThemeProvider,
-  Typography,
-} from "@mui/material";
+import { Box, createTheme, styled, ThemeProvider } from "@mui/material";
 import { listen } from "@tauri-apps/api/event";
 import { AnimatePresence, motion, Variants } from "framer-motion";
 import React, {
@@ -18,9 +12,9 @@ import React, {
 } from "react";
 import { useNavigate, useParams } from "react-router";
 import useSWR from "swr";
+import { tauriFetcher } from "../../tools/http";
 import DocModal from "../../components/DocModal";
 import { DealsContext } from "../../context/DealsContext";
-import { tauriFetcher } from "../../tools/http";
 import { FutureIds, UrlTaPerdOptions, UrlType } from "../../types";
 import {
   analyzeIndicatorsData,
@@ -42,6 +36,7 @@ import mfiDoc from "./Mfi/Mfi.md?raw";
 import mjDoc from "./Mj/Mj.md?raw";
 import mrDoc from "./Mr/MR.md?raw";
 import obvDoc from "./Obv/Obv.md?raw";
+import atrDoc from "./ATR/ATR.md?raw";
 
 // lazy load components
 const MaKbar = lazy(() => import("./Ma/MaKbar"));
@@ -51,6 +46,7 @@ const MJ = lazy(() => import("./Mj/MJ"));
 const MR = lazy(() => import("./Mr/MR"));
 const Kd = lazy(() => import("./Kd/Kd"));
 const Mfi = lazy(() => import("./Mfi/Mfi"));
+const ATR = lazy(() => import("./ATR/ATR"));
 
 const PageContainer = styled(Box)`
   width: 100vw;
@@ -131,6 +127,7 @@ const FullscreenVerticalCarousel: React.FC = () => {
       kd: { title: "KD隨機指標策略", content: kdDoc },
       mfi: { title: "MFI資金流便覽", content: mfiDoc },
       ichimoku_cloud: { title: "一目均衡表說明", content: ichimokuDoc },
+      atr: { title: "ATR Trend 策略說明", content: atrDoc },
     }),
     [],
   );
@@ -189,9 +186,10 @@ const FullscreenVerticalCarousel: React.FC = () => {
         ),
       },
       {
-        id: "mj",
+        id: "mr",
         content: (
-          <MJ
+          <MR
+            perd={perd}
             visibleCount={visibleCount}
             setVisibleCount={setVisibleCount}
             rightOffset={rightOffset}
@@ -200,9 +198,9 @@ const FullscreenVerticalCarousel: React.FC = () => {
         ),
       },
       {
-        id: "mr",
+        id: "mj",
         content: (
-          <MR
+          <MJ
             visibleCount={visibleCount}
             setVisibleCount={setVisibleCount}
             rightOffset={rightOffset}
@@ -235,6 +233,17 @@ const FullscreenVerticalCarousel: React.FC = () => {
       {
         id: "ichimoku_cloud",
         content: <IchimokuCloud perd={perd} />,
+      },
+      {
+        id: "atr",
+        content: (
+          <ATR
+            visibleCount={visibleCount}
+            setVisibleCount={setVisibleCount}
+            rightOffset={rightOffset}
+            setRightOffset={setRightOffset}
+          />
+        ),
       },
     ],
     [perd, visibleCount, rightOffset],
@@ -290,9 +299,6 @@ const FullscreenVerticalCarousel: React.FC = () => {
             handleSetPerd(options[idx + 1]);
           }
         }
-      } else if (e.key === " ") {
-        e.preventDefault(); // Prevent page scroll
-        window.dispatchEvent(new CustomEvent("detail-switch-step"));
       }
     },
     [current, scrolling, goToSlide, perd, handleSetPerd, isDocOpen],
@@ -341,10 +347,10 @@ const FullscreenVerticalCarousel: React.FC = () => {
     };
   }, []);
 
-  const swrKey =
-    id === FutureIds.NASDAQ
+  const { data } = useSWR(
+    id === FutureIds.NASDAQ_FUTURE
       ? `https://query1.finance.yahoo.com/v8/finance/chart/${
-          FutureIds.NASDAQ
+          FutureIds.NASDAQ_FUTURE
         }?interval=${
           perd === UrlTaPerdOptions.Hour
             ? "1h"
@@ -362,73 +368,26 @@ const FullscreenVerticalCarousel: React.FC = () => {
           type: UrlType.Indicators,
           id: encodeURIComponent(id as string),
           perd,
-        });
-
-  const { data, error: swrError } = useSWR(swrKey, tauriFetcher, {
-    shouldRetryOnError: true,
-    errorRetryCount: 3,
-  });
+        }),
+    tauriFetcher,
+  );
 
   const deals = useMemo(() => {
     if (!data || !id || typeof data !== "string") return [];
-    try {
-      return id === FutureIds.NASDAQ
-        ? analyzeNasdaqIndicatorsData(
-            data,
-            perd === UrlTaPerdOptions.Hour
-              ? IndicatorsDateTimeType.DateTime
-              : IndicatorsDateTimeType.Date,
-          )
-        : analyzeIndicatorsData(
-            data,
-            perd === UrlTaPerdOptions.Hour
-              ? IndicatorsDateTimeType.DateTime
-              : IndicatorsDateTimeType.Date,
-          );
-    } catch (e) {
-      console.error("Data processing error:", e);
-      return [];
-    }
+    return id === FutureIds.NASDAQ_FUTURE
+      ? analyzeNasdaqIndicatorsData(
+          data,
+          perd === UrlTaPerdOptions.Hour
+            ? IndicatorsDateTimeType.DateTime
+            : IndicatorsDateTimeType.Date,
+        )
+      : analyzeIndicatorsData(
+          data,
+          perd === UrlTaPerdOptions.Hour
+            ? IndicatorsDateTimeType.DateTime
+            : IndicatorsDateTimeType.Date,
+        );
   }, [data, id, perd]);
-
-  if (swrError) {
-    return (
-      <Box
-        height="100vh"
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="center"
-        sx={{ bgcolor: "#0f1214", color: "white", p: 4, textAlign: "center" }}
-      >
-        <Typography variant="h5" color="error" gutterBottom>
-          數據載入失敗
-        </Typography>
-        <Typography variant="body2" sx={{ mb: 3, opacity: 0.7 }}>
-          {swrError.message || "發生未知錯誤，請檢查網路連線或權限設定。"}
-        </Typography>
-        <Typography
-          variant="caption"
-          sx={{ mb: 4, display: "block", opacity: 0.5 }}
-        >
-          URL: {swrKey.substring(0, 100)}...
-        </Typography>
-        <button
-          onClick={() => window.location.reload()}
-          style={{
-            padding: "8px 24px",
-            backgroundColor: "#2196f3",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
-        >
-          重新整理
-        </button>
-      </Box>
-    );
-  }
 
   return (
     <ThemeProvider theme={darkTheme}>

@@ -1,18 +1,14 @@
-import { Box, CircularProgress, Container } from "@mui/material";
+import { Box, CircularProgress, Container, Stack, Tooltip, Typography } from "@mui/material";
 import { useContext, useEffect, useRef, useState } from "react";
 import { DealsContext } from "../../../context/DealsContext";
 import { UrlTaPerdOptions } from "../../../types";
 import IchimokuChart from "./components/IchimokuChart";
-import IchimokuChecklist from "./components/IchimokuChecklist";
-import IchimokuHeader from "./components/IchimokuHeader";
 import { useIchimokuData } from "./useIchimokuData";
-
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
 
 export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
   const deals = useContext(DealsContext);
   const { settings } = useIndicatorSettings();
-  const [activeStep, setActiveStep] = useState(0);
 
   // --- Zoom & Pan Logic (Adapted from Obv.tsx) ---
   const [visibleCount, setVisibleCount] = useState(180);
@@ -23,7 +19,7 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
   const startOffset = useRef(0);
 
   // Hook for Data Processing
-  const { chartData, signals, score, recommendation, steps } = useIchimokuData(
+  const { chartData, signals } = useIchimokuData(
     deals,
     perd,
     visibleCount,
@@ -31,15 +27,6 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
     settings
   );
 
-  // Handle Step Switching Event (from external or header)
-  useEffect(() => {
-    const handleSwitchStep = () => {
-      setActiveStep((prev) => (prev + 1) % (steps.length || 3));
-    };
-    window.addEventListener("detail-switch-step", handleSwitchStep);
-    return () =>
-      window.removeEventListener("detail-switch-step", handleSwitchStep);
-  }, [steps.length]);
 
   // Handle Zoom & Pan Interactions
   useEffect(() => {
@@ -138,15 +125,39 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
         pb: 1,
       }}
     >
-      <IchimokuHeader
-        score={score}
-        recommendation={recommendation}
-        activeStep={activeStep}
-        steps={steps}
-        onStepChange={setActiveStep}
-      />
-
-      <IchimokuChecklist activeStepData={steps[activeStep]} />
+      <Stack
+        direction="row"
+        spacing={2}
+        alignItems="center"
+        sx={{ mb: 1, flexShrink: 0 }}
+      >
+        <Tooltip
+          title={
+            <Box sx={{ p: 1 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: "bold" }}>
+                一目均衡表 + CMF 策略
+              </Typography>
+              <Typography variant="caption" display="block">
+                核心邏輯：
+              </Typography>
+              <Typography variant="caption" display="block">
+                1. 結構：價格 &gt; 雲層 (多頭結構)
+              </Typography>
+              <Typography variant="caption" display="block">
+                2. 動能：CMF 資金流入 & TK 金叉
+              </Typography>
+              <Typography variant="caption" display="block">
+                3. 風險：基準線不應下彎 & 無頂背離
+              </Typography>
+            </Box>
+          }
+          arrow
+        >
+          <Typography variant="h6" component="h1" fontWeight="bold" color="white">
+            Ichimoku Cloud
+          </Typography>
+        </Tooltip>
+      </Stack>
 
       <IchimokuChart
         ref={chartContainerRef}

@@ -1,21 +1,11 @@
-import CancelIcon from "@mui/icons-material/Cancel";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import {
   Box,
-  Card,
-  CardContent,
-  Chip,
   CircularProgress,
   Container,
-  Divider,
   Stack,
-  Step,
-  StepButton,
-  Stepper,
   Typography,
 } from "@mui/material";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef } from "react";
 import {
   Bar,
   CartesianGrid,
@@ -44,18 +34,6 @@ interface KdChartData extends Partial<EnhancedDealData> {
   // signals and other properties if needed
 }
 
-type CheckStatus = "pass" | "fail" | "manual";
-
-interface StepCheck {
-  label: string;
-  status: CheckStatus;
-}
-
-interface KdStep {
-  label: string;
-  description: string;
-  checks: StepCheck[];
-}
 
 export default function Kd({
   visibleCount,
@@ -70,16 +48,6 @@ export default function Kd({
 }) {
   const { settings } = useIndicatorSettings();
   const deals = useContext(DealsContext);
-  const [activeStep, setActiveStep] = useState(0);
-
-  useEffect(() => {
-    const handleSwitchStep = () => {
-      setActiveStep((prev) => (prev + 1) % 4); // 4 steps total
-    };
-    window.addEventListener("detail-switch-step", handleSwitchStep);
-    return () =>
-      window.removeEventListener("detail-switch-step", handleSwitchStep);
-  }, []);
 
   // Zoom & Pan Control
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -176,169 +144,6 @@ export default function Kd({
     return detectKdDivergence(inputForDivergence);
   }, [chartData]);
 
-  const { steps, score, recommendation } = useMemo(() => {
-    if (chartData.length === 0)
-      return { steps: [], score: 0, recommendation: "" };
-
-    const current = chartData[chartData.length - 1];
-    const prev = chartData[chartData.length - 2] || current;
-
-    const isNum = (n: any): n is number => typeof n === "number";
-
-    const price = current.c;
-    const kVal = current.k;
-    const dVal = current.d;
-    const bollMa = current.bollMa;
-    const vol = current.v;
-    const volMa = current.volMa20;
-    const prevK = prev.k || 0;
-    const prevD = prev.d || 0;
-
-    if (
-      !isNum(price) ||
-      !isNum(kVal) ||
-      !isNum(dVal) ||
-      !isNum(bollMa) ||
-      !isNum(vol) ||
-      !isNum(volMa)
-    ) {
-      return { steps: [], score: 0, recommendation: "Data Error" };
-    }
-
-    // I. Regime
-    const volRatio = vol / volMa;
-    const isVolStable = volRatio > 0.6;
-    const bollMaRising = bollMa > (prev.bollMa || 0);
-    const trendStatus = bollMaRising ? "Uptrend" : "Downtrend/Flat";
-
-    // II. Entry
-    const isOversold = kVal < 20 && dVal < 20;
-    const isOverbought = kVal > 80 && dVal > 80;
-    const goldCross = prevK < prevD && kVal > dVal;
-    const deathCross = prevK > prevD && kVal < dVal;
-
-    // Check for recent bullish divergence (last 3 candles)
-    const recentBullishDiv = signals.some(
-      (s) =>
-        s.type === DivergenceSignalType.BULLISH_DIVERGENCE && s.t === current.t,
-    );
-    const recentBearishDiv = signals.some(
-      (s) =>
-        s.type === DivergenceSignalType.BEARISH_DIVERGENCE && s.t === current.t,
-    );
-
-    // III. Risk
-    const stopLoss = (price * 0.97).toFixed(2); // 3% trail
-
-    // Score
-    let totalScore = 0;
-    // 1. Volume (20)
-    if (isVolStable) totalScore += 20;
-    // 2. Trend (20)
-    if (bollMaRising || price > bollMa) totalScore += 20;
-    // 3. KD Position (40)
-    if (isOversold && goldCross)
-      totalScore += 40; // Strong buy
-    else if (goldCross && price > bollMa)
-      totalScore += 30; // Trend Buy
-    else if (recentBullishDiv)
-      totalScore += 30; // Divergence Buy
-    else if (kVal > dVal && kVal > prevK) totalScore += 10; // Momentum
-
-    if (isOverbought || deathCross || recentBearishDiv) totalScore -= 20;
-
-    // 4. Price Action (20)
-    if (price > (current.o || 0)) totalScore += 20;
-
-    if (totalScore < 0) totalScore = 0;
-
-    let rec = "Reject";
-    if (totalScore >= 80) rec = "Strong Buy";
-    else if (totalScore >= 60) rec = "Watch";
-    else if (deathCross || isOverbought) rec = "Sell/Exit";
-    else rec = "Neutral";
-
-    const kdSteps: KdStep[] = [
-      {
-        label: "I. 綜合評估",
-        description: `得分: ${totalScore} - ${rec}`,
-        checks: [
-          {
-            label: "趨勢動能強 (K > D)",
-            status: kVal > dVal ? "pass" : "fail",
-          },
-          {
-            label: "無頂部背離",
-            status: recentBearishDiv ? "fail" : "pass",
-          },
-          { label: "量價配合", status: isVolStable ? "pass" : "manual" },
-        ],
-      },
-      {
-        label: "II. 市場環境",
-        description: "流動性與趨勢 (Regime)",
-        checks: [
-          {
-            label: `成交量穩定 (>60% MA): ${(volRatio * 100).toFixed(0)}%`,
-            status: isVolStable ? "pass" : "fail",
-          },
-          {
-            label: `趨勢方向 (中軌): ${trendStatus}`,
-            status: bollMaRising ? "pass" : "manual",
-          },
-          { label: "波動度正常 (ATR)", status: "manual" },
-        ],
-      },
-      {
-        label: "III. 入場條件",
-        description: "交叉與背離 (Entry)",
-        checks: [
-          {
-            label: `KD 黃金交叉: ${goldCross ? "Yes" : "No"}`,
-            status: goldCross ? "pass" : "fail",
-          },
-          {
-            label: `超賣區 (<20): ${isOversold ? "Yes" : "No"}`,
-            status: isOversold ? "pass" : "fail",
-          },
-          {
-            label: `底背離信號: ${recentBullishDiv ? "Yes" : "No"}`,
-            status: recentBullishDiv ? "pass" : "manual",
-          },
-        ],
-      },
-      {
-        label: "IV. 風險控管",
-        description: "停損與部位 (Risk)",
-        checks: [
-          { label: `建議停損: ${stopLoss}`, status: "manual" },
-          {
-            label: "KD 極端值減倉 (>85)",
-            status: kVal > 85 ? "fail" : "pass",
-          },
-          { label: "死亡交叉警示", status: deathCross ? "fail" : "pass" },
-        ],
-      },
-    ];
-
-    return { steps: kdSteps, score: totalScore, recommendation: rec };
-  }, [chartData, signals]);
-
-  const handleStep = (step: number) => () => {
-    setActiveStep(step);
-  };
-
-  const getStatusIcon = (status: CheckStatus) => {
-    switch (status) {
-      case "pass":
-        return <CheckCircleIcon fontSize="small" color="success" />;
-      case "fail":
-        return <CancelIcon fontSize="small" color="error" />;
-      case "manual":
-      default:
-        return <HelpOutlineIcon fontSize="small" color="disabled" />;
-    }
-  };
 
   if (chartData.length === 0) {
     return (
@@ -367,62 +172,11 @@ export default function Kd({
       }}
     >
       <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="h6" component="div" color="white">
+        <Typography variant="h6" component="div" color="white" sx={{ mr: 2 }}>
           KD
         </Typography>
-
-        <Chip
-          label={`${score}分 - ${recommendation}`}
-          color={score >= 80 ? "success" : score >= 60 ? "warning" : "error"}
-          variant="outlined"
-          size="small"
-        />
-
-        <Divider orientation="vertical" flexItem />
-        <Box sx={{ flexGrow: 1 }}>
-          <Stepper nonLinear activeStep={activeStep}>
-            {steps.map((step, index) => (
-              <Step key={step.label}>
-                <StepButton color="inherit" onClick={handleStep(index)}>
-                  {step.label}
-                </StepButton>
-              </Step>
-            ))}
-          </Stepper>
-        </Box>
       </Stack>
 
-      <Card variant="outlined" sx={{ mb: 1, bgcolor: "background.default" }}>
-        <CardContent sx={{ py: 1, "&:last-child": { pb: 1 } }}>
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={1}
-            alignItems="center"
-          >
-            <Typography variant="subtitle2" color="primary" fontWeight="bold">
-              {steps[activeStep]?.description}
-            </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              {steps[activeStep]?.checks.map((check, idx) => (
-                <Chip
-                  key={idx}
-                  icon={getStatusIcon(check.status)}
-                  label={check.label}
-                  variant="outlined"
-                  color={
-                    check.status === "pass"
-                      ? "success"
-                      : check.status === "fail"
-                        ? "error"
-                        : "default"
-                  }
-                  size="small"
-                />
-              ))}
-            </Stack>
-          </Stack>
-        </CardContent>
-      </Card>
 
       <Box
         ref={chartContainerRef}

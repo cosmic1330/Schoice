@@ -1,21 +1,13 @@
 import { dateFormat } from "@ch20026103/anysis";
 import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
-import CancelIcon from "@mui/icons-material/Cancel";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import {
   Box,
-  Card,
-  CardContent,
   Chip,
   CircularProgress,
   Container,
   Divider,
   FormControlLabel,
   Stack,
-  Step,
-  StepButton,
-  Stepper,
   Switch,
   Typography,
 } from "@mui/material";
@@ -38,22 +30,9 @@ import { DealsContext } from "../../../context/DealsContext";
 import { useGapDetection } from "../../../hooks/useGapDetection";
 import { useGapVisualization } from "../../../hooks/useGapVisualization";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
-import useMarketAnalysis from "../../../hooks/useMarketAnalysis";
 import { UrlTaPerdOptions } from "../../../types";
 import { calculateIndicators } from "../../../utils/indicatorUtils";
 
-type CheckStatus = "pass" | "fail" | "manual";
-
-interface StepCheck {
-  label: string;
-  status: CheckStatus;
-}
-
-interface StrategyStep {
-  label: string;
-  description: string;
-  checks: StepCheck[];
-}
 
 export default function MaKbar({
   perd,
@@ -78,7 +57,6 @@ export default function MaKbar({
   const startOffset = useRef(0);
 
   // --- States ---
-  const [activeStep, setActiveStep] = useState(0);
   const [showGaps, setShowGaps] = useState(true);
   const [showOnlyUnfilled, setShowOnlyUnfilled] = useState(false);
   const [hoveredGapDate, setHoveredGapDate] = useState<
@@ -94,25 +72,11 @@ export default function MaKbar({
     ma240: true,
   });
 
-  const { power } = useMarketAnalysis({
-    ta: deals,
-    perd,
-  });
-
   // Re-calculate indicators based on custom settings
   const chartData = useMemo(() => {
     return calculateIndicators(deals, settings);
   }, [deals, settings]);
 
-  // Handle Zoom (Wheel)
-  useEffect(() => {
-    const handleSwitchStep = () => {
-      setActiveStep((prev) => (prev + 1) % 4); // 4 steps total
-    };
-    window.addEventListener("detail-switch-step", handleSwitchStep);
-    return () =>
-      window.removeEventListener("detail-switch-step", handleSwitchStep);
-  }, []);
 
   useEffect(() => {
     const container = chartContainerRef.current;
@@ -189,8 +153,10 @@ export default function MaKbar({
   }, [chartData, visibleCount, rightOffset]);
 
   // Gap Detection
-  const { gapsWithFillStatus, unfilledGaps, recentGaps, unfilledGapsCount } =
-    useGapDetection(slicedChartData, 0.7);
+  const { gapsWithFillStatus, unfilledGaps } = useGapDetection(
+    slicedChartData,
+    0.7,
+  );
 
   // Gap Visualization Data
   const { gapLines, enhancedChartData } = useGapVisualization({
@@ -288,6 +254,12 @@ export default function MaKbar({
         color: "#4caf50",
         label: `MA${settings.ma120}扣抵`,
       },
+      {
+        key: "ma240",
+        deductionKey: "deduction240",
+        color: "#cc00ff",
+        label: `MA${settings.ma240}扣抵`,
+      },
     ];
 
     maConfigs.forEach((config) => {
@@ -312,208 +284,6 @@ export default function MaKbar({
     return points;
   }, [enhancedChartData, visibleMAs, showDeductions, chartData, settings]);
 
-  // Derived Logic for Dashboard
-  const { steps, score, recommendation } = useMemo(() => {
-    if (enhancedChartData.length === 0)
-      return { steps: [], score: 0, recommendation: "" };
-
-    const current = enhancedChartData[enhancedChartData.length - 1];
-
-    const price = current.c;
-    const trend = current.trend as string;
-    const ma5 = current.ma5;
-    const ma20 = current.ma20;
-    const ma240 = current.ma240;
-
-    const isNum = (n: any): n is number => typeof n === "number";
-
-    if (!isNum(price) || !isNum(ma5) || !isNum(ma20) || !isNum(ma240)) {
-      return { steps: [], score: 0, recommendation: "Data Error" };
-    }
-
-    // 1. Trend Analysis
-    const isBullish = trend === "多頭";
-    const isBearish = trend === "空頭";
-    const maStackOk = ma5 > ma20;
-
-    // 2. Gap Analysis
-    const lastGap = recentGaps.length > 0 ? recentGaps[0] : null;
-    const recentUpGap = lastGap && lastGap.type === "up";
-    const hasUnfilledUp = unfilledGaps.some((g) => g.type === "up");
-
-    // 3. Power Analysis
-    const powerStr = power as string;
-    const isPowerBullish = powerStr.includes("多方");
-    const isPowerBearish = powerStr.includes("空方");
-
-    // 4. Signal (Current Candle)
-    const lastSignal = signals.length > 0 ? signals[signals.length - 1] : null;
-    const isRecentBuy =
-      lastSignal &&
-      lastSignal.type === "buy" &&
-      enhancedChartData.length -
-        enhancedChartData.indexOf(
-          enhancedChartData.find((d) => d.t === lastSignal.t) as any,
-        ) <
-        5;
-
-    // Scoring
-    let totalScore = 0;
-
-    // Trend (40)
-    if (isBullish) totalScore += 40;
-    else if (maStackOk) totalScore += 20;
-    if (isBearish) totalScore -= 20;
-
-    // Gaps (30)
-    if (recentUpGap) totalScore += 20;
-    if (hasUnfilledUp) totalScore += 10;
-    if (lastGap && lastGap.type === "down") totalScore -= 10;
-
-    // Power (30)
-    if (isPowerBullish) totalScore += 30;
-    if (isPowerBearish) totalScore -= 20;
-
-    // Bonus
-    if (isRecentBuy) totalScore += 10;
-
-    if (totalScore < 0) totalScore = 0;
-    if (totalScore > 100) totalScore = 100;
-
-    let rec = "Neutral";
-    if (totalScore >= 80) rec = "Strong Buy";
-    else if (totalScore >= 60) rec = "Buy";
-    else if (totalScore <= 30) rec = "Sell";
-    else rec = "Hold";
-
-    const dashSteps: StrategyStep[] = [
-      {
-        label: "I. 綜合評估",
-        description: `得分: ${totalScore} - ${rec}`,
-        checks: [
-          {
-            label: `目前建議: ${rec}`,
-            status: totalScore >= 60 ? "pass" : "manual",
-          },
-          { label: "近期金叉訊號", status: isRecentBuy ? "pass" : "manual" },
-        ],
-      },
-      {
-        label: "II. 趨勢分析",
-        description: `MA 排列: ${trend}`,
-        checks: [
-          {
-            label: `均線多頭排列 (${settings.ma5}>${settings.ma10}>${settings.ma20}>${settings.ma60}>${settings.ma240})`,
-            status: isBullish ? "pass" : isBearish ? "fail" : "manual",
-          },
-          {
-            label: `MA${settings.ma5} > MA${settings.ma20}: ${maStackOk}`,
-            status: maStackOk ? "pass" : "fail",
-          },
-        ],
-      },
-      {
-        label: "III. 缺口研判",
-        description: `未補: ${unfilledGapsCount} / 近期: ${
-          lastGap ? (lastGap.type === "up" ? "↑" : "↓") : "無"
-        }`,
-        checks: [
-          { label: "近期出現向上跳空", status: recentUpGap ? "pass" : "fail" },
-          {
-            label: "存在未補多方缺口",
-            status: hasUnfilledUp ? "pass" : "fail",
-          },
-        ],
-      },
-      {
-        label: "IV. 力道動能",
-        description: powerStr,
-        checks: [
-          { label: "多方力道增強", status: isPowerBullish ? "pass" : "fail" },
-          {
-            label: "MACD 動能支持",
-            status: isPowerBullish
-              ? "pass"
-              : isPowerBearish
-                ? "fail"
-                : "manual",
-          },
-        ],
-      },
-    ];
-
-    return { steps: dashSteps, score: totalScore, recommendation: rec };
-  }, [
-    enhancedChartData,
-    recentGaps,
-    unfilledGaps,
-    unfilledGapsCount,
-    power,
-    signals,
-  ]);
-
-  const handleStep = (step: number) => () => {
-    setActiveStep(step);
-    // 根據步驟自動調整顯示
-    if (step === 0) {
-      // 綜合評估：全開
-      setVisibleMAs({
-        ma5: true,
-        ma10: true,
-        ma20: true,
-        ma60: true,
-        ma120: true,
-        ma240: true,
-      });
-      setShowGaps(true);
-      setShowDeductions(true);
-    } else if (step === 1) {
-      // 趨勢分析：全開 MA，關閉缺口
-      setVisibleMAs({
-        ma5: true,
-        ma10: true,
-        ma20: true,
-        ma60: true,
-        ma120: true,
-        ma240: true,
-      });
-      setShowGaps(false);
-    } else if (step === 2) {
-      // 缺口研判：關閉 MA，開啟缺口
-      setVisibleMAs({
-        ma5: false,
-        ma10: false,
-        ma20: false,
-        ma60: false,
-        ma120: false,
-        ma240: false,
-      });
-      setShowGaps(true);
-    } else if (step === 3) {
-      // 力道動能：僅開短期 MA
-      setVisibleMAs({
-        ma5: true,
-        ma10: true,
-        ma20: true,
-        ma60: false,
-        ma120: false,
-        ma240: false,
-      });
-      setShowGaps(false);
-    }
-  };
-
-  const getStatusIcon = (status: CheckStatus) => {
-    switch (status) {
-      case "pass":
-        return <CheckCircleIcon fontSize="small" color="success" />;
-      case "fail":
-        return <CancelIcon fontSize="small" color="error" />;
-      case "manual":
-      default:
-        return <HelpOutlineIcon fontSize="small" color="disabled" />;
-    }
-  };
 
   // 自定義 Tooltip 組件來處理 hover 事件
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -629,199 +399,125 @@ export default function MaKbar({
       }}
     >
       <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="h6" component="div" color="white">
+        <Typography variant="h6" component="div" color="white" sx={{ mr: 2 }}>
           MA
         </Typography>
 
-        <Chip
-          label={`${score}分 - ${recommendation}`}
-          color={score >= 80 ? "success" : score >= 60 ? "warning" : "error"}
-          variant="outlined"
-          size="small"
-        />
+        <Box sx={{ flexGrow: 1, display: "flex", gap: 1.5, alignItems: "center" }}>
+          {/* Glowing HUD MA Toggles */}
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            {[
+              { key: "ma5" as const, label: `${settings.ma5}`, color: "#2196f3" },
+              { key: "ma10" as const, label: `${settings.ma10}`, color: "#ffeb3b" },
+              { key: "ma20" as const, label: `${settings.ma20}`, color: "#ff9800" },
+              { key: "ma60" as const, label: `${settings.ma60}`, color: "#f44336" },
+              { key: "ma120" as const, label: `${settings.ma120}`, color: "#4caf50" },
+              { key: "ma240" as const, label: `${settings.ma240}`, color: "#9c27b0" },
+            ].map((m) => {
+              const isActive = visibleMAs[m.key];
+              return (
+                <Chip
+                  key={m.key}
+                  label={`MA${m.label}`}
+                  size="small"
+                  onClick={() => setVisibleMAs(prev => ({ ...prev, [m.key]: !prev[m.key] }))}
+                  sx={{
+                    height: 26,
+                    fontSize: "0.7rem",
+                    fontWeight: "700",
+                    letterSpacing: "0.02em",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    position: "relative",
+                    transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+                    border: `1px solid ${isActive ? m.color : "rgba(255,255,255,0.1)"}`,
+                    bgcolor: isActive ? m.color : "rgba(0,0,0,0.2)",
+                    color: isActive ? "#000" : "rgba(255,255,255,0.5)",
+                    boxShadow: isActive 
+                      ? `0 0 12px ${m.color}88, inset 0 0 4px rgba(255,255,255,0.5)` 
+                      : "none",
+                    "& .MuiChip-label": { px: 1.5 },
+                    "&:hover": {
+                      bgcolor: isActive ? m.color : "rgba(255,255,255,0.1)",
+                      transform: "translateY(-1px)",
+                      boxShadow: isActive 
+                        ? `0 0 18px ${m.color}, inset 0 0 4px rgba(255,255,255,0.5)` 
+                        : `0 0 8px rgba(255,255,255,0.2)`,
+                      color: isActive ? "#000" : "#fff",
+                    },
+                    "&:active": {
+                      transform: "translateY(0px) scale(0.96)",
+                    }
+                  }}
+                />
+              );
+            })}
+          </Stack>
 
-        <Divider orientation="vertical" flexItem />
+          <Divider orientation="vertical" flexItem sx={{ mx: 0.5, height: 20, alignSelf: "center", borderColor: "rgba(255,255,255,0.1)" }} />
 
-        <Box sx={{ flexGrow: 1 }}>
-          <Stepper nonLinear activeStep={activeStep}>
-            {steps.map((step, index) => (
-              <Step key={step.label}>
-                <StepButton color="inherit" onClick={handleStep(index)}>
-                  {step.label}
-                </StepButton>
-              </Step>
-            ))}
-          </Stepper>
+          {/* Unified Glassmorphism Control Panel */}
+          <Box sx={{ 
+            display: "flex", 
+            alignItems: "center", 
+            gap: 2, 
+            px: 2, 
+            py: 0.5,
+            borderRadius: "10px",
+            background: "rgba(255, 255, 255, 0.03)",
+            backdropFilter: "blur(8px)",
+            border: "1px solid rgba(255, 255, 255, 0.05)",
+            boxShadow: "inset 0 0 20px rgba(0,0,0,0.2)"
+          }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  size="small"
+                  checked={showGaps}
+                  onChange={(e) => setShowGaps(e.target.checked)}
+                  sx={{
+                    "& .MuiSwitch-switchBase.Mui-checked": { color: "#2196f3" },
+                    "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "#2196f3" }
+                  }}
+                />
+              }
+              label={<Typography variant="caption" sx={{ color: showGaps ? "#fff" : "#888", fontWeight: showGaps ? 600 : 400 }}>缺口</Typography>}
+              sx={{ m: 0 }}
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  size="small"
+                  checked={showOnlyUnfilled}
+                  onChange={(e) => setShowOnlyUnfilled(e.target.checked)}
+                  disabled={!showGaps}
+                  sx={{
+                    "& .MuiSwitch-switchBase.Mui-checked": { color: "#ff9800" },
+                    "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "#ff9800" }
+                  }}
+                />
+              }
+              label={<Typography variant="caption" sx={{ color: showOnlyUnfilled ? "#fff" : "#888", fontWeight: showOnlyUnfilled ? 600 : 400 }}>僅未補</Typography>}
+              sx={{ m: 0 }}
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  size="small"
+                  checked={showDeductions}
+                  onChange={(e) => setShowDeductions(e.target.checked)}
+                  sx={{
+                    "& .MuiSwitch-switchBase.Mui-checked": { color: "#4caf50" },
+                    "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "#4caf50" }
+                  }}
+                />
+              }
+              label={<Typography variant="caption" sx={{ color: showDeductions ? "#fff" : "#888", fontWeight: showDeductions ? 600 : 400 }}>扣抵</Typography>}
+              sx={{ m: 0 }}
+            />
+          </Box>
         </Box>
       </Stack>
-
-      <Card variant="outlined" sx={{ mb: 1, bgcolor: "background.default" }}>
-        <CardContent sx={{ py: 1, "&:last-child": { pb: 1 } }}>
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={1}
-            alignItems="center"
-          >
-            <Typography variant="subtitle2" color="primary" fontWeight="bold">
-              {steps[activeStep]?.description}
-            </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              {steps[activeStep]?.checks.map((check, idx) => (
-                <Chip
-                  key={idx}
-                  icon={getStatusIcon(check.status)}
-                  label={check.label}
-                  variant="outlined"
-                  color={
-                    check.status === "pass"
-                      ? "success"
-                      : check.status === "fail"
-                        ? "error"
-                        : "default"
-                  }
-                  size="small"
-                />
-              ))}
-            </Stack>
-
-            {/* Contextual Visibility Controls */}
-            <Divider
-              orientation="vertical"
-              flexItem
-              sx={{ display: { xs: "none", md: "block" }, mx: 1 }}
-            />
-            <Stack direction="row" spacing={1} alignItems="center">
-              {(activeStep === 0 || activeStep === 1 || activeStep === 3) && (
-                <>
-                  {[
-                    {
-                      key: "ma5" as const,
-                      label: `MA${settings.ma5}`,
-                      color: "#2196f3",
-                    },
-                    {
-                      key: "ma10" as const,
-                      label: `MA${settings.ma10}`,
-                      color: "#ffeb3b",
-                    },
-                    {
-                      key: "ma20" as const,
-                      label: `MA${settings.ma20}`,
-                      color: "#ff9800",
-                    },
-                    {
-                      key: "ma60" as const,
-                      label: `MA${settings.ma60}`,
-                      color: "#f44336",
-                    },
-                    {
-                      key: "ma120" as const,
-                      label: `MA${settings.ma120}`,
-                      color: "#4caf50",
-                    },
-                    {
-                      key: "ma240" as const,
-                      label: `MA${settings.ma240}`,
-                      color: "#9c27b0",
-                    },
-                  ]
-                    .filter((m) =>
-                      activeStep === 3
-                        ? ["ma5", "ma10", "ma20"].includes(m.key)
-                        : true,
-                    )
-                    .map((m) => (
-                      <Chip
-                        key={m.key}
-                        label={m.label}
-                        size="small"
-                        onClick={() =>
-                          setVisibleMAs((prev) => ({
-                            ...prev,
-                            [m.key]: !prev[m.key],
-                          }))
-                        }
-                        sx={{
-                          height: 20,
-                          fontSize: "0.65rem",
-                          bgcolor: visibleMAs[m.key] ? m.color : "transparent",
-                          color: visibleMAs[m.key] ? "#000" : "#888",
-                          borderColor: visibleMAs[m.key] ? m.color : "#444",
-                          "&:hover": {
-                            bgcolor: visibleMAs[m.key]
-                              ? m.color
-                              : "rgba(255,255,255,0.1)",
-                          },
-                        }}
-                      />
-                    ))}
-                </>
-              )}
-
-              {(activeStep === 0 || activeStep === 2) && (
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        size="small"
-                        checked={showGaps}
-                        onChange={(e) => setShowGaps(e.target.checked)}
-                      />
-                    }
-                    label={
-                      <Typography
-                        variant="caption"
-                        sx={{ fontSize: "0.65rem", color: "#888" }}
-                      >
-                        缺口
-                      </Typography>
-                    }
-                    sx={{ m: 0 }}
-                  />
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        size="small"
-                        checked={showOnlyUnfilled}
-                        onChange={(e) => setShowOnlyUnfilled(e.target.checked)}
-                        disabled={!showGaps}
-                        color="secondary"
-                      />
-                    }
-                    label={
-                      <Typography
-                        variant="caption"
-                        sx={{ fontSize: "0.65rem", color: "#888" }}
-                      >
-                        僅未補
-                      </Typography>
-                    }
-                    sx={{ m: 0 }}
-                  />
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        size="small"
-                        checked={showDeductions}
-                        onChange={(e) => setShowDeductions(e.target.checked)}
-                      />
-                    }
-                    label={
-                      <Typography
-                        variant="caption"
-                        sx={{ fontSize: "0.65rem", color: "#888" }}
-                      >
-                        扣抵
-                      </Typography>
-                    }
-                    sx={{ m: 0 }}
-                  />
-                </Stack>
-              )}
-            </Stack>
-          </Stack>
-        </CardContent>
-      </Card>
 
       {/* Combined Chart: Price (Main) + Volume (Overlay at bottom) */}
       <Box

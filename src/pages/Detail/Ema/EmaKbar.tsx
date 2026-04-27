@@ -1,20 +1,5 @@
-import CancelIcon from "@mui/icons-material/Cancel";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
-import {
-  Box,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  Container,
-  Divider,
-  Stack,
-  Step,
-  StepButton,
-  Stepper,
-  Typography,
-} from "@mui/material";
+
+import { Box, Chip, Typography, CircularProgress, Container, Stack } from '@mui/material';
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   Bar,
@@ -30,13 +15,16 @@ import {
   YAxis,
   ZAxis,
 } from "recharts";
+import boll from "../../../cls_tools/boll";
 import dmi from "../../../cls_tools/dmi";
 import ema from "../../../cls_tools/ema";
 import ma from "../../../cls_tools/ma";
 import AvgCandlestickRectangle from "../../../components/RechartCustoms/AvgCandlestickRectangle";
+import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
 import { DealsContext } from "../../../context/DealsContext";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
 import ChartTooltip from "../Tooltip/ChartTooltip";
+import { calculateMarketRegime, calculateGoldenDeathSignals } from "./signalLogic";
 
 interface AvgMaChartData extends Partial<{
   t: number | string;
@@ -54,19 +42,10 @@ interface AvgMaChartData extends Partial<{
   diPlus: number | null;
   diMinus: number | null;
   adx: number | null;
-}
-
-type CheckStatus = "pass" | "fail" | "manual";
-
-interface StepCheck {
-  label: string;
-  status: CheckStatus;
-}
-
-interface AvgMaStep {
-  label: string;
-  description: string;
-  checks: StepCheck[];
+  mss: number;
+  marketType: string;
+  diagnostic: string;
+  bw: number;
 }
 
 interface SignalPoint extends AvgMaChartData {
@@ -87,16 +66,6 @@ export default function AvgMaKbar({
 }) {
   const { settings } = useIndicatorSettings();
   const deals = useContext(DealsContext);
-  const [activeStep, setActiveStep] = useState(0);
-
-  useEffect(() => {
-    const handleSwitchStep = () => {
-      setActiveStep((prev) => (prev + 1) % 5); // 5 steps total
-    };
-    window.addEventListener("detail-switch-step", handleSwitchStep);
-    return () =>
-      window.removeEventListener("detail-switch-step", handleSwitchStep);
-  }, []);
 
   // Zoom & Pan Control
   // const [visibleCount, setVisibleCount] = useState(160);
@@ -105,6 +74,15 @@ export default function AvgMaKbar({
   const isDragging = useRef(false);
   const lastX = useRef(0);
   const startOffset = useRef(0);
+
+  const [visibleMAs, setVisibleMAs] = useState({
+    emaShort: true,
+    emaLong: true,
+    ema60: true,
+    sma200: true,
+  });
+
+  const [isAvgCandle, setIsAvgCandle] = useState(true);
 
   useEffect(() => {
     const container = chartContainerRef.current;
@@ -181,8 +159,13 @@ export default function AvgMaKbar({
     let ema60_data = ema.init(deals[0], 60);
     let sma200_data = ma.init(deals[0], 200);
     let dmi_data = dmi.init(deals[0], 14);
+    let boll_data = boll.init(deals[0]);
 
     const response: AvgMaChartData[] = [];
+    const ema60Series: number[] = [];
+
+    // Keltner Channel state for Squeeze Pro
+    let prevAtr = 0;
 
     for (let i = 0; i < deals.length; i++) {
       const deal = deals[i];
@@ -194,6 +177,7 @@ export default function AvgMaKbar({
         ema60_data = ema.next(deal, ema60_data, 60);
         sma200_data = ma.next(deal, sma200_data, 200);
         dmi_data = dmi.next(deal, dmi_data, 14);
+        boll_data = boll.next(deal, boll_data, 20);
       }
 
       // Vol MA20
@@ -206,6 +190,22 @@ export default function AvgMaKbar({
         volMa20 = sumV / 20;
       }
 
+      ema60Series.push(ema60_data.ema || 0);
+      const regime = calculateMarketRegime(
+        deal,
+        i > 0 ? deals[i - 1] : null,
+        i,
+        prevAtr,
+        boll_data,
+        ema5_data.ema || 0,
+        ema10_data.ema || 0,
+        ema60_data.ema || 0,
+        ema60Series,
+        dmi_data.adx || 0,
+        response[i - 1]?.adx || 0
+      );
+      prevAtr = regime.prevAtr;
+
       response.push({
         ...deal,
         ema5: ema5_data.ema || null,
@@ -216,6 +216,10 @@ export default function AvgMaKbar({
         diPlus: dmi_data.pDi ?? null,
         diMinus: dmi_data.mDi ?? null,
         adx: dmi_data.adx ?? null,
+        bw: regime.bw,
+        mss: regime.mss,
+        marketType: regime.marketType,
+        diagnostic: regime.diagnostics.join("|")
       });
     }
 
@@ -234,243 +238,9 @@ export default function AvgMaKbar({
   }, [chartData]);
 
   const signals = useMemo((): SignalPoint[] => {
-    const points: SignalPoint[] = [];
-    for (let i = 1; i < chartData.length; i++) {
-      const prev = chartData[i - 1];
-      const curr = chartData[i];
-      if (
-        prev.ema5 !== null &&
-        prev.ema10 !== null &&
-        curr.ema5 !== null &&
-        curr.ema10 !== null
-      ) {
-        const price = curr.c || 0;
-        const ema60 = curr.ema60 || 0;
-        const sma200 = curr.sma200 || 0;
-
-        if (prev.ema5 < prev.ema10 && curr.ema5 > curr.ema10) {
-          // Golden Cross
-          // Trend buy if price > ema60 AND price > sma200
-          const isTrendBuy =
-            ema60 > 0 && sma200 > 0 && price > ema60 && price > sma200;
-
-          points.push({
-            ...curr,
-            type: "golden",
-            subType: isTrendBuy ? "trend" : "rebound",
-          });
-        } else if (prev.ema5 > prev.ema10 && curr.ema5 < curr.ema10) {
-          // Death Cross
-          const isTrendSell =
-            ema60 > 0 && sma200 > 0 && price < ema60 && price < sma200;
-
-          points.push({
-            ...curr,
-            type: "death",
-            subType: isTrendSell ? "trend" : "rebound",
-          });
-        }
-      }
-    }
-    return points;
+    return calculateGoldenDeathSignals(chartData) as SignalPoint[];
   }, [chartData]);
 
-  const { steps, score, recommendation } = useMemo(() => {
-    if (chartData.length === 0)
-      return { steps: [], score: 0, recommendation: "" };
-
-    const current = chartData[chartData.length - 1];
-
-    const isNum = (n: any): n is number => typeof n === "number";
-
-    const price = current.c;
-    const ema5 = current.ema5;
-    const ema10 = current.ema10;
-    const ema60 = current.ema60;
-    const sma200 = current.sma200;
-    const vol = current.v;
-    const volMa = current.volMa20;
-
-    if (!isNum(price) || !isNum(ema5) || !isNum(ema10)) {
-      return { steps: [], score: 0, recommendation: "Data Error" };
-    }
-
-    // Signals
-    const recentCross =
-      signals.length > 0
-        ? signals
-            .slice()
-            .reverse()
-            .find(
-              (s) =>
-                (s.type === "golden" || s.type === "death") &&
-                (s.t === current.t ||
-                  s.t === chartData[chartData.length - 2]?.t),
-            )
-        : null;
-    const trendUp = ema5 > ema10;
-    const aboveLifeLine =
-      isNum(ema60) && isNum(sma200) && price > ema60 && price > sma200;
-    const volOk = isNum(vol) && isNum(volMa) && vol > volMa; // Volume support
-
-    // Scoring
-    let totalScore = 0;
-
-    // 1. Trend (30)
-    if (trendUp) totalScore += 10;
-    if (isNum(ema60) && price > ema60) totalScore += 10;
-    if (isNum(sma200) && price > sma200) totalScore += 10;
-
-    // 2. Signal Quality (40)
-    if (recentCross) {
-      if (recentCross.type === "golden") {
-        if (recentCross.subType === "trend")
-          totalScore += 40; // Strong buy (Above both lines)
-        else totalScore += 20; // Rebound buy (Between or below lines)
-      } else {
-        if (recentCross.subType === "trend")
-          totalScore -= 40; // Strong sell (Below both lines)
-        else totalScore -= 20; // Correction
-      }
-    } else {
-      if (trendUp && aboveLifeLine) totalScore += 20; // Holding trend
-    }
-
-    // 3. Volume (10)
-    if (volOk) totalScore += 10;
-
-    // 4. Momentum (K strength) (20)
-    if (price > ema5) totalScore += 20;
-
-    // 5. DMI (30) - Bonus
-    const isUptrend =
-      (current.diPlus || 0) > (current.diMinus || 0) && (current.adx || 0) > 20;
-    if (isUptrend) totalScore += 10;
-
-    if (totalScore < 0) totalScore = 0;
-    if (totalScore > 100) totalScore = 100;
-
-    let rec = "Neutral";
-    if (totalScore >= 80) rec = "Strong Buy";
-    else if (totalScore >= 60) rec = "Buy";
-    else if (totalScore <= 30) rec = "Sell";
-    else rec = "Hold";
-
-    const avgSteps: AvgMaStep[] = [
-      {
-        label: "I. 綜合評估",
-        description: `得分: ${totalScore} - ${rec}`,
-        checks: [
-          {
-            label: `目前建議: ${rec}`,
-            status: totalScore >= 60 ? "pass" : "manual",
-          },
-        ],
-      },
-      {
-        label: "II. 趨勢判斷",
-        description: "核心趨勢帶 (EMA60 & SMA200)",
-        checks: [
-          {
-            label: `價格 > EMA60 (季線): ${
-              isNum(ema60) && price > ema60 ? "Yes" : "No"
-            }`,
-            status: isNum(ema60) && price > ema60 ? "pass" : "fail",
-          },
-          {
-            label: `價格 > SMA200 (年線): ${
-              isNum(sma200) && price > sma200 ? "Yes" : "No"
-            }`,
-            status: isNum(sma200) && price > sma200 ? "pass" : "fail",
-          },
-          {
-            label: `EMA${settings.emaShort} > EMA${settings.emaLong} (短線): ${
-              trendUp ? "Yes" : "No"
-            }`,
-            status: trendUp ? "pass" : "fail",
-          },
-        ],
-      },
-      {
-        label: "III. 趨勢強度 (DMI)",
-        description: "ADX 與 DI 方向",
-        checks: [
-          {
-            label: `ADX 強度 (>20): ${(current.adx || 0).toFixed(1)}`,
-            status: (current.adx || 0) > 20 ? "pass" : "fail",
-          },
-          {
-            label: "多頭趨勢 (DI+ > DI-)",
-            status:
-              (current.diPlus || 0) > (current.diMinus || 0) ? "pass" : "fail",
-          },
-        ],
-      },
-      {
-        label: "IV. 進場訊號",
-        description: "交叉與型態",
-        checks: [
-          {
-            label: `均線訊號: ${
-              recentCross
-                ? recentCross.type === "golden"
-                  ? "黃金交叉"
-                  : "死亡交叉"
-                : "無"
-            }`,
-            status:
-              recentCross?.type === "golden"
-                ? "pass"
-                : recentCross?.type === "death"
-                  ? "fail"
-                  : "manual",
-          },
-          {
-            label: `訊號性質: ${
-              recentCross
-                ? recentCross.subType === "trend"
-                  ? "順勢 (強)"
-                  : "逆勢 (弱)"
-                : "N/A"
-            }`,
-            status: recentCross?.subType === "trend" ? "pass" : "manual",
-          },
-        ],
-      },
-      {
-        label: "V. 動能確認",
-        description: "量價與均線",
-        checks: [
-          {
-            label: `價格站穩 EMA5: ${price > ema5 ? "Yes" : "No"}`,
-            status: price > ema5 ? "pass" : "fail",
-          },
-          {
-            label: `成交量 > 均量: ${volOk ? "Yes" : "No"}`,
-            status: volOk ? "pass" : "manual",
-          },
-        ],
-      },
-    ];
-
-    return { steps: avgSteps, score: totalScore, recommendation: rec };
-  }, [chartData, signals]);
-
-  const handleStep = (step: number) => () => {
-    setActiveStep(step);
-  };
-
-  const getStatusIcon = (status: CheckStatus) => {
-    switch (status) {
-      case "pass":
-        return <CheckCircleIcon fontSize="small" color="success" />;
-      case "fail":
-        return <CancelIcon fontSize="small" color="error" />;
-      case "manual":
-      default:
-        return <HelpOutlineIcon fontSize="small" color="disabled" />;
-    }
-  };
 
   if (chartData.length === 0) {
     return (
@@ -499,62 +269,114 @@ export default function AvgMaKbar({
       }}
     >
       <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="h6" component="div" color="white">
+        <Typography variant="h6" component="div" color="white" sx={{ mr: 2 }}>
           EMA
         </Typography>
+        <Box sx={{ flexGrow: 1, display: "flex", gap: 1.5, alignItems: "center" }}>
+          {/* Market Status Badge */}
+          {chartData.length > 0 && (
+            <Chip
+              label={`${chartData[chartData.length - 1].marketType}市 (${chartData[chartData.length - 1].mss.toFixed(1)})`}
+              size="small"
+              sx={{
+                height: 28,
+                bgcolor: chartData[chartData.length - 1].marketType === "趨勢" 
+                  ? "rgba(33, 150, 243, 0.2)" 
+                  : chartData[chartData.length - 1].marketType === "寬震"
+                    ? "rgba(156, 39, 176, 0.2)"
+                    : "rgba(255, 255, 255, 0.05)",
+                color: chartData[chartData.length - 1].marketType === "趨勢" 
+                  ? "#2196f3" 
+                  : chartData[chartData.length - 1].marketType === "寬震"
+                    ? "#ce93d8"
+                    : "#aaa",
+                border: `1px solid ${
+                  chartData[chartData.length - 1].marketType === "趨勢" 
+                    ? "#2196f3" 
+                    : chartData[chartData.length - 1].marketType === "寬震"
+                      ? "#9c27b0"
+                      : "rgba(255, 255, 255, 0.1)"
+                }`,
+                fontWeight: "bold",
+                borderRadius: "4px",
+                mr: 2,
+                "& .MuiChip-label": { px: 1 },
+              }}
+            />
+          )}
 
-        <Chip
-          label={`${score}分 - ${recommendation}`}
-          color={score >= 80 ? "success" : score >= 60 ? "warning" : "error"}
-          variant="outlined"
-          size="small"
-        />
+          {/* Candlestick Type Toggle */}
+          <Chip
+            label={isAvgCandle ? "平均 K 線" : "標準 K 線"}
+            size="small"
+            onClick={() => setIsAvgCandle(!isAvgCandle)}
+            variant="outlined"
+            sx={{
+              height: 28,
+              bgcolor: isAvgCandle ? "rgba(76, 175, 80, 0.1)" : "rgba(33, 150, 243, 0.1)",
+              color: isAvgCandle ? "#4caf50" : "#2196f3",
+              borderColor: isAvgCandle ? "rgba(76, 175, 80, 0.4)" : "rgba(33, 150, 243, 0.4)",
+              fontWeight: "bold",
+              borderRadius: "4px",
+              mr: 2,
+              transition: "all 0.2s",
+              "&:hover": {
+                bgcolor: isAvgCandle ? "rgba(76, 175, 80, 0.2)" : "rgba(33, 150, 243, 0.2)",
+                transform: "translateY(-1px)",
+              },
+              "& .MuiChip-label": { px: 1.5 },
+            }}
+          />
 
-        <Divider orientation="vertical" flexItem />
-        <Box sx={{ flexGrow: 1 }}>
-          <Stepper nonLinear activeStep={activeStep}>
-            {steps.map((step, index) => (
-              <Step key={step.label}>
-                <StepButton color="inherit" onClick={handleStep(index)}>
-                  {step.label}
-                </StepButton>
-              </Step>
-            ))}
-          </Stepper>
+          {/* Glowing HUD EMA Toggles */}
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            {[
+              { key: "emaShort" as const, label: `EMA${settings.emaShort}`, color: "#589bf3" },
+              { key: "emaLong" as const, label: `EMA${settings.emaLong}`, color: "#ff7300" },
+              { key: "ema60" as const, label: `EMA60`, color: "#9c27b0" },
+              { key: "sma200" as const, label: `SMA200`, color: "#607d8b" },
+            ].map((m) => {
+              const isActive = visibleMAs[m.key];
+              return (
+                <Chip
+                  key={m.key}
+                  label={m.label}
+                  size="small"
+                  onClick={() => setVisibleMAs(prev => ({ ...prev, [m.key]: !prev[m.key] }))}
+                  sx={{
+                    height: 26,
+                    fontSize: "0.7rem",
+                    fontWeight: "700",
+                    letterSpacing: "0.02em",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+                    border: `1px solid ${isActive ? m.color : "rgba(255,255,255,0.1)"}`,
+                    bgcolor: isActive ? m.color : "rgba(0,0,0,0.2)",
+                    color: isActive ? "#000" : "rgba(255,255,255,0.5)",
+                    boxShadow: isActive 
+                      ? `0 0 12px ${m.color}88, inset 0 0 4px rgba(255,255,255,0.5)` 
+                      : "none",
+                    "& .MuiChip-label": { px: 1.5 },
+                    "&:hover": {
+                      bgcolor: isActive ? m.color : "rgba(255,255,255,0.1)",
+                      transform: "translateY(-1px)",
+                      boxShadow: isActive 
+                        ? `0 0 18px ${m.color}, inset 0 0 4px rgba(255,255,255,0.5)` 
+                        : `0 0 8px rgba(255,255,255,0.2)`,
+                      color: isActive ? "#000" : "#fff",
+                    },
+                    "&:active": {
+                      transform: "translateY(0px) scale(0.96)",
+                    }
+                  }}
+                />
+              );
+            })}
+          </Stack>
         </Box>
       </Stack>
 
-      <Card variant="outlined" sx={{ bgcolor: "background.default" }}>
-        <CardContent>
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={1}
-            alignItems="center"
-          >
-            <Typography variant="subtitle2" color="primary" fontWeight="bold">
-              {steps[activeStep]?.description}
-            </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              {steps[activeStep]?.checks.map((check, idx) => (
-                <Chip
-                  key={idx}
-                  icon={getStatusIcon(check.status)}
-                  label={check.label}
-                  variant="outlined"
-                  color={
-                    check.status === "pass"
-                      ? "success"
-                      : check.status === "fail"
-                        ? "error"
-                        : "default"
-                  }
-                  size="small"
-                />
-              ))}
-            </Stack>
-          </Stack>
-        </CardContent>
-      </Card>
 
       <Box
         ref={chartContainerRef}
@@ -578,7 +400,10 @@ export default function AvgMaKbar({
               width={0}
             />
             <ZAxis type="number" range={[10]} />
-            <Tooltip content={<ChartTooltip />} offset={50} />
+            <Tooltip 
+              content={<ChartTooltip hideKeys={["mss", "marketType", "diagnostic", "bw"]} />} 
+              offset={50} 
+            />
 
             <Line
               dataKey="h"
@@ -617,7 +442,7 @@ export default function AvgMaKbar({
               name="開"
             />
 
-            <Customized component={AvgCandlestickRectangle} />
+            <Customized component={isAvgCandle ? AvgCandlestickRectangle : BaseCandlestickRectangle} />
 
             {/* Volume Bars (Overlay) */}
             <Bar
@@ -640,42 +465,50 @@ export default function AvgMaKbar({
               }}
             />
 
-            <Line
-              dataKey="ema5"
-              stroke="#589bf3"
-              dot={false}
-              activeDot={false}
-              strokeWidth={2}
-              name={`EMA ${settings.emaShort}`}
-            />
-            <Line
-              dataKey="ema10"
-              stroke="#ff7300"
-              dot={false}
-              activeDot={false}
-              strokeWidth={2}
-              name={`EMA ${settings.emaLong}`}
-            />
-            <Line
-              dataKey="ema60"
-              stroke="#9c27b0"
-              dot={false}
-              activeDot={false}
-              strokeWidth={1}
-              strokeDasharray="5 5"
-              name={`EMA 60`}
-              opacity={0.8}
-            />
-            <Line
-              dataKey="sma200"
-              stroke="#607d8b"
-              dot={false}
-              activeDot={false}
-              strokeWidth={1}
-              strokeDasharray="3 3"
-              name={`SMA 200`}
-              opacity={0.8}
-            />
+             {visibleMAs.emaShort && (
+              <Line
+                dataKey="ema5"
+                stroke="#589bf3"
+                dot={false}
+                activeDot={false}
+                strokeWidth={2}
+                name={`EMA ${settings.emaShort}`}
+              />
+            )}
+            {visibleMAs.emaLong && (
+              <Line
+                dataKey="ema10"
+                stroke="#ff7300"
+                dot={false}
+                activeDot={false}
+                strokeWidth={2}
+                name={`EMA ${settings.emaLong}`}
+              />
+            )}
+            {visibleMAs.ema60 && (
+              <Line
+                dataKey="ema60"
+                stroke="#9c27b0"
+                dot={false}
+                activeDot={false}
+                strokeWidth={1}
+                strokeDasharray="5 5"
+                name={`EMA 60`}
+                opacity={0.8}
+              />
+            )}
+            {visibleMAs.sma200 && (
+              <Line
+                dataKey="sma200"
+                stroke="#607d8b"
+                dot={false}
+                activeDot={false}
+                strokeWidth={1}
+                strokeDasharray="3 3"
+                name={`SMA 200`}
+                opacity={0.8}
+              />
+            )}
 
             {signals.map((signal) => {
               const isGolden = signal.type === "golden";
@@ -760,6 +593,7 @@ export default function AvgMaKbar({
             <CartesianGrid strokeDasharray="3 3" opacity={0.1} stroke="#fff" />
             <XAxis dataKey="t" hide />
             <YAxis
+              yAxisId="dmiAxis"
               domain={[0, 60]}
               tick={{ fill: "rgba(255,255,255,0.7)", fontSize: 10 }}
               stroke="rgba(255,255,255,0.3)"
@@ -771,9 +605,40 @@ export default function AvgMaKbar({
                 fontSize: 10,
               }}
             />
-            <Tooltip content={<ChartTooltip />} />
-            <ReferenceLine y={20} stroke="#666" strokeDasharray="3 3" />
+            <YAxis yAxisId="statusAxis" domain={[0, 1]} hide />
+            <Tooltip content={<ChartTooltip hideKeys={["mss", "marketType", "diagnostic", "bw"]} showMESS={false} showIchimoku={false} showSignals={false} />} />
+            
+            {/* Market Status Ribbon (Background) */}
+            <Bar
+              dataKey="mss"
+              yAxisId="statusAxis"
+              isAnimationActive={false}
+              shape={(props: any) => {
+                const { x, y, width, height, payload } = props;
+                const { marketType, mss } = payload;
+                let fill = "rgba(255,255,255,0.02)"; // Ranging (Grey)
+                if (marketType === "趨勢") {
+                  fill = payload.diPlus > payload.diMinus ? "rgba(33, 150, 243, 0.2)" : "rgba(244, 67, 54, 0.2)";
+                } else if (marketType === "寬震") {
+                  fill = "rgba(156, 39, 176, 0.12)";
+                } else if (marketType === "擠壓") {
+                  fill = "rgba(0, 0, 0, 0.35)"; // Deep grey for squeeze
+                }
+                return (
+                  <rect
+                    x={x}
+                    y={0} // Fill from top of the DMI area
+                    width={width}
+                    height={300} // Sufficient height to cover area
+                    fill={fill}
+                  />
+                );
+              }}
+            />
+
+            <ReferenceLine yAxisId="dmiAxis" y={20} stroke="#666" strokeDasharray="3 3" />
             <Line
+              yAxisId="dmiAxis"
               dataKey="adx"
               stroke="#ffeb3b"
               strokeWidth={2}
@@ -781,6 +646,7 @@ export default function AvgMaKbar({
               name="ADX"
             />
             <Line
+              yAxisId="dmiAxis"
               dataKey="diPlus"
               stroke="#ff4d4f"
               strokeWidth={1}
@@ -788,6 +654,7 @@ export default function AvgMaKbar({
               name="DI+"
             />
             <Line
+              yAxisId="dmiAxis"
               dataKey="diMinus"
               stroke="#52c41a"
               strokeWidth={1}

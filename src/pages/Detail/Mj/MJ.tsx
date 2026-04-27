@@ -1,21 +1,11 @@
-import CancelIcon from "@mui/icons-material/Cancel";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import {
   Box,
-  Card,
-  CardContent,
-  Chip,
   CircularProgress,
   Container,
-  Divider,
   Stack,
-  Step,
-  StepButton,
-  Stepper,
   Typography,
 } from "@mui/material";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef } from "react";
 import {
   Area,
   Bar,
@@ -45,6 +35,7 @@ interface MjChartData extends Partial<{
   v: number | null;
 }> {
   j: number | null;
+  rsi: number | null;
   osc: number | null;
   bollMa: number | null;
   bollUb: number | null;
@@ -55,18 +46,6 @@ interface MjChartData extends Partial<{
   negativeOsc: number | null;
 }
 
-type CheckStatus = "pass" | "fail" | "manual";
-
-interface StepCheck {
-  label: string;
-  status: CheckStatus;
-}
-
-interface MjStep {
-  label: string;
-  description: string;
-  checks: StepCheck[];
-}
 
 export default function MJ({
   visibleCount,
@@ -81,16 +60,6 @@ export default function MJ({
 }) {
   const deals = useContext(DealsContext);
   const { settings } = useIndicatorSettings();
-  const [activeStep, setActiveStep] = useState(0);
-
-  useEffect(() => {
-    const handleSwitchStep = () => {
-      setActiveStep((prev) => (prev + 1) % 4); // 4 steps total
-    };
-    window.addEventListener("detail-switch-step", handleSwitchStep);
-    return () =>
-      window.removeEventListener("detail-switch-step", handleSwitchStep);
-  }, []);
 
   // Zoom & Pan Control
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -181,6 +150,7 @@ export default function MJ({
         return {
           ...item,
           j,
+          rsi: item.rsi,
           osc,
           longZone: isLong ? j : null,
           shortZone: isShort ? j : null,
@@ -201,144 +171,30 @@ export default function MJ({
       const curr = chartData[i];
       const prev = chartData[i - 1];
 
-      const currLong = (curr.j || 0) > 50 && (curr.osc || 0) > 0;
-      const prevLong = (prev.j || 0) > 50 && (prev.osc || 0) > 0;
+      // MJ Logic: J crosses 50
+      const jCrossUp = (prev.j || 0) <= 50 && (curr.j || 0) > 50;
+      const jCrossDown = (prev.j || 0) >= 50 && (curr.j || 0) < 50;
 
-      const currShort = (curr.j || 0) < 50 && (curr.osc || 0) < 0;
-      const prevShort = (prev.j || 0) < 50 && (prev.osc || 0) < 0;
+      const isOscPositive = (curr.osc || 0) > 0;
+      const isOscNegative = (curr.osc || 0) < 0;
 
-      if (currLong && !prevLong) {
+      // 1. Long Entry: J crosses up 50 AND Osc is positive AND 50 < RSI < 75
+      if (
+        jCrossUp &&
+        isOscPositive &&
+        (curr.rsi || 0) < 75 &&
+        (curr.rsi || 0) > 50
+      ) {
         result.push({ t: curr.t, type: "entry_long", price: curr.c });
-      } else if (currShort && !prevShort) {
+      }
+      // 2. Short Entry: J crosses down 50 AND Osc is negative AND RSI > 25 (avoid bottom)
+      else if (jCrossDown && isOscNegative && (curr.rsi || 100) > 25) {
         result.push({ t: curr.t, type: "entry_short", price: curr.c });
       }
     }
     return result;
   }, [chartData]);
 
-  const { steps, score, recommendation } = useMemo(() => {
-    if (chartData.length === 0)
-      return { steps: [], score: 0, recommendation: "" };
-
-    const current = chartData[chartData.length - 1];
-    const prev = chartData[chartData.length - 2] || current;
-
-    const isNum = (n: any): n is number => typeof n === "number";
-
-    const price = current.c;
-    const j = current.j;
-    const osc = current.osc;
-    const bollMa = current.bollMa;
-
-    if (!isNum(price) || !isNum(j) || !isNum(osc) || !isNum(bollMa)) {
-      return { steps: [], score: 0, recommendation: "Data Error" };
-    }
-
-    const isLongZone = j > 50 && osc > 0;
-    const isShortZone = j < 50 && osc < 0;
-    const trendUp = price > bollMa;
-    const jRising = j > (prev.j || 0);
-    const oscRising = osc > (prev.osc || 0);
-
-    // Scoring
-    let totalScore = 0;
-
-    // 1. Zone Status (40)
-    if (isLongZone) totalScore += 40;
-    else if (j > 50 || osc > 0) totalScore += 20; // Partial bull
-    if (isShortZone) totalScore -= 40;
-
-    // 2. Trend (20)
-    if (trendUp) totalScore += 20;
-
-    // 3. Momentum (40)
-    if (jRising) totalScore += 20;
-    if (oscRising) totalScore += 20;
-
-    if (totalScore < 0) totalScore = 0;
-    if (totalScore > 100) totalScore = 100;
-
-    let rec = "Neutral";
-    if (totalScore >= 80) rec = "Strong Buy";
-    else if (totalScore >= 60) rec = "Buy";
-    else if (totalScore <= 20) rec = "Sell";
-    else rec = "Hold";
-
-    // const stopLoss = (price * 0.95).toFixed(2);
-
-    const mjSteps: MjStep[] = [
-      {
-        label: "I. 綜合評估",
-        description: `得分: ${totalScore} - ${rec}`,
-        checks: [
-          {
-            label: `目前建議: ${rec}`,
-            status: totalScore >= 60 ? "pass" : "manual",
-          },
-        ],
-      },
-      {
-        label: "II. 指標狀態",
-        description: "MJ 雙指標共振",
-        checks: [
-          {
-            label: `KD-J 線 > 50: ${j.toFixed(1)}`,
-            status: j > 50 ? "pass" : "fail",
-          },
-          {
-            label: `MACD Osc > 0: ${osc.toFixed(2)}`,
-            status: osc > 0 ? "pass" : "fail",
-          },
-        ],
-      },
-      {
-        label: "III. 訊號判定",
-        description: "多空區域確認",
-        checks: [
-          {
-            label: `多方共振 (J>50 & Osc>0): ${isLongZone ? "Yes" : "No"}`,
-            status: isLongZone ? "pass" : "fail",
-          },
-          {
-            label: `空方共振 (J<50 & Osc<0): ${isShortZone ? "Yes" : "No"}`,
-            status: isShortZone ? "fail" : "pass",
-          },
-        ],
-      },
-      {
-        label: "IV. 趨勢與動能",
-        description: "MA20 與 動能方向",
-        checks: [
-          {
-            label: `價格 > 中軌: ${trendUp ? "Yes" : "No"}`,
-            status: trendUp ? "pass" : "fail",
-          },
-          {
-            label: `J線 上升中: ${jRising ? "Yes" : "No"}`,
-            status: jRising ? "pass" : "fail",
-          },
-        ],
-      },
-    ];
-
-    return { steps: mjSteps, score: totalScore, recommendation: rec };
-  }, [chartData]);
-
-  const handleStep = (step: number) => () => {
-    setActiveStep(step);
-  };
-
-  const getStatusIcon = (status: CheckStatus) => {
-    switch (status) {
-      case "pass":
-        return <CheckCircleIcon fontSize="small" color="success" />;
-      case "fail":
-        return <CancelIcon fontSize="small" color="error" />;
-      case "manual":
-      default:
-        return <HelpOutlineIcon fontSize="small" color="disabled" />;
-    }
-  };
 
   if (chartData.length === 0) {
     return (
@@ -367,62 +223,11 @@ export default function MJ({
       }}
     >
       <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="h6" component="div" color="white">
+        <Typography variant="h6" component="div" color="white" sx={{ mr: 2 }}>
           MJ
         </Typography>
-
-        <Chip
-          label={`${score}分 - ${recommendation}`}
-          color={score >= 80 ? "success" : score >= 60 ? "warning" : "error"}
-          variant="outlined"
-          size="small"
-        />
-
-        <Divider orientation="vertical" flexItem />
-        <Box sx={{ flexGrow: 1 }}>
-          <Stepper nonLinear activeStep={activeStep}>
-            {steps.map((step, index) => (
-              <Step key={step.label}>
-                <StepButton color="inherit" onClick={handleStep(index)}>
-                  {step.label}
-                </StepButton>
-              </Step>
-            ))}
-          </Stepper>
-        </Box>
       </Stack>
 
-      <Card variant="outlined" sx={{ mb: 1, bgcolor: "background.default" }}>
-        <CardContent sx={{ py: 1, "&:last-child": { pb: 1 } }}>
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={1}
-            alignItems="center"
-          >
-            <Typography variant="subtitle2" color="primary" fontWeight="bold">
-              {steps[activeStep]?.description}
-            </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              {steps[activeStep]?.checks.map((check, idx) => (
-                <Chip
-                  key={idx}
-                  icon={getStatusIcon(check.status)}
-                  label={check.label}
-                  variant="outlined"
-                  color={
-                    check.status === "pass"
-                      ? "success"
-                      : check.status === "fail"
-                        ? "error"
-                        : "default"
-                  }
-                  size="small"
-                />
-              ))}
-            </Stack>
-          </Stack>
-        </CardContent>
-      </Card>
 
       <Box
         ref={chartContainerRef}
@@ -616,55 +421,65 @@ export default function MJ({
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
             <XAxis dataKey="t" hide />
 
-            {/* Left Axis for MACD Osc */}
+            {/* Left Axis for J-Line (0-100) */}
             <YAxis
               yAxisId="left"
               orientation="left"
+              domain={([dataMin, dataMax]) => {
+                const diff = Math.max(
+                  Math.abs(dataMin - 50),
+                  Math.abs(dataMax - 50),
+                );
+                return [50 - diff, 50 + diff];
+              }}
+              ticks={[0, 30, 50, 70, 100]}
               stroke="#888"
               fontSize={10}
             />
 
-            {/* Right Axis for J-Line (0-100) */}
+            {/* Right Axis for MACD Osc */}
             <YAxis
               yAxisId="right"
               orientation="right"
-              domain={[0, 100]}
-              ticks={[0, 25, 50, 75, 100]}
-              stroke="#2196f3"
+              domain={([dataMin, dataMax]) => {
+                const absMax = Math.max(Math.abs(dataMin), Math.abs(dataMax));
+                return [-absMax, absMax];
+              }}
+              stroke="#888"
               fontSize={10}
               width={0}
             />
 
             <Tooltip content={<ChartTooltip />} />
 
-            <ReferenceLine y={0} yAxisId="left" stroke="#666" opacity={0.5} />
+            <ReferenceLine y={0} yAxisId="right" stroke="#666" opacity={0.5} />
             <ReferenceLine
               y={50}
-              yAxisId="right"
+              yAxisId="left"
               stroke="#666"
               strokeDasharray="3 3"
               opacity={0.5}
             />
 
-            {/* MACD Bars (Left Axis) */}
+            {/* MACD Bars (Right Axis) */}
             <Bar
-              yAxisId="left"
+              yAxisId="right"
               dataKey="positiveOsc"
               fill="#f44336"
               barSize={3}
               name="Osc +"
             />
             <Bar
-              yAxisId="left"
+              yAxisId="right"
               dataKey="negativeOsc"
               fill="#4caf50"
               barSize={3}
               name="Osc -"
             />
 
-            {/* J Line Zones (Right Axis) */}
+            {/* J Line Zones (Left Axis) */}
             <Area
-              yAxisId="right"
+              yAxisId="left"
               type="monotone"
               dataKey="longZone"
               fill="#ffcdd2"
@@ -673,7 +488,7 @@ export default function MJ({
               opacity={0.3}
             />
             <Area
-              yAxisId="right"
+              yAxisId="left"
               type="monotone"
               dataKey="shortZone"
               fill="#c8e6c9"
@@ -682,7 +497,7 @@ export default function MJ({
               opacity={0.3}
             />
             <Line
-              yAxisId="right"
+              yAxisId="left"
               dataKey="j"
               stroke="#2196f3"
               dot={false}

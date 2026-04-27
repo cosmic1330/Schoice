@@ -18,6 +18,7 @@ interface ChartTooltipProps {
   dateFormatter?: (tick: number | string) => string;
   sortKeys?: string[];
   showIchimoku?: boolean;
+  showMESS?: boolean;
 }
 
 const ChartTooltip = ({
@@ -28,6 +29,7 @@ const ChartTooltip = ({
   hideKeys = [],
   dateFormatter = formatDateTick,
   showIchimoku = true,
+  showMESS = true,
 }: ChartTooltipProps) => {
   if (active && payload && payload.length && label !== undefined) {
     const data = payload[0].payload;
@@ -91,6 +93,47 @@ const ChartTooltip = ({
               style={{ whiteSpace: "pre-wrap" }}
             >
               {data.signalReason}
+            </Typography>
+          </div>
+        )}
+
+        {/* Market Environment (Strict MESS) */}
+        {showMESS && data.marketType && (
+          <div
+            style={{
+              marginTop: 8,
+              marginBottom: 8,
+              padding: "8px",
+              backgroundColor: "rgba(255, 255, 255, 0.05)",
+              borderRadius: 4,
+              border: `1px solid ${data.marketType === '趨勢' ? '#2196f3' : 'rgba(255,255,255,0.2)'}`,
+            }}
+          >
+            <Typography
+              variant="caption"
+              display="block"
+              style={{
+                color: "#90caf9",
+                fontWeight: "bold",
+                marginBottom: 4,
+                textTransform: "uppercase",
+                letterSpacing: 1,
+              }}
+            >
+              市場環境 (MESS)
+            </Typography>
+            <Typography
+              variant="body2"
+              fontWeight="bold"
+              style={{
+                color: data.marketType === '趨勢' ? '#2196f3' : data.marketType === '寬震' ? '#ce93d8' : '#fff',
+                marginBottom: 2,
+              }}
+            >
+              {data.marketType}市 ({data.mss.toFixed(1)})
+            </Typography>
+            <Typography variant="caption" style={{ color: "#bbb" }}>
+              診斷：{data.diagnostic || "盤整無顯著訊號"}
             </Typography>
           </div>
         )}

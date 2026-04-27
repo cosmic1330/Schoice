@@ -1,19 +1,20 @@
-import CancelIcon from "@mui/icons-material/Cancel";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import LockIcon from "@mui/icons-material/Lock";
+import LockOpenIcon from "@mui/icons-material/LockOpen";
+import SettingsIcon from "@mui/icons-material/Settings";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import {
   Box,
-  Card,
-  CardContent,
+  Button,
   Chip,
   CircularProgress,
   Container,
   Divider,
+  IconButton,
+  Menu,
   Tooltip as MuiTooltip,
+  Slider,
   Stack,
-  Step,
-  StepButton,
-  Stepper,
   Typography,
 } from "@mui/material";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -34,6 +35,7 @@ import {
 import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
 import { DealsContext } from "../../../context/DealsContext";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
+import { calculateChannel } from "../../../utils/channelUtils";
 import { calculateIndicators } from "../../../utils/indicatorUtils";
 import ChartTooltip from "../Tooltip/ChartTooltip";
 import Fundamental from "../Tooltip/Fundamental";
@@ -54,19 +56,11 @@ interface BolleanChartData extends Partial<{
   exitSignal?: number | null;
   buyReason?: string;
   exitReason?: string;
-}
-
-type CheckStatus = "pass" | "fail" | "manual";
-
-interface StepCheck {
-  label: string;
-  status: CheckStatus;
-}
-
-interface BolleanStep {
-  label: string;
-  description: string;
-  checks: StepCheck[];
+  channelUb?: number | null;
+  channelLb?: number | null;
+  kcDynamicStop?: number | null;
+  kcExitSignal?: number | null;
+  kcMiddle?: number | null;
 }
 
 const BuyArrow = (props: any) => {
@@ -119,6 +113,41 @@ const ExitArrow = (props: any) => {
   );
 };
 
+const KcXMarker = (props: any) => {
+  const { cx, cy } = props;
+  if (!cx || !cy) return null;
+  return (
+    <g>
+      <line
+        x1={cx - 5}
+        y1={cy - 5}
+        x2={cx + 5}
+        y2={cy + 5}
+        stroke="#ff1744"
+        strokeWidth={3}
+      />
+      <line
+        x1={cx + 5}
+        y1={cy - 5}
+        x2={cx - 5}
+        y2={cy + 5}
+        stroke="#ff1744"
+        strokeWidth={3}
+      />
+      <text
+        x={cx}
+        y={cy - 12}
+        textAnchor="middle"
+        fill="#ff1744"
+        fontSize="10px"
+        fontWeight="bold"
+      >
+        跌破
+      </text>
+    </g>
+  );
+};
+
 export default function Bollean({
   visibleCount,
   setVisibleCount,
@@ -130,18 +159,46 @@ export default function Bollean({
   rightOffset: number;
   setRightOffset: React.Dispatch<React.SetStateAction<number>>;
 }) {
-  const { settings } = useIndicatorSettings();
+  const { settings, updateSetting, resetSettings } = useIndicatorSettings();
   const deals = useContext(DealsContext);
-  const [activeStep, setActiveStep] = useState(0);
+  const [showChannel, setShowChannel] = useState(false);
+  const [showKc, setShowKc] = useState(true);
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockedInfo, setLockedInfo] = useState<{
+    slope: number;
+    upperIntercept: number;
+    lowerIntercept: number;
+    anchorTime: number | string;
+    type: string;
+  } | null>(null);
 
-  useEffect(() => {
-    const handleSwitchStep = () => {
-      setActiveStep((prev) => (prev + 1) % 4); // 4 steps total
-    };
-    window.addEventListener("detail-switch-step", handleSwitchStep);
-    return () =>
-      window.removeEventListener("detail-switch-step", handleSwitchStep);
-  }, []);
+  // LRC Dynamic Parameters
+  const [channelPeriod, setChannelPeriod] = useState(60);
+  const [channelMultiplier, setChannelMultiplier] = useState(2.0);
+  const [channelAnchorEl, setChannelAnchorEl] = useState<null | HTMLElement>(
+    null,
+  );
+  const [kcAnchorEl, setKcAnchorEl] = useState<null | HTMLElement>(null);
+
+  const handleOpenChannelSettings = (event: React.MouseEvent<HTMLElement>) => {
+    setChannelAnchorEl(event.currentTarget);
+  };
+  const handleCloseChannelSettings = () => {
+    setChannelAnchorEl(null);
+  };
+
+  const handleOpenKcSettings = (event: React.MouseEvent<HTMLElement>) => {
+    setKcAnchorEl(event.currentTarget);
+  };
+  const handleCloseKcSettings = () => {
+    setKcAnchorEl(null);
+  };
+
+  const handleResetChannel = () => {
+    setChannelPeriod(60);
+    setChannelMultiplier(2.0);
+  };
+
   const { id } = useParams();
 
   // Zoom & Pan Control
@@ -217,105 +274,178 @@ export default function Bollean({
     };
   }, [deals.length, visibleCount, rightOffset]);
 
-  const chartData = useMemo((): BolleanChartData[] => {
+  const allPointsWithIndicators = useMemo((): BolleanChartData[] => {
     if (!deals || deals.length === 0) return [];
-
-    // Initial pass: Calculate Bands using centralized utility
     const baseData = calculateIndicators(deals, settings);
-
-    // Second pass: Calculate Signals & Logic
     let lastSignalState: "buy" | "neutral" = "neutral";
-
-    // Helper to check valid number
     const isNum = (n: any): n is number => typeof n === "number";
 
-    return baseData
-      .map((d, i) => {
-        if (i < settings.boll) return d; // Skip initial stabilization
+    return baseData.map((d, i) => {
+      if (i < settings.boll) return d as BolleanChartData;
+      const prev = baseData[i - 1];
+      const price = d.c;
+      const ub = d.bollUb;
+      const lb = d.bollLb;
+      const ma = d.bollMa;
+      const width = d.bandWidth;
 
-        const prev = baseData[i - 1];
+      if (
+        !isNum(price) ||
+        ub === null ||
+        lb === null ||
+        ma === null ||
+        width === null
+      )
+        return d as BolleanChartData;
 
-        const price = d.c;
-        const ub = d.bollUb;
-        const lb = d.bollLb;
-        const ma = d.bollMa;
-        const width = d.bandWidth;
+      const maRising = ma > (prev.bollMa || 0);
+      const priceAboveMa = price > ma;
+      const isSqueeze = width < 0.15;
+      const breakoutUp =
+        isSqueeze && price > ub && (d.v || 0) > (prev.v || 0) * 1.3;
+      const touchedLb = (d.l || 0) <= lb;
+      const closeHigh = price > (d.o || 0);
+      const reversalLong = touchedLb && closeHigh && maRising;
 
-        if (
-          !isNum(price) ||
-          ub === null ||
-          lb === null ||
-          ma === null ||
-          width === null
-        )
-          return d;
+      let score = 0;
+      if (maRising) score += 20;
+      if (priceAboveMa) score += 20;
+      if (breakoutUp) score += 40;
+      if (reversalLong) score += 30;
 
-        // 1. Trend Filter
-        const maRising = ma > (prev.bollMa || 0);
-        const priceAboveMa = price > ma;
+      let buySignal: number | null = null;
+      let exitSignal: number | null = null;
+      let buyReason: string | undefined;
+      let exitReason: string | undefined;
 
-        // 2. Squeeze Breakout Condition
-        // BandWidth low (< 0.10 or relative low - using 0.15 as generic placeholder for "tight")
-        // Note: Absolute bandwidth depends on asset class. Percentage width is safer.
-        // README says < 30% percentile, which requires history.
-        // Simplified: width < 0.10 (10%) is often "squeeze" for stocks. Let's use 0.15 for now.
-        const isSqueeze = width < 0.15;
-        const breakoutUp =
-          isSqueeze && price > ub && (d.v || 0) > (prev.v || 0) * 1.3; // Volume spike
-
-        // 3. Reversal (Long)
-        // Price touched Lower Band then closed higher (Hammer/Pinbar logic simplified)
-        const touchedLb = (d.l || 0) <= lb;
-        const closeHigh = price > (d.o || 0);
-        const reversalLong = touchedLb && closeHigh && maRising; // Trend following dip buy
-
-        // Scoring for BUY
-        let score = 0;
-        if (maRising) score += 20;
-        if (priceAboveMa) score += 20;
-        if (breakoutUp) score += 40; // High weight for breakout
-        if (reversalLong) score += 30;
-
-        let buySignal: number | null = null;
-        let exitSignal: number | null = null;
-        let buyReason: string | undefined;
-        let exitReason: string | undefined;
-
-        if (lastSignalState === "buy") {
-          // Exit Logic
-          // 1. Price falls below MA (Trend break)
-          // 2. Price touches UB then fails to make new high (simplified: close < prev close after touching UB) - too noisy?
-          // Let's use simple MA break or strict Hard Stop below previous low.
-          if (price < ma) {
-            exitSignal = (d.h || 0) * 1.02;
-            exitReason = "跌破中軌";
-            lastSignalState = "neutral";
-          }
-        } else {
-          // Buy Logic
-          // Score threshold or specific setup
-          if ((breakoutUp || reversalLong) && score >= 50) {
-            buySignal = (d.l || 0) * 0.98;
-            buyReason = "突破/反轉";
-            lastSignalState = "buy";
-          }
+      if (lastSignalState === "buy") {
+        if (price < ma) {
+          exitSignal = (d.h || 0) * 1.02;
+          exitReason = "跌破中軌";
+          lastSignalState = "neutral";
         }
+      } else {
+        if ((breakoutUp || reversalLong) && score >= 50) {
+          buySignal = (d.l || 0) * 0.98;
+          buyReason = "突破/反轉";
+          lastSignalState = "buy";
+        }
+      }
 
-        return {
-          ...d,
-          buySignal,
-          exitSignal,
-          buyReason,
-          exitReason,
-        };
-      })
-      .slice(
-        -(visibleCount + rightOffset),
-        rightOffset === 0 ? undefined : -rightOffset,
+      return {
+        ...d,
+        buySignal,
+        exitSignal,
+        buyReason,
+        exitReason,
+      } as BolleanChartData;
+    });
+  }, [deals, settings]);
+
+  const chartData = useMemo(() => {
+    return allPointsWithIndicators.slice(
+      -(visibleCount + rightOffset),
+      rightOffset === 0 ? undefined : -rightOffset,
+    );
+  }, [allPointsWithIndicators, visibleCount, rightOffset]);
+
+  const yDomain = useMemo(() => {
+    if (chartData.length === 0) return ["auto", "auto"];
+
+    let min = Infinity;
+    let max = -Infinity;
+
+    chartData.forEach((d: any) => {
+      // Include Price
+      if (d.h != null && d.h > max) max = d.h;
+      if (d.l != null && d.l < min) min = d.l;
+
+      // Include Bollinger Bands
+      if (d.bollUb != null && d.bollUb > max) max = d.bollUb;
+      if (d.bollLb != null && d.bollLb < min) min = d.bollLb;
+      if (d.kcDynamicStop != null && d.kcDynamicStop < min)
+        min = d.kcDynamicStop;
+      if (d.kcDynamicStop != null && d.kcDynamicStop > max)
+        max = d.kcDynamicStop;
+    });
+
+    if (min === Infinity || max === -Infinity) return ["auto", "auto"];
+
+    const range = max - min;
+    const padding = range * 0.05; // 5% padding
+    return [min - padding, max + padding];
+  }, [chartData]);
+
+  const channelInfo = useMemo(() => {
+    if (isLocked && lockedInfo) return lockedInfo;
+    if (chartData.length === 0) return null;
+
+    // Requirements: dynamic points based on channelPeriod
+    const n = Math.min(channelPeriod, chartData.length);
+    const calculationSlice = chartData.slice(-n);
+
+    const highs = calculationSlice.map((d) => d.h as number | null);
+    const lows = calculationSlice.map((d) => d.l as number | null);
+
+    return calculateChannel(highs, lows, channelMultiplier);
+  }, [chartData, isLocked, lockedInfo, channelPeriod, channelMultiplier]);
+
+  const handleToggleLock = (checked: boolean) => {
+    if (checked) {
+      if (!channelInfo || chartData.length === 0) return;
+      const n = Math.min(channelPeriod, chartData.length);
+      const anchorPoint = chartData[chartData.length - n];
+      if (!anchorPoint || anchorPoint.t === undefined) return;
+      setLockedInfo({
+        ...channelInfo,
+        anchorTime: anchorPoint.t,
+      });
+      setIsLocked(true);
+    } else {
+      setIsLocked(false);
+      setLockedInfo(null);
+    }
+  };
+
+  const finalChartData = useMemo(() => {
+    if (!channelInfo) return chartData;
+
+    let anchorIdx = -1;
+    if (isLocked && lockedInfo) {
+      anchorIdx = allPointsWithIndicators.findIndex(
+        (p) => p.t === lockedInfo.anchorTime,
       );
-  }, [deals, visibleCount, rightOffset]);
+    } else {
+      const n = Math.min(channelPeriod, chartData.length);
+      const startIndex = chartData.length - n;
+      return chartData.map((d, i) => {
+        const relativeIndex = i - startIndex;
+        const channelUb =
+          channelInfo.slope * relativeIndex + channelInfo.upperIntercept;
+        const channelLb =
+          channelInfo.slope * relativeIndex + channelInfo.lowerIntercept;
+        return { ...d, channelUb, channelLb };
+      });
+    }
 
-  // MA Deduction Points for BOLL chart
+    if (anchorIdx === -1) return chartData;
+
+    return chartData.map((d) => {
+      const currentFullIdx = allPointsWithIndicators.findIndex(
+        (p) => p.t === d.t,
+      );
+      if (currentFullIdx === -1) return d;
+
+      const relativeIndex = currentFullIdx - anchorIdx;
+      const channelUb =
+        channelInfo.slope * relativeIndex + channelInfo.upperIntercept;
+      const channelLb =
+        channelInfo.slope * relativeIndex + channelInfo.lowerIntercept;
+
+      return { ...d, channelUb, channelLb };
+    });
+  }, [chartData, channelInfo, isLocked, lockedInfo, allPointsWithIndicators]);
+
   const maDeductionPoints = useMemo(() => {
     if (chartData.length === 0) return [];
     const latest = chartData[chartData.length - 1];
@@ -333,13 +463,12 @@ export default function Bollean({
       { key: "deduction20", color: "#ff9800", period: settings.ma20 },
       { key: "deduction60", color: "#f44336", period: settings.ma60 },
       { key: "deduction120", color: "#4caf50", period: settings.ma120 },
+      { key: "deduction240", color: "#cc00ff", period: settings.ma240 },
     ];
 
     maConfigs.forEach((config) => {
       const t = (latest as any)[config.key];
       if (t) {
-        // Find price in full deals by current timestamp
-        // indicatorUtils already calculated these. We need price at time t.
         const fullData = calculateIndicators(deals, settings);
         const target = fullData.find((d) => d.t === t);
         if (target) {
@@ -356,148 +485,6 @@ export default function Bollean({
 
     return points;
   }, [chartData, deals, settings]);
-
-  const { steps, score, recommendation } = useMemo(() => {
-    if (chartData.length === 0)
-      return { steps: [], score: 0, recommendation: "" };
-
-    const current = chartData[chartData.length - 1];
-    const prev = chartData[chartData.length - 2] || current;
-
-    const isNum = (n: any): n is number => typeof n === "number";
-
-    const price = current.c;
-    const ub = current.bollUb;
-    const lb = current.bollLb;
-    const ma = current.bollMa;
-    const width = current.bandWidth;
-
-    // Safety
-    if (
-      !isNum(price) ||
-      !isNum(ub) ||
-      !isNum(lb) ||
-      !isNum(ma) ||
-      !isNum(width)
-    ) {
-      return { steps: [], score: 0, recommendation: "Data Error" };
-    }
-
-    // I. Market Environment
-    // 1. Band Width
-    const isSqueeze = width < 0.15; // < 15% width as proxy for "Low"
-    const isWide = width > 0.3; // > 30% as "High/Volatile"
-
-    // 2. Trend
-    const maSlope = ma - (prev.bollMa || ma);
-    const maRising = maSlope > 0;
-    const pricePosition =
-      price > ma ? "Bullish (Above MA)" : "Bearish (Below MA)";
-
-    // II. Entry Conditions
-    const volSpike = (current.v || 0) > (prev.v || 0) * 1.3;
-    const touchedLb = (current.l || 0) <= lb;
-    const reversalCandle = touchedLb && price > (current.o || 0); // Simple check
-
-    // III. Risk
-    const stopLoss = price > ma ? ma.toFixed(2) : (price * 0.98).toFixed(2); // Simple rule
-
-    // IV. Score
-    let totalScore = 0;
-    // Trend (40%)
-    if (maRising) totalScore += 20;
-    if (price > ma) totalScore += 20;
-    // Volatility (20%)
-    if (!isWide) totalScore += 20; // Prefer not too volatile unless breaking out
-    // Signal (40%)
-    if (volSpike) totalScore += 20;
-    if (reversalCandle || (price > ub && isSqueeze)) totalScore += 20;
-
-    let rec = "Reject";
-    if (totalScore >= 80) rec = "Strong Buy";
-    else if (totalScore >= 60) rec = "Watch";
-    else rec = "Neutral";
-
-    const bolleanSteps: BolleanStep[] = [
-      {
-        label: "I. 綜合評估",
-        description: `得分: ${totalScore} - ${rec}`,
-        checks: [
-          { label: "趨勢明確 (MA斜率)", status: maRising ? "pass" : "fail" },
-          { label: "成交量配合", status: volSpike ? "pass" : "manual" },
-          { label: "無假突破跡象", status: "manual" },
-        ],
-      },
-      {
-        label: "II. 市場環境",
-        description: "波動度與趨勢 (Macro & Regime)",
-        checks: [
-          {
-            label: `帶寬狀態: ${
-              isSqueeze ? "壓縮 (<15%)" : isWide ? "擴張 (>30%)" : "正常"
-            }`,
-            status: "manual",
-          },
-          {
-            label: `趨勢方向: ${maRising ? "上彎 (偏多)" : "下彎 (偏空)"}`,
-            status: maRising ? "pass" : "fail",
-          },
-          {
-            label: `價格位置: ${pricePosition}`,
-            status: price > ma ? "pass" : "fail",
-          },
-        ],
-      },
-      {
-        label: "III. 入場條件",
-        description: "多/空策略與突破 (Entry)",
-        checks: [
-          {
-            label: "突破上軌且放量 (Squeeze Breakout)",
-            status: price > ub && volSpike ? "pass" : "fail",
-          },
-          {
-            label: "觸及下軌並反轉 (Reversal)",
-            status: reversalCandle ? "pass" : "fail",
-          },
-          {
-            label: "中軌向上支撐",
-            status: maRising && price > ma ? "pass" : "fail",
-          },
-        ],
-      },
-      {
-        label: "IV. 風險控管",
-        description: "停損與部位 (Risk Control)",
-        checks: [
-          { label: `建議停損位: ${stopLoss} (中軌)`, status: "manual" },
-          {
-            label: `帶寬: ${(width * 100).toFixed(1)}% (過寬減倉)`,
-            status: isWide ? "fail" : "pass",
-          },
-          { label: "單筆風險 < 1.5%", status: "manual" },
-        ],
-      },
-    ];
-
-    return { steps: bolleanSteps, score: totalScore, recommendation: rec };
-  }, [chartData]);
-
-  const handleStep = (step: number) => () => {
-    setActiveStep(step);
-  };
-
-  const getStatusIcon = (status: CheckStatus) => {
-    switch (status) {
-      case "pass":
-        return <CheckCircleIcon fontSize="small" color="success" />;
-      case "fail":
-        return <CancelIcon fontSize="small" color="error" />;
-      case "manual":
-      default:
-        return <HelpOutlineIcon fontSize="small" color="disabled" />;
-    }
-  };
 
   if (chartData.length === 0) {
     return (
@@ -527,63 +514,247 @@ export default function Bollean({
     >
       <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
         <MuiTooltip title={<Fundamental id={id} />} arrow>
-          <Typography variant="h6" component="div" color="white">
+          <Typography variant="h6" component="div" color="white" sx={{ mr: 2 }}>
             Bolling
           </Typography>
         </MuiTooltip>
 
-        <Chip
-          label={`${score}分 - ${recommendation}`}
-          color={score >= 80 ? "success" : score >= 60 ? "warning" : "error"}
-          variant="outlined"
-          size="small"
-        />
+        <Box
+          sx={{ flexGrow: 1, display: "flex", gap: 2, alignItems: "center" }}
+        >
+          {channelInfo && (
+            <Chip
+              label={
+                channelInfo.type === "ascending"
+                  ? "上升通道"
+                  : channelInfo.type === "descending"
+                    ? "下降通道"
+                    : "橫盤通道"
+              }
+              color="secondary"
+              variant="filled"
+              size="small"
+              sx={{ height: 24, fontSize: "0.75rem" }}
+            />
+          )}
 
-        <Divider orientation="vertical" flexItem />
-        <Box sx={{ flexGrow: 1 }}>
-          <Stepper nonLinear activeStep={activeStep}>
-            {steps.map((step, index) => (
-              <Step key={step.label}>
-                <StepButton color="inherit" onClick={handleStep(index)}>
-                  {step.label}
-                </StepButton>
-              </Step>
-            ))}
-          </Stepper>
-        </Box>
-      </Stack>
+          <Divider orientation="vertical" flexItem sx={{ mx: 1, height: 24 }} />
 
-      <Card variant="outlined" sx={{ mb: 1, bgcolor: "background.default" }}>
-        <CardContent sx={{ py: 1, "&:last-child": { pb: 1 } }}>
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={1}
-            alignItems="center"
-          >
-            <Typography variant="subtitle2" color="primary" fontWeight="bold">
-              {steps[activeStep]?.description}
-            </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              {steps[activeStep]?.checks.map((check, idx) => (
-                <Chip
-                  key={idx}
-                  icon={getStatusIcon(check.status)}
-                  label={check.label}
-                  variant="outlined"
-                  color={
-                    check.status === "pass"
-                      ? "success"
-                      : check.status === "fail"
-                        ? "error"
-                        : "default"
-                  }
-                  size="small"
-                />
-              ))}
-            </Stack>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <Chip
+                icon={
+                  showChannel ? (
+                    <VisibilityIcon fontSize="small" />
+                  ) : (
+                    <VisibilityOffIcon fontSize="small" />
+                  )
+                }
+                label="通道"
+                size="small"
+                onClick={() => setShowChannel(!showChannel)}
+                variant={showChannel ? "filled" : "outlined"}
+                color={showChannel ? "secondary" : "default"}
+                sx={{
+                  height: 24,
+                  fontSize: "0.75rem",
+                  fontWeight: showChannel ? "bold" : "normal",
+                  transition: "all 0.2s",
+                  borderColor: showChannel ? "secondary.main" : "#444",
+                  "&:hover": {
+                    transform: "translateY(-1px)",
+                    boxShadow: showChannel
+                      ? "0 2px 8px rgba(156, 39, 176, 0.3)"
+                      : "none",
+                  },
+                }}
+              />
+              <IconButton
+                size="small"
+                onClick={handleOpenChannelSettings}
+                color="secondary"
+                sx={{
+                  p: 0.4,
+                  transition: "transform 0.2s",
+                  "&:hover": { transform: "rotate(45deg)" },
+                }}
+              >
+                <SettingsIcon sx={{ fontSize: "1rem" }} />
+              </IconButton>
+            </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <Chip
+                icon={
+                  showKc ? (
+                    <VisibilityIcon fontSize="small" />
+                  ) : (
+                    <VisibilityOffIcon fontSize="small" />
+                  )
+                }
+                label="動態防線"
+                size="small"
+                onClick={() => setShowKc(!showKc)}
+                variant={showKc ? "filled" : "outlined"}
+                color={showKc ? "warning" : "default"}
+                sx={{
+                  height: 24,
+                  fontSize: "0.75rem",
+                  fontWeight: showKc ? "bold" : "normal",
+                  transition: "all 0.2s",
+                  borderColor: showKc ? "warning.main" : "#444",
+                  "&:hover": {
+                    transform: "translateY(-1px)",
+                    boxShadow: showKc
+                      ? "0 2px 8px rgba(255, 152, 0, 0.3)"
+                      : "none",
+                  },
+                }}
+              />
+              <IconButton
+                size="small"
+                onClick={handleOpenKcSettings}
+                color="warning"
+                sx={{
+                  p: 0.4,
+                  transition: "transform 0.2s",
+                  "&:hover": { transform: "rotate(45deg)" },
+                }}
+              >
+                <SettingsIcon sx={{ fontSize: "1rem" }} />
+              </IconButton>
+            </Box>
+
+            {showChannel && (
+              <Chip
+                icon={
+                  isLocked ? (
+                    <LockIcon fontSize="small" />
+                  ) : (
+                    <LockOpenIcon fontSize="small" />
+                  )
+                }
+                label="固定"
+                size="small"
+                onClick={() => handleToggleLock(!isLocked)}
+                variant={isLocked ? "filled" : "outlined"}
+                color={isLocked ? "warning" : "default"}
+                sx={{
+                  height: 24,
+                  fontSize: "0.75rem",
+                  fontWeight: isLocked ? "bold" : "normal",
+                  transition: "all 0.2s",
+                  borderColor: isLocked ? "warning.main" : "#444",
+                  "&:hover": {
+                    transform: "translateY(-1px)",
+                    boxShadow: isLocked
+                      ? "0 2px 8px rgba(237, 108, 2, 0.3)"
+                      : "none",
+                  },
+                }}
+              />
+            )}
           </Stack>
-        </CardContent>
-      </Card>
+        </Box>
+        <Menu
+          anchorEl={channelAnchorEl}
+          open={Boolean(channelAnchorEl)}
+          onClose={handleCloseChannelSettings}
+          PaperProps={{
+            sx: { p: 2, width: 250, bgcolor: "background.paper" },
+          }}
+        >
+          <Typography variant="subtitle2" gutterBottom>
+            通道參數調校
+          </Typography>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="caption" color="text.secondary">
+              計算長度: {channelPeriod} 根
+            </Typography>
+            <Slider
+              value={channelPeriod}
+              min={10}
+              max={200}
+              step={1}
+              onChange={(_, v) => setChannelPeriod(v as number)}
+              size="small"
+            />
+          </Box>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="caption" color="text.secondary">
+              標準差倍數: {channelMultiplier.toFixed(1)}
+            </Typography>
+            <Slider
+              value={channelMultiplier}
+              min={0.5}
+              max={5.0}
+              step={0.1}
+              onChange={(_, v) => setChannelMultiplier(v as number)}
+              size="small"
+              color="secondary"
+            />
+          </Box>
+          <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
+            <Button
+              size="small"
+              onClick={handleResetChannel}
+              sx={{ color: "secondary.main", fontWeight: "bold" }}
+            >
+              回復預設
+            </Button>
+          </Box>
+        </Menu>
+
+        <Menu
+          anchorEl={kcAnchorEl}
+          open={Boolean(kcAnchorEl)}
+          onClose={handleCloseKcSettings}
+          PaperProps={{
+            sx: { p: 2, width: 250, bgcolor: "background.paper" },
+          }}
+        >
+          <Typography variant="subtitle2" gutterBottom>
+            動態防線 (KC)
+          </Typography>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="caption" color="text.secondary">
+              計算長度: {settings.kcLength} 根
+            </Typography>
+            <Slider
+              value={settings.kcLength}
+              min={5}
+              max={100}
+              step={1}
+              onChange={(_, v) => updateSetting("kcLength", v as number)}
+              size="small"
+              color="warning"
+            />
+          </Box>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="caption" color="text.secondary">
+              標準差倍數: {settings.kcMult.toFixed(1)}
+            </Typography>
+            <Slider
+              value={settings.kcMult}
+              min={0.5}
+              max={5.0}
+              step={0.1}
+              onChange={(_, v) => updateSetting("kcMult", v as number)}
+              size="small"
+              color="warning"
+            />
+          </Box>
+          <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
+            <Button
+              size="small"
+              onClick={resetSettings}
+              sx={{ color: "warning.main", fontWeight: "bold" }}
+            >
+              全部回復預設
+            </Button>
+          </Box>
+        </Menu>
+      </Stack>
 
       <Box
         ref={chartContainerRef}
@@ -591,12 +762,12 @@ export default function Bollean({
       >
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
-            data={chartData}
+            data={finalChartData}
             margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
             <XAxis dataKey="t" hide />
-            <YAxis domain={["auto", "auto"]} />
+            <YAxis domain={yDomain} allowDataOverflow={true} />
             <YAxis
               yAxisId="right"
               orientation="right"
@@ -607,7 +778,11 @@ export default function Bollean({
             />
 
             <Tooltip
-              content={<ChartTooltip hideKeys={["buySignal", "exitSignal"]} />}
+              content={
+                <ChartTooltip
+                  hideKeys={["buySignal", "exitSignal", "kcExitSignal"]}
+                />
+              }
               offset={50}
             />
 
@@ -649,57 +824,92 @@ export default function Bollean({
             />
             <Customized component={BaseCandlestickRectangle} />
 
-            {(activeStep === 0 || activeStep === 2) && (
-              <Bar
-                dataKey="v"
-                yAxisId="right"
-                fill="#90caf9"
-                opacity={0.3}
-                name="Volume"
-                barSize={10}
-              />
-            )}
+            <Bar
+              dataKey="v"
+              yAxisId="right"
+              fill="#90caf9"
+              opacity={0.3}
+              name="Volume"
+              barSize={10}
+            />
 
             <Line
               dataKey="bollMa"
               stroke="#2196f3"
-              strokeWidth={1.5}
+              strokeWidth={1}
               dot={false}
               activeDot={false}
               name={`${settings.boll} MA (Mid)`}
             />
             <Line
               dataKey="bollUb"
-              stroke="#ff9800"
-              strokeDasharray="3 3"
+              stroke="#00bcd4"
+              strokeWidth={1.7}
               dot={false}
               activeDot={false}
               name="Upper Band"
             />
             <Line
               dataKey="bollLb"
-              stroke="#ff9800"
-              strokeDasharray="3 3"
+              stroke="#00bcd4"
+              strokeWidth={1.7}
               dot={false}
               activeDot={false}
               name="Lower Band"
             />
 
-            {/* Signals */}
-            {(activeStep === 0 || activeStep === 2) && (
+            {/* Price Channel lines */}
+            {showChannel && (
               <>
-                <Scatter
-                  dataKey="buySignal"
-                  shape={<BuyArrow />}
-                  legendType="none"
+                <Line
+                  dataKey="channelUb"
+                  stroke="#d286ee"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={false}
+                  name="Channel Upper"
+                />
+                <Line
+                  dataKey="channelLb"
+                  stroke="#d286ee"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={false}
+                  name="Channel Lower"
+                />
+              </>
+            )}
+
+            {/* KC Dynamic Defense Line */}
+            {showKc && (
+              <>
+                <Line
+                  dataKey="kcDynamicStop"
+                  stroke="#ff9800"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={false}
+                  name="動態防線"
                 />
                 <Scatter
-                  dataKey="exitSignal"
-                  shape={<ExitArrow />}
+                  dataKey="kcExitSignal"
+                  shape={<KcXMarker />}
                   legendType="none"
                 />
               </>
             )}
+
+            {/* Signals */}
+            <Scatter
+              dataKey="buySignal"
+              shape={<BuyArrow />}
+              legendType="none"
+            />
+            <Scatter
+              dataKey="exitSignal"
+              shape={<ExitArrow />}
+              legendType="none"
+            />
 
             {/* Deduction Markers */}
             {maDeductionPoints.map((p) => (

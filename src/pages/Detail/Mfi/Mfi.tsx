@@ -1,22 +1,12 @@
-import CancelIcon from "@mui/icons-material/Cancel";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import {
   Box,
-  Card,
-  CardContent,
-  Chip,
   CircularProgress,
   Container,
-  Divider,
   Tooltip as MuiTooltip,
   Stack,
-  Step,
-  StepButton,
-  Stepper,
   Typography,
 } from "@mui/material";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef } from "react";
 import {
   Bar,
   CartesianGrid,
@@ -31,7 +21,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import macd from "../../../cls_tools/macd";
 import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
 import { DealsContext } from "../../../context/DealsContext";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
@@ -70,21 +59,8 @@ interface MfiChartData extends Partial<EnhancedDealData> {
   // MACD
   macdOsc?: number | null;
   macdDif?: number | null;
-  macdDem?: number | null;
 }
 
-type CheckStatus = "pass" | "fail" | "manual";
-
-interface StepCheck {
-  label: string;
-  status: CheckStatus;
-}
-
-interface MfiStep {
-  label: string;
-  description: string;
-  checks: StepCheck[];
-}
 
 export default function Mfi({
   visibleCount,
@@ -99,16 +75,6 @@ export default function Mfi({
 }) {
   const deals = useContext(DealsContext);
   const { settings } = useIndicatorSettings();
-  const [activeStep, setActiveStep] = useState(0);
-
-  useEffect(() => {
-    const handleSwitchStep = () => {
-      setActiveStep((prev) => (prev + 1) % 4); // 4 steps total
-    };
-    window.addEventListener("detail-switch-step", handleSwitchStep);
-    return () =>
-      window.removeEventListener("detail-switch-step", handleSwitchStep);
-  }, []);
 
   // Zoom & Pan Control
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -186,22 +152,16 @@ export default function Mfi({
   const chartData = useMemo((): MfiChartData[] => {
     if (!deals || deals.length === 0) return [];
 
-    // 1. Initial enhancement (MAs, Boll, RSI, MFI)
     const enhancedData = calculateIndicators(deals, settings);
 
-    // 2. Full dataset signal calculation
-    let macdState = macd.init(deals[0]);
-    const fullDataWithMacd = enhancedData.map((d, i) => {
-      if (i > 0) macdState = macd.next(d as any, macdState);
-      return {
-        ...d,
-        macdOsc: macdState.osc,
-        macdDif: (macdState as any).dif,
-        macdDem: (macdState as any).dem,
-      };
-    });
+    // Map MACD fields for compatibility
+    const dataWithMacd = enhancedData.map((d) => ({
+      ...d,
+      macdOsc: d.osc,
+      macdDif: d.dif,
+    }));
 
-    const fullDataWithSignals = fullDataWithMacd.map((d, i, arr) => {
+    const fullDataWithSignals = dataWithMacd.map((d, i, arr) => {
       let buySignal: number | null = null;
       let exitSignal: number | null = null;
       let accumulationSignal: number | null = null;
@@ -226,11 +186,7 @@ export default function Mfi({
         }
 
         // v2.0 Accumulation Signal (吸籌確認)
-        // Conditions: MFI < 30 + Hook Up + Low Vol + (Box<3% or Support) + MACD Improving
         if (currMfi < 30 && currMfi > prevMfi) {
-          // Data Prep
-          // Note: using simple loop for extrema might be slow if array is huge, but fine for typical chart
-          // We need access to highs/lows. arr has them.
           const highs = arr.map((x) => x.h || 0);
           const lows = arr.map((x) => x.l || 0);
           const resistance = getExtrema(highs, i, 20, "MAX");
@@ -262,162 +218,12 @@ export default function Mfi({
       };
     });
 
-    // 3. Slice for visible area
-    const slicedData = fullDataWithSignals.slice(
+    return fullDataWithSignals.slice(
       -(visibleCount + rightOffset),
       rightOffset === 0 ? undefined : -rightOffset,
     );
-
-    return slicedData;
   }, [deals, settings, visibleCount, rightOffset]);
 
-  const { steps, score, recommendation } = useMemo(() => {
-    if (chartData.length === 0)
-      return { steps: [], score: 0, recommendation: "" };
-
-    const current = chartData[chartData.length - 1];
-    const prev = chartData[chartData.length - 2] || current;
-
-    const isNum = (n: any): n is number => typeof n === "number";
-
-    const price = current.c;
-    const mfiVal = current.mfi;
-    const bollMa = current.bollMa;
-    const vol = current.v;
-    const volMa = current.volMa20;
-    const macdOsc = current.macdOsc || 0;
-
-    if (
-      !isNum(price) ||
-      !isNum(mfiVal) ||
-      !isNum(bollMa) ||
-      !isNum(vol) ||
-      !isNum(volMa)
-    ) {
-      return { steps: [], score: 0, recommendation: "Data Error" };
-    }
-
-    // I. Regime
-    const volRatio = vol / volMa;
-    const isVolStable = volRatio > 0.6; // Not dead volume
-    const bollMaRising = bollMa > (prev.bollMa || 0);
-    const trendStatus = bollMaRising ? "Uptrend" : "Downtrend/Flat";
-
-    // II. Entry
-    const isOversold = mfiVal < 20;
-    const isOverbought = mfiVal > 80;
-    const mfiRising = mfiVal > (prev.mfi || 0);
-    const macdBullish = macdOsc > 0 && macdOsc > (prev.macdOsc || 0);
-
-    // III. Risk
-    const stopLoss = (price * 0.97).toFixed(2); // 3% trail or recent low
-
-    // Score
-    let totalScore = 0;
-    // 1. Volume (20)
-    if (isVolStable) totalScore += 20;
-    // 2. Trend (20)
-    if (bollMaRising || price > bollMa) totalScore += 20;
-    // 3. MFI Position (30)
-    if (isOversold && mfiRising)
-      totalScore += 30; // Perfect buy setup
-    else if (mfiVal > 40 && mfiVal < 60 && mfiRising && price > bollMa)
-      totalScore += 20; // Momentum continuation
-    else if (isOverbought) totalScore -= 20; // Warning
-
-    // 4. MACD Confirmation (10)
-    if (macdBullish) totalScore += 10;
-
-    // 5. Price Action (20)
-    if (price > (current.o || 0)) totalScore += 20; // Green candle
-
-    if (totalScore < 0) totalScore = 0;
-    if (totalScore > 100) totalScore = 100;
-
-    let rec = "Reject";
-    if (totalScore >= 80) rec = "Strong Buy";
-    else if (totalScore >= 60) rec = "Watch";
-    else if (isOverbought) rec = "Sell/Exit";
-    else rec = "Neutral";
-
-    const mfiSteps: MfiStep[] = [
-      {
-        label: "I. 綜合評估",
-        description: `得分: ${totalScore} - ${rec}`,
-        checks: [
-          {
-            label: "趨勢動能強 (MFI > 50 & Rising)",
-            status: mfiVal > 50 && mfiRising ? "pass" : "fail",
-          },
-          { label: "無頂部背離 (Bearish Div)", status: "manual" },
-          { label: "量價配合", status: isVolStable ? "pass" : "manual" },
-        ],
-      },
-      {
-        label: "II. 市場環境",
-        description: "流動性與趨勢 (Regime)",
-        checks: [
-          {
-            label: `成交量穩定 (>60% MA): ${(volRatio * 100).toFixed(0)}%`,
-            status: isVolStable ? "pass" : "fail",
-          },
-          {
-            label: `趨勢方向 (中軌): ${trendStatus}`,
-            status: bollMaRising ? "pass" : "manual",
-          },
-          { label: "波動度正常 (ATR)", status: "manual" },
-        ],
-      },
-      {
-        label: "III. 入場條件",
-        description: "超賣反轉或動能 (Entry)",
-        checks: [
-          {
-            label: `MFI < 20 (超賣): ${mfiVal.toFixed(1)}`,
-            status: isOversold ? "pass" : mfiVal < 30 ? "manual" : "fail",
-          },
-          {
-            label: "MFI 低點抬高 (Turn Up)",
-            status: mfiVal > (prev.mfi || 0) ? "pass" : "fail",
-          },
-          {
-            label: `MACD 翻紅: ${macdBullish ? "Yes" : "No"}`,
-            status: macdBullish ? "pass" : "manual",
-          },
-        ],
-      },
-      {
-        label: "IV. 風險控管",
-        description: "停損與部位 (Risk)",
-        checks: [
-          { label: `建議停損: ${stopLoss}`, status: "manual" },
-          {
-            label: "MFI 極端值減倉 (<15/>85)",
-            status: mfiVal < 15 || mfiVal > 85 ? "fail" : "pass",
-          },
-          { label: "單筆風險 < 1.2%", status: "manual" },
-        ],
-      },
-    ];
-
-    return { steps: mfiSteps, score: totalScore, recommendation: rec };
-  }, [chartData]);
-
-  const handleStep = (step: number) => () => {
-    setActiveStep(step);
-  };
-
-  const getStatusIcon = (status: CheckStatus) => {
-    switch (status) {
-      case "pass":
-        return <CheckCircleIcon fontSize="small" color="success" />;
-      case "fail":
-        return <CancelIcon fontSize="small" color="error" />;
-      case "manual":
-      default:
-        return <HelpOutlineIcon fontSize="small" color="disabled" />;
-    }
-  };
 
   if (chartData.length === 0) {
     return (
@@ -447,63 +253,12 @@ export default function Mfi({
     >
       <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
         <MuiTooltip title="MFI 較敏感，MACD 較穩重。兩者結合可減少 MFI 頻繁震盪產生的雜訊。\n 價格是否觸碰布林軌道邊界?MACD 是否出現轉向交叉? 有的話可信度越高">
-          <Typography variant="h6" component="div" color="white">
+          <Typography variant="h6" component="div" color="white" sx={{ mr: 2 }}>
             MFI
           </Typography>
         </MuiTooltip>
-
-        <Chip
-          label={`${score}分 - ${recommendation}`}
-          color={score >= 80 ? "success" : score >= 60 ? "warning" : "error"}
-          variant="outlined"
-          size="small"
-        />
-
-        <Divider orientation="vertical" flexItem />
-        <Box sx={{ flexGrow: 1 }}>
-          <Stepper nonLinear activeStep={activeStep}>
-            {steps.map((step, index) => (
-              <Step key={step.label}>
-                <StepButton color="inherit" onClick={handleStep(index)}>
-                  {step.label}
-                </StepButton>
-              </Step>
-            ))}
-          </Stepper>
-        </Box>
       </Stack>
 
-      <Card variant="outlined" sx={{ mb: 1, bgcolor: "background.default" }}>
-        <CardContent sx={{ py: 1, "&:last-child": { pb: 1 } }}>
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={1}
-            alignItems="center"
-          >
-            <Typography variant="subtitle2" color="primary" fontWeight="bold">
-              {steps[activeStep]?.description}
-            </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              {steps[activeStep]?.checks.map((check, idx) => (
-                <Chip
-                  key={idx}
-                  icon={getStatusIcon(check.status)}
-                  label={check.label}
-                  variant="outlined"
-                  color={
-                    check.status === "pass"
-                      ? "success"
-                      : check.status === "fail"
-                        ? "error"
-                        : "default"
-                  }
-                  size="small"
-                />
-              ))}
-            </Stack>
-          </Stack>
-        </CardContent>
-      </Card>
 
       <Box
         ref={chartContainerRef}

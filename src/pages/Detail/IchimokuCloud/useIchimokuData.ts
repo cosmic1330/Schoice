@@ -19,9 +19,35 @@ const getNextTradingTime = (
 ): Date => {
   const nextDate = new Date(currentDate);
   if (perd === UrlTaPerdOptions.Hour) {
-    nextDate.setHours(nextDate.getHours() + 1); // Simplified for now, can copy complex logic if needed
+    const hours = nextDate.getHours();
+    const minutes = nextDate.getMinutes();
+
+    // 台股小時線序列: 10:00, 11:00, 12:00, 13:00, 13:30
+    if (hours < 10) {
+      nextDate.setHours(10, 0, 0, 0);
+    } else if (hours === 10) {
+      nextDate.setHours(11, 0, 0, 0);
+    } else if (hours === 11) {
+      nextDate.setHours(12, 0, 0, 0);
+    } else if (hours === 12) {
+      nextDate.setHours(13, 0, 0, 0);
+    } else if (hours === 13 && minutes < 30) {
+      nextDate.setHours(13, 30, 0, 0);
+    } else {
+      // 跨日到下一個交易日 10:00
+      nextDate.setDate(nextDate.getDate() + 1);
+      nextDate.setHours(10, 0, 0, 0);
+    }
+
+    // 跳過週末
+    while (nextDate.getDay() === 0 || nextDate.getDay() === 6) {
+      nextDate.setDate(nextDate.getDate() + 1);
+    }
   } else if (perd === UrlTaPerdOptions.Day) {
     nextDate.setDate(nextDate.getDate() + 1);
+    while (nextDate.getDay() === 0 || nextDate.getDay() === 6) {
+      nextDate.setDate(nextDate.getDate() + 1);
+    }
   } else if (perd === UrlTaPerdOptions.Week) {
     nextDate.setDate(nextDate.getDate() + 7);
   }
@@ -58,7 +84,7 @@ export const useIchimokuData = (
       return {
         combinedData: [],
         signals: [],
-        analysis: { steps: [], score: 0, recommendation: "Loading..." },
+        analysis: { steps: [] },
       };
     }
 
@@ -221,8 +247,6 @@ export const useIchimokuData = (
   return {
     chartData: slicedData,
     signals,
-    score: analysis.score,
-    recommendation: analysis.recommendation,
     steps: analysis.steps,
   };
 };
