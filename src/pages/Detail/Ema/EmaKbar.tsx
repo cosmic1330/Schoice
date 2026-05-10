@@ -614,8 +614,8 @@ export default function AvgMaKbar({
               yAxisId="statusAxis"
               isAnimationActive={false}
               shape={(props: any) => {
-                const { x, y, width, height, payload } = props;
-                const { marketType, mss } = payload;
+                const { x, width, payload } = props;
+                const { marketType } = payload;
                 let fill = "rgba(255,255,255,0.02)"; // Ranging (Grey)
                 if (marketType === "趨勢") {
                   fill = payload.diPlus > payload.diMinus ? "rgba(33, 150, 243, 0.2)" : "rgba(244, 67, 54, 0.2)";

@@ -56,6 +56,7 @@ export default function useFormatSkillData(data: TaListType) {
     let ema20_data = ema.init(init, 20);
     let ema60_data = ema.init(init, 60);
     let ema120_data = ema.init(init, 120);
+    let ema200_data = ema.init(init, 200);
     let boll_data = boll.init(init);
     let macd_data = macd.init(init);
     let kd_data = kd.init(init, 9);
@@ -94,6 +95,7 @@ export default function useFormatSkillData(data: TaListType) {
       ema20: ema20_data.ema,
       ema60: ema60_data.ema,
       ema120: ema120_data.ema,
+      ema200: ema200_data.ema,
       macd: macd_data.macd,
       dif: macd_data.dif[macd_data.dif.length - 1] || 0,
       osc: macd_data.osc,
@@ -142,6 +144,7 @@ export default function useFormatSkillData(data: TaListType) {
       ema20_data = ema.next(value, ema20_data, 20);
       ema60_data = ema.next(value, ema60_data, 60);
       ema120_data = ema.next(value, ema120_data, 120);
+      ema200_data = ema.next(value, ema200_data, 200);
       boll_data = boll.next(value, boll_data, 20);
       macd_data = macd.next(value, macd_data);
       kd_data = kd.next(value, kd_data, 9);
@@ -180,6 +183,7 @@ export default function useFormatSkillData(data: TaListType) {
         ema20: ema20_data.ema,
         ema60: ema60_data.ema,
         ema120: ema120_data.ema,
+        ema200: ema200_data.ema,
         macd: macd_data.macd,
         dif: macd_data.dif[macd_data.dif.length - 1] || 0,
         osc: macd_data.osc,

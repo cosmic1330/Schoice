@@ -790,6 +790,7 @@ export default class SyncEngine {
       ema20: ema.init(ta[0], 20),
       ema60: ema.init(ta[0], 60),
       ema120: ema.init(ta[0], 120),
+      ema200: ema.init(ta[0], 200),
       boll: boll.init(ta[0]),
       macd: macd.init(ta[0]),
       kd: kd.init(ta[0], 9),
@@ -826,6 +827,7 @@ export default class SyncEngine {
         state.ema20 = ema.next(val, state.ema20, 20);
         state.ema60 = ema.next(val, state.ema60, 60);
         state.ema120 = ema.next(val, state.ema120, 120);
+        state.ema200 = ema.next(val, state.ema200, 200);
         state.boll = boll.next(val, state.boll, 20);
         state.macd = macd.next(val, state.macd);
         state.kd = kd.next(val, state.kd, 9);
@@ -868,6 +870,7 @@ export default class SyncEngine {
           ema20: state.ema20.ema,
           ema60: state.ema60.ema,
           ema120: state.ema120.ema,
+          ema200: state.ema200.ema,
           macd: state.macd.macd,
           dif: state.macd.dif[state.macd.dif.length - 1] || 0,
           osc: state.macd.osc,

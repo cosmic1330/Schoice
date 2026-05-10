@@ -30,6 +30,7 @@ const NUMERIC_COLUMNS = [
   "ema20",
   "ema60",
   "ema120",
+  "ema200",
   "macd",
   "dif",
   "osc",

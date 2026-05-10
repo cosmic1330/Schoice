@@ -29,6 +29,7 @@ export class StockDailyQueryBuilder extends BaseQueryBuilder {
     ema20: { key: "ema20", group: "_day_ago_sk" },
     ema60: { key: "ema60", group: "_day_ago_sk" },
     ema120: { key: "ema120", group: "_day_ago_sk" },
+    ema200: { key: "ema200", group: "_day_ago_sk" },
     macd: { key: "macd", group: "_day_ago_sk" },
     dif: { key: "dif", group: "_day_ago_sk" },
     osc: { key: "osc", group: "_day_ago_sk" },

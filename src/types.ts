@@ -214,6 +214,7 @@ export type SkillsTableType = {
   ema20: number;
   ema60: number;
   ema120: number;
+  ema200: number;
   macd: number;
   dif: number;
   osc: number;
@@ -292,6 +293,7 @@ export type TimeSharingSkillsTableType = {
   ema20: number;
   ema60: number;
   ema120: number;
+  ema200: number;
   macd: number;
   dif: number;
   osc: number;

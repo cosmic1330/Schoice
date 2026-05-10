@@ -597,5 +597,18 @@ pub fn value() -> Vec<Migration> {
             ",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 15,
+            description: "add_ema200_to_skills_tables",
+            sql: "
+                ALTER TABLE daily_skills
+                    ADD COLUMN ema200 REAL;
+                ALTER TABLE weekly_skills
+                    ADD COLUMN ema200 REAL;
+                ALTER TABLE hourly_skills
+                    ADD COLUMN ema200 REAL;
+            ",
+            kind: MigrationKind::Up,
+        },
     ]
 }
