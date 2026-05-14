@@ -31,6 +31,8 @@
   - *TL;DR: 強制使用 `YYYYMMDD` 格式；包含併發限制(1)、隨機延遲與 3 分鐘自動熔斷機制。*
 - 🟢 **[G-006: BDD 行為驅動開發規範表](../active-tasks/REQ-000_Template.md)**
   - *TL;DR: 所有顯著開發必須包含 Given/When/Then 劇本，確保在實作前定義清晰行為邊界。*
+- 🟢 **[G-007: 爬蟲驗證與改版適應測試規範](../active-tasks/constraints/G-007_ScraperValidation.md)**
+  - *TL;DR: 遇到爬蟲失效或網頁改版時，禁止直接改正式代碼，強制優先使用 `scratch/` 下的獨立指令碼進行隔離驗證與診斷。*
 
 ### 功能需求 (Functional Requirements)
 *(已完成的任務檔案已依據 Lean 規範刪除，內容併入主文檔)*
@@ -46,3 +48,4 @@
 - 🔵 REQ-012: [修復週轉率計算異常](../active-tasks/REQ-012_FixTurnoverRateZero.md) (Completed)
 - 🔵 REQ-013: [修正回測週資料選擇邏輯](../active-tasks/REQ-013_FixBacktestWeeklyDataSelection.md) (Completed)
 - 🔵 REQ-014: [重構 weekDate 為 weekIndex](../active-tasks/REQ-014_RefactorWeekDateToWeekIndex.md) (Completed)
+- 🔵 REQ-015: [修正 Yahoo 基本面爬蟲同步失效及改版適應](../active-tasks/REQ-015_FixScraperRevenueSync.md) (Completed)

@@ -214,18 +214,31 @@ export default class SyncEngine {
         dates[0] ||
         String(dateFormat(new Date().getTime(), Mode.TimeStampToNumber));
 
+      const d = new Date();
+      const currMonth = d.getMonth() + 1;
+      let expectedRevMonth = currMonth - 1;
+      if (d.getDate() < 10) expectedRevMonth = currMonth - 2;
+      if (expectedRevMonth <= 0) expectedRevMonth += 12;
+
+      const expectedStr1 = `${expectedRevMonth < 10 ? '0' : ''}${expectedRevMonth}月`;
+      const expectedStr2 = `/${expectedRevMonth < 10 ? '0' : ''}${expectedRevMonth}`;
+
       menu.forEach((stock) => {
         const info = snapshot[stock.stock_id];
         if (!info) {
           healthMap[stock.stock_id] = "missing";
-        } else if (
-          info.last_date < today ||
-          !info.has_ext_data ||
-          forceExtData
-        ) {
-          healthMap[stock.stock_id] = "stale";
         } else {
-          healthMap[stock.stock_id] = "fresh";
+          const isRevStale = info.revenue_last_month ? (!info.revenue_last_month.includes(expectedStr1) && !info.revenue_last_month.includes(expectedStr2)) : true;
+          if (
+            info.last_date < today ||
+            !info.has_ext_data ||
+            isRevStale ||
+            forceExtData
+          ) {
+            healthMap[stock.stock_id] = "stale";
+          } else {
+            healthMap[stock.stock_id] = "fresh";
+          }
         }
       });
 
@@ -490,7 +503,7 @@ export default class SyncEngine {
       skipTaFetch
         ? Promise.resolve(null as any)
         : this.fetchData(stock, UrlTaPerdOptions.Hour),
-      fetchStockExtData(stock.stock_id), // New detailed fetcher
+      fetchStockExtData(stock.stock_id, stock.market_type), // New detailed fetcher
     ]);
 
     // [CRITICAL] Always ensure stock exists in local DB before saving relations
