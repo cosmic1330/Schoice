@@ -4,6 +4,7 @@
 
 ## 2026-06-03
 - [Detail/Sync] [REQ-016] 同步與重構股票詳細資訊頁面：將 `SLstening` 的 `src/pages/Detail` 目錄下的多時框技術指標頁面（CCI、唐奇通道、CMF、ATR、KD 等）以及模組化指標渲染架構 `CHART_CONFIG` 同步至 `schoice`；升級 `useIndicatorSettings.ts` 和 `indicatorUtils.ts` 以完全支援新指標參數及背離檢測；重構 `Detail/index.tsx` 以維持 Yahoo Finance SWR 網路數據抓取 API，保證向前相容性。
+- [Header/Fix] 修正 `MarketSentiment` 頂欄大盤與期指價格漲跌幅數值錯誤：改為直接解析 Yahoo Finance API 回傳的 `meta` 欄位，提取最即時實時價格 `regularMarketPrice` 與官方昨日收盤價 `previousClose` 計算當日漲跌，以實現 100% 精準的當日累計漲跌點數與百分比顯示。
 
 ## 2026-05-14
 - [Scraper/Fix] [REQ-015] 修復 Yahoo 股市營收表改版與上櫃同步失效：重構營收表解析器支援 `.table-body-wrapper .table-row` 結構，支援上市上櫃動態網址 (`.TW` / `.TWO`) 識別，並在同步引擎中加入跨月營收進度落後的過期判定機制。

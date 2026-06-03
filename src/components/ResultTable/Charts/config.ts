@@ -44,7 +44,7 @@ export const ObvIndicatorColor: IndicatorColorType[] = [
     color: "#589bf3",
   },
   {
-    key: "obv_ma10",
+    key: "obv_ma20",
     color: "#ff7300",
   },
 ];

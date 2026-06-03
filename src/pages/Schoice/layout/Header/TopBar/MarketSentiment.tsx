@@ -77,10 +77,60 @@ export default function MarketSentiment() {
     ? t("Pages.Schoice.Header.bullish")
     : t("Pages.Schoice.Header.bearish");
 
-  const latestPrice = ta[ta.length - 1]?.c;
-  const prevPrice = ta[ta.length - 2]?.c;
-  const diff = latestPrice && prevPrice ? latestPrice - prevPrice : 0;
-  const percent = prevPrice ? ((diff / prevPrice) * 100).toFixed(2) : "0.00";
+  const meta = useMemo(() => {
+    if (!data || typeof data !== "string") return null;
+    try {
+      const json = JSON.parse(data);
+      return json[0]?.chart?.meta || null;
+    } catch (e) {
+      return null;
+    }
+  }, [data]);
+
+  const latestPrice = useMemo(() => {
+    if (meta && meta.regularMarketPrice !== undefined) {
+      return meta.regularMarketPrice;
+    }
+    return ta[ta.length - 1]?.c || 0;
+  }, [meta, ta]);
+
+  const { diff, percent } = useMemo(() => {
+    const yesterdayClose = meta?.previousClose || 0;
+    if (yesterdayClose && latestPrice) {
+      const diffVal = latestPrice - yesterdayClose;
+      const percentVal = ((diffVal / yesterdayClose) * 100).toFixed(2);
+      return { diff: diffVal, percent: percentVal };
+    }
+
+    if (ta.length < 2) return { diff: 0, percent: "0.00" };
+    const latest = ta[ta.length - 1];
+    const latestC = latest.c;
+    const latestDateStr = String(latest.t).slice(0, 8);
+
+    let yesterdayC = latestC;
+    let found = false;
+
+    for (let i = ta.length - 2; i >= 0; i--) {
+      const dateStr = String(ta[i].t).slice(0, 8);
+      if (dateStr !== latestDateStr) {
+        yesterdayC = ta[i].c;
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      yesterdayC = ta[ta.length - 2].c;
+    }
+
+    const diffVal = latestC - yesterdayC;
+    const percentVal = yesterdayC ? ((diffVal / yesterdayC) * 100).toFixed(2) : "0.00";
+
+    return {
+      diff: diffVal,
+      percent: percentVal,
+    };
+  }, [meta, latestPrice, ta]);
 
   return (
     <Stack direction="row" alignItems="center" spacing={2.5}>
