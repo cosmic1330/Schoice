@@ -18,6 +18,7 @@ import {
   ComposedChart,
   Customized,
   Line,
+  ReferenceArea,
   ReferenceDot,
   ReferenceLine,
   ResponsiveContainer,
@@ -28,11 +29,9 @@ import {
 import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
 import { DealsContext } from "../../../context/DealsContext";
 import { useGapDetection } from "../../../hooks/useGapDetection";
-import { useGapVisualization } from "../../../hooks/useGapVisualization";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
 import { UrlTaPerdOptions } from "../../../types";
 import { calculateIndicators } from "../../../utils/indicatorUtils";
-
 
 export default function MaKbar({
   perd,
@@ -58,7 +57,7 @@ export default function MaKbar({
 
   // --- States ---
   const [showGaps, setShowGaps] = useState(true);
-  const [showOnlyUnfilled, setShowOnlyUnfilled] = useState(false);
+  const [showOnlyUnfilled, setShowOnlyUnfilled] = useState(true);
   const [hoveredGapDate, setHoveredGapDate] = useState<
     number | string | undefined
   >(undefined);
@@ -68,7 +67,7 @@ export default function MaKbar({
     ma10: true,
     ma20: true,
     ma60: true,
-    ma120: true,
+    ma120: false,
     ma240: true,
   });
 
@@ -76,7 +75,6 @@ export default function MaKbar({
   const chartData = useMemo(() => {
     return calculateIndicators(deals, settings);
   }, [deals, settings]);
-
 
   useEffect(() => {
     const container = chartContainerRef.current;
@@ -158,14 +156,6 @@ export default function MaKbar({
     0.7,
   );
 
-  // Gap Visualization Data
-  const { gapLines, enhancedChartData } = useGapVisualization({
-    gaps: showOnlyUnfilled ? unfilledGaps : gapsWithFillStatus,
-    chartData: slicedChartData,
-    isVisible: showGaps,
-    highlightedGapDate: hoveredGapDate,
-  });
-
   // Signal Calculation (Historical)
   const signals = useMemo(() => {
     const result: {
@@ -174,11 +164,11 @@ export default function MaKbar({
       price: number;
       reason: string;
     }[] = [];
-    if (enhancedChartData.length < 2) return result;
+    if (slicedChartData.length < 2) return result;
 
-    for (let i = 1; i < enhancedChartData.length; i++) {
-      const current = enhancedChartData[i];
-      const prev = enhancedChartData[i - 1];
+    for (let i = 1; i < slicedChartData.length; i++) {
+      const current = slicedChartData[i];
+      const prev = slicedChartData[i - 1];
 
       // Ensure we have values
       if (
@@ -210,12 +200,12 @@ export default function MaKbar({
       }
     }
     return result;
-  }, [enhancedChartData]);
+  }, [slicedChartData]);
 
   // Current Deduction Points (based on latest bar)
   const deductionPoints = useMemo(() => {
-    if (enhancedChartData.length === 0 || !showDeductions) return [];
-    const latest = enhancedChartData[enhancedChartData.length - 1];
+    if (slicedChartData.length === 0 || !showDeductions) return [];
+    const latest = slicedChartData[slicedChartData.length - 1];
     const points: {
       t: number | string;
       price: number;
@@ -282,8 +272,7 @@ export default function MaKbar({
     });
 
     return points;
-  }, [enhancedChartData, visibleMAs, showDeductions, chartData, settings]);
-
+  }, [slicedChartData, visibleMAs, showDeductions, chartData, settings]);
 
   // 自定義 Tooltip 組件來處理 hover 事件
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -372,7 +361,7 @@ export default function MaKbar({
     return null;
   };
 
-  if (enhancedChartData.length === 0) {
+  if (slicedChartData.length === 0) {
     return (
       <Box
         height="100vh"
@@ -403,16 +392,42 @@ export default function MaKbar({
           MA
         </Typography>
 
-        <Box sx={{ flexGrow: 1, display: "flex", gap: 1.5, alignItems: "center" }}>
+        <Box
+          sx={{ flexGrow: 1, display: "flex", gap: 1.5, alignItems: "center" }}
+        >
           {/* Glowing HUD MA Toggles */}
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
             {[
-              { key: "ma5" as const, label: `${settings.ma5}`, color: "#2196f3" },
-              { key: "ma10" as const, label: `${settings.ma10}`, color: "#ffeb3b" },
-              { key: "ma20" as const, label: `${settings.ma20}`, color: "#ff9800" },
-              { key: "ma60" as const, label: `${settings.ma60}`, color: "#f44336" },
-              { key: "ma120" as const, label: `${settings.ma120}`, color: "#4caf50" },
-              { key: "ma240" as const, label: `${settings.ma240}`, color: "#9c27b0" },
+              {
+                key: "ma5" as const,
+                label: `${settings.ma5}`,
+                color: "#2196f3",
+              },
+              {
+                key: "ma10" as const,
+                label: `${settings.ma10}`,
+                color: "#ffeb3b",
+              },
+              {
+                key: "ma20" as const,
+                label: `${settings.ma20}`,
+                color: "#ff9800",
+              },
+              {
+                key: "ma60" as const,
+                label: `${settings.ma60}`,
+                color: "#f44336",
+              },
+              {
+                key: "ma120" as const,
+                label: `${settings.ma120}`,
+                color: "#4caf50",
+              },
+              {
+                key: "ma240" as const,
+                label: `${settings.ma240}`,
+                color: "#9c27b0",
+              },
             ].map((m) => {
               const isActive = visibleMAs[m.key];
               return (
@@ -420,7 +435,12 @@ export default function MaKbar({
                   key={m.key}
                   label={`MA${m.label}`}
                   size="small"
-                  onClick={() => setVisibleMAs(prev => ({ ...prev, [m.key]: !prev[m.key] }))}
+                  onClick={() =>
+                    setVisibleMAs((prev) => ({
+                      ...prev,
+                      [m.key]: !prev[m.key],
+                    }))
+                  }
                   sx={{
                     height: 26,
                     fontSize: "0.7rem",
@@ -433,42 +453,53 @@ export default function MaKbar({
                     border: `1px solid ${isActive ? m.color : "rgba(255,255,255,0.1)"}`,
                     bgcolor: isActive ? m.color : "rgba(0,0,0,0.2)",
                     color: isActive ? "#000" : "rgba(255,255,255,0.5)",
-                    boxShadow: isActive 
-                      ? `0 0 12px ${m.color}88, inset 0 0 4px rgba(255,255,255,0.5)` 
+                    boxShadow: isActive
+                      ? `0 0 12px ${m.color}88, inset 0 0 4px rgba(255,255,255,0.5)`
                       : "none",
                     "& .MuiChip-label": { px: 1.5 },
                     "&:hover": {
                       bgcolor: isActive ? m.color : "rgba(255,255,255,0.1)",
                       transform: "translateY(-1px)",
-                      boxShadow: isActive 
-                        ? `0 0 18px ${m.color}, inset 0 0 4px rgba(255,255,255,0.5)` 
+                      boxShadow: isActive
+                        ? `0 0 18px ${m.color}, inset 0 0 4px rgba(255,255,255,0.5)`
                         : `0 0 8px rgba(255,255,255,0.2)`,
                       color: isActive ? "#000" : "#fff",
                     },
                     "&:active": {
                       transform: "translateY(0px) scale(0.96)",
-                    }
+                    },
                   }}
                 />
               );
             })}
           </Stack>
 
-          <Divider orientation="vertical" flexItem sx={{ mx: 0.5, height: 20, alignSelf: "center", borderColor: "rgba(255,255,255,0.1)" }} />
+          <Divider
+            orientation="vertical"
+            flexItem
+            sx={{
+              mx: 0.5,
+              height: 20,
+              alignSelf: "center",
+              borderColor: "rgba(255,255,255,0.1)",
+            }}
+          />
 
           {/* Unified Glassmorphism Control Panel */}
-          <Box sx={{ 
-            display: "flex", 
-            alignItems: "center", 
-            gap: 2, 
-            px: 2, 
-            py: 0.5,
-            borderRadius: "10px",
-            background: "rgba(255, 255, 255, 0.03)",
-            backdropFilter: "blur(8px)",
-            border: "1px solid rgba(255, 255, 255, 0.05)",
-            boxShadow: "inset 0 0 20px rgba(0,0,0,0.2)"
-          }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              px: 2,
+              py: 0.5,
+              borderRadius: "10px",
+              background: "rgba(255, 255, 255, 0.03)",
+              backdropFilter: "blur(8px)",
+              border: "1px solid rgba(255, 255, 255, 0.05)",
+              boxShadow: "inset 0 0 20px rgba(0,0,0,0.2)",
+            }}
+          >
             <FormControlLabel
               control={
                 <Switch
@@ -477,11 +508,23 @@ export default function MaKbar({
                   onChange={(e) => setShowGaps(e.target.checked)}
                   sx={{
                     "& .MuiSwitch-switchBase.Mui-checked": { color: "#2196f3" },
-                    "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "#2196f3" }
+                    "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                      backgroundColor: "#2196f3",
+                    },
                   }}
                 />
               }
-              label={<Typography variant="caption" sx={{ color: showGaps ? "#fff" : "#888", fontWeight: showGaps ? 600 : 400 }}>缺口</Typography>}
+              label={
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: showGaps ? "#fff" : "#888",
+                    fontWeight: showGaps ? 600 : 400,
+                  }}
+                >
+                  缺口
+                </Typography>
+              }
               sx={{ m: 0 }}
             />
             <FormControlLabel
@@ -493,11 +536,23 @@ export default function MaKbar({
                   disabled={!showGaps}
                   sx={{
                     "& .MuiSwitch-switchBase.Mui-checked": { color: "#ff9800" },
-                    "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "#ff9800" }
+                    "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                      backgroundColor: "#ff9800",
+                    },
                   }}
                 />
               }
-              label={<Typography variant="caption" sx={{ color: showOnlyUnfilled ? "#fff" : "#888", fontWeight: showOnlyUnfilled ? 600 : 400 }}>僅未補</Typography>}
+              label={
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: showOnlyUnfilled ? "#fff" : "#888",
+                    fontWeight: showOnlyUnfilled ? 600 : 400,
+                  }}
+                >
+                  僅未補
+                </Typography>
+              }
               sx={{ m: 0 }}
             />
             <FormControlLabel
@@ -508,11 +563,23 @@ export default function MaKbar({
                   onChange={(e) => setShowDeductions(e.target.checked)}
                   sx={{
                     "& .MuiSwitch-switchBase.Mui-checked": { color: "#4caf50" },
-                    "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "#4caf50" }
+                    "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                      backgroundColor: "#4caf50",
+                    },
                   }}
                 />
               }
-              label={<Typography variant="caption" sx={{ color: showDeductions ? "#fff" : "#888", fontWeight: showDeductions ? 600 : 400 }}>扣抵</Typography>}
+              label={
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: showDeductions ? "#fff" : "#888",
+                    fontWeight: showDeductions ? 600 : 400,
+                  }}
+                >
+                  扣抵
+                </Typography>
+              }
               sx={{ m: 0 }}
             />
           </Box>
@@ -526,7 +593,7 @@ export default function MaKbar({
       >
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
-            data={enhancedChartData}
+            data={slicedChartData}
             syncId="maSync"
             margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
           >
@@ -730,34 +797,42 @@ export default function MaKbar({
               );
             })}
 
-            {/* Gap Visualization */}
+            {/* Gap Visualization (Premium Support/Resistance Area Zones) */}
             {showGaps &&
-              gapLines
-                .map((gap) => [
-                  <Line
-                    key={`gap-upper-${gap.date}`}
-                    dataKey={`gap_upper_${gap.date}`}
-                    stroke={gap.upperLine.stroke}
-                    strokeWidth={gap.upperLine.strokeWidth}
-                    strokeDasharray={gap.upperLine.strokeDasharray}
-                    opacity={gap.upperLine.opacity}
-                    dot={false}
-                    activeDot={false}
-                    legendType="none"
-                  />,
-                  <Line
-                    key={`gap-lower-${gap.date}`}
-                    dataKey={`gap_lower_${gap.date}`}
-                    stroke={gap.lowerLine.stroke}
-                    strokeWidth={gap.lowerLine.strokeWidth}
-                    strokeDasharray={gap.lowerLine.strokeDasharray}
-                    opacity={gap.lowerLine.opacity}
-                    dot={false}
-                    activeDot={false}
-                    legendType="none"
-                  />,
-                ])
-                .flat()}
+              (showOnlyUnfilled ? unfilledGaps : gapsWithFillStatus).map(
+                (gap) => {
+                  const latestDate =
+                    slicedChartData[slicedChartData.length - 1]?.t;
+                  const endDate =
+                    gap.filled && gap.fillDate ? gap.fillDate : latestDate;
+
+                  // Traditional Taiwan stock market: Red is support (up gap), Green is resistance (down gap)
+                  // Use extremely elegant semi-transparent filled bands that do not block candles (isFront={false})
+                  const strokeColor =
+                    gap.type === "up"
+                      ? "rgba(255, 77, 79, 0.6)"
+                      : "rgba(82, 196, 26, 0.6)";
+                  const fillColor =
+                    gap.type === "up"
+                      ? "rgba(255, 77, 79, 0.2)"
+                      : "rgba(82, 196, 26, 0.2)";
+
+                  return (
+                    <ReferenceArea
+                      key={`gap-area-${gap.date}`}
+                      x1={gap.date}
+                      x2={endDate}
+                      y1={gap.low}
+                      y2={gap.high}
+                      fill={fillColor}
+                      stroke={strokeColor}
+                      strokeDasharray="4 3"
+                      strokeWidth={1.2}
+                      isFront={false}
+                    />
+                  );
+                },
+              )}
 
             {/* Deduction Markers */}
             {showDeductions &&

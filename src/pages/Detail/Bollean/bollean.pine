@@ -1,0 +1,71 @@
+//@version=5
+indicator("布林帶 30期 + RSI + EMA 200 (台股配色版)", shorttitle="BB30_EMA200_TW", overlay=true)
+
+// ==================== 參數設置 ====================
+bbLength = input.int(30, "布林週期", minval=1)
+bbMult   = input.float(2.0, "標準差倍數", minval=0.5, step=0.1)
+emaLen   = input.int(200, "趨勢過濾 (EMA 200)", minval=1)
+
+rsiLength = input.int(14, "RSI 週期")
+rsiBuyLevel = input.int(35, "RSI 買入分界")
+rsiSellLevel = input.int(65, "RSI 賣出分界")
+
+showSignals = input.bool(true, "顯示買賣標籤")
+
+// ==================== 核心計算 ====================
+// 布林帶
+basis = ta.sma(close, bbLength)
+dev   = bbMult * ta.stdev(close, bbLength)
+upper = basis + dev
+lower = basis - dev
+
+// RSI
+rsiVal = ta.rsi(close, rsiLength)
+
+// EMA 200
+ema200 = ta.ema(close, emaLen)
+
+// ==================== 台股邏輯買賣訊號 ====================
+// 【紅標買入】：價格在 EMA 200 之上 + 回踩下軌 + RSI 低位回升
+buySignal = ta.crossover(close, lower) and rsiVal > rsiBuyLevel and close > ema200
+
+// 【綠標賣出】：價格觸碰上軌轉弱 + RSI 高位
+sellSignal = ta.crossunder(close, upper) and rsiVal < rsiSellLevel
+
+// ==================== 繪製圖表 ====================
+// 軌道顏色：淺色處理避免干擾 K 線
+p_upper = plot(upper, color=color.new(color.gray, 50), title="上軌")
+p_lower = plot(lower, color=color.new(color.gray, 50), title="下軌")
+plot(basis, color=color.new(color.blue, 70), title="中線")
+
+// EMA 200：使用黃色，台股常用的重要均線顏色
+plot(ema200, color=color.new(color.yellow, 0), linewidth=2, title="EMA 200")
+
+// 通道填充
+fill(p_upper, p_lower, color=color.new(color.purple, 97), title="填充")
+
+// --- 訊號標籤 (台股配色：紅買綠賣) ---
+plotshape(showSignals and buySignal,  
+     title="多頭買入", 
+     location=location.belowbar, 
+     color=color.red, 
+     style=shape.labelup, 
+     size=size.normal, 
+     text="買", 
+     textcolor=color.white)
+
+plotshape(showSignals and sellSignal, 
+     title="空頭賣出", 
+     location=location.abovebar, 
+     color=color.green, 
+     style=shape.labeldown, 
+     size=size.normal, 
+     text="賣", 
+     textcolor=color.white)
+
+// --- 背景色 (台股配色：偏多紅色，偏空綠色) ---
+bgcolor(close > ema200 ? color.new(color.red, 96) : color.new(color.green, 96))
+
+// ==================== 警報 ====================
+alertcondition(buySignal, "台股多頭買點", "EMA200上方+布林下軌+RSI轉強")
+alertcondition(sellSignal, "高位獲利賣點", "觸碰布林上軌+RSI轉弱")

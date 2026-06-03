@@ -8,6 +8,7 @@ import cmfTool from "../../../cls_tools/cmf";
 import ichimokuTool from "../../../cls_tools/ichimoku";
 import macdTool from "../../../cls_tools/macd";
 import {
+  analyzeIchimokuAtPoint,
   calculateIchimokuSignals,
   IchimokuCombinedData,
 } from "./ichimokuStrategy";
@@ -77,9 +78,10 @@ export const useIchimokuData = (
   perd: UrlTaPerdOptions,
   visibleCount: number,
   rightOffset: number,
-  settings?: any, // Accept settings
+  settings?: any,
+  hoveredIndex?: number | null,
 ) => {
-  const { combinedData, signals, analysis } = useMemo(() => {
+  const { combinedData, signals } = useMemo(() => {
     if (!deals || deals.length < 52) {
       return {
         combinedData: [],
@@ -146,16 +148,14 @@ export const useIchimokuData = (
     // Let's stick to standard TradingView style:
     // Cloud projected forward.
 
+    // 4. Prepare Final Data Structure (Visual Shift)
     const chartRows: IchimokuCombinedData[] = enrichedData.map((d, i) => {
       // Cloud at this candle T comes from T-26 data
       const cloudSourceIdx = i - 26;
       const cloudSource =
         cloudSourceIdx >= 0 ? enrichedData[cloudSourceIdx] : null;
 
-      // Chikou: At time T, we plot the Close of T+26? No, Chikou is lagged.
       // Chikou Value at T is Close(T). It is plotted at T-26.
-      // So at this row i (Time T), we should see Chikou from T+26?
-      // chartData[i].chikou = Close(i+26).
       const chikouSourceIdx = i + 26;
       const chikouSource =
         chikouSourceIdx < enrichedData.length
@@ -164,34 +164,21 @@ export const useIchimokuData = (
 
       return {
         ...d,
-        // senkouA/B here represents the cloud lines visible at this Time T
         senkouA: cloudSource ? cloudSource.senkouA : null,
         senkouB: cloudSource ? cloudSource.senkouB : null,
-        // chikou here represents the line visible at this Time T (which is Price of T+26)
         chikou: chikouSource ? chikouSource.c : null,
         cmfPrev: i > 0 ? enrichedData[i - 1].cmf : null,
         cmfEma5: d.cmfEma5,
       };
     });
 
-    // 5. Run Strategy Logic
-    // signalCalc needs raw-ish data or aligned data?
-    // Our calculateIchimokuSignals logic expects `senkouA/B` to be the cloud values AT CURRENT TIME.
-    // Which matches our `chartRows` construction above.
-    const { signals, lastAnalysis } = calculateIchimokuSignals(chartRows);
-
-    // 6. Future Projection (26 Bars)
-    // We need to extend the chart for 26 bars into future to show the Cloud Projections.
-    // Future Cloud comes from the last 26 bars of Enriched Data (i = N-26 to N).
+    // 5. Future Projection (26 Bars) - Move BEFORE signal calculation
     const lastData = enrichedData[enrichedData.length - 1];
     if (lastData) {
       let currentDate = parseTradeTime(lastData.t as number, perd);
 
       for (let k = 1; k <= 26; k++) {
         currentDate = getNextTradingTime(currentDate, perd);
-        // Cloud Source for Future T+K is T+K-26.
-        // i.e. EnrichedData index = (Length-1) + k - 26.
-        // if k=1 (first future bar), source = Length + 1 - 26 - 1 (since 0 indexed) = Length - 26.
         const sourceIdx = enrichedData.length - 26 + (k - 1);
         const source =
           sourceIdx < enrichedData.length ? enrichedData[sourceIdx] : null;
@@ -231,22 +218,49 @@ export const useIchimokuData = (
       }
     }
 
+    // 6. Run Strategy Logic - Now it sees the future projection
+    const { signals, lastAnalysis } = calculateIchimokuSignals(chartRows);
+
     return { combinedData: chartRows, signals, analysis: lastAnalysis };
   }, [deals, perd, settings]);
 
-  const slicedData = useMemo(() => {
-    if (!combinedData || combinedData.length === 0) return [];
+  const { chartData: slicedData, currentAnalysis } = useMemo(() => {
+    if (!combinedData || combinedData.length === 0) {
+      return {
+        chartData: [],
+        currentAnalysis: { steps: [], score: 0, recommendation: "No Data" },
+      };
+    }
+
     const start = Math.max(0, combinedData.length - visibleCount - rightOffset);
     const end = rightOffset === 0 ? undefined : -rightOffset;
-    // Slice logic
-    if (end)
-      return combinedData.slice(start, combinedData.length - rightOffset);
-    return combinedData.slice(start);
-  }, [combinedData, visibleCount, rightOffset]);
+    const sliced = end
+      ? combinedData.slice(start, combinedData.length - rightOffset)
+      : combinedData.slice(start);
+
+    // Determine which index to analyze
+    let targetIdx: number;
+    if (hoveredIndex !== undefined && hoveredIndex !== null) {
+      // hoveredIndex is relative to the slice
+      targetIdx = start + hoveredIndex;
+    } else {
+      // Default: analyze the rightmost real price bar in the current view
+      const lastRealPointIdx = combinedData.length - 27;
+      targetIdx = Math.max(0, lastRealPointIdx - rightOffset);
+    }
+
+    const dynamicAnalysis = analyzeIchimokuAtPoint(combinedData, targetIdx);
+
+    return {
+      chartData: sliced,
+      currentAnalysis: dynamicAnalysis,
+    };
+  }, [combinedData, visibleCount, rightOffset, hoveredIndex]);
 
   return {
     chartData: slicedData,
     signals,
-    steps: analysis.steps,
+    steps: currentAnalysis.steps,
+    analysis: currentAnalysis,
   };
 };

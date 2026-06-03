@@ -1,22 +1,25 @@
-import { Box, CircularProgress, Container, Stack, Tooltip, Typography } from "@mui/material";
-import { useContext, useEffect, useRef, useState } from "react";
+import { Box, CircularProgress, Container, Stack } from "@mui/material";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { DealsContext } from "../../../context/DealsContext";
 import { UrlTaPerdOptions } from "../../../types";
 import IchimokuChart from "./components/IchimokuChart";
 import { useIchimokuData } from "./useIchimokuData";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
+import IchimokuHeader from "./components/IchimokuHeader";
 
 export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
   const deals = useContext(DealsContext);
   const { settings } = useIndicatorSettings();
 
-  // --- Zoom & Pan Logic (Adapted from Obv.tsx) ---
-  const [visibleCount, setVisibleCount] = useState(180);
+  // --- Zoom & Pan Logic ---
+  const [visibleCount, setVisibleCount] = useState(120);
   const [rightOffset, setRightOffset] = useState(0);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const lastX = useRef(0);
   const startOffset = useRef(0);
+
+  const [activeStep, setActiveStep] = useState(0);
 
   // Hook for Data Processing
   const { chartData, signals } = useIchimokuData(
@@ -24,9 +27,9 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
     perd,
     visibleCount,
     rightOffset,
-    settings
+    settings,
+    null // Disable hover analysis
   );
-
 
   // Handle Zoom & Pan Interactions
   useEffect(() => {
@@ -99,14 +102,18 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
     }
   }, [deals.length, visibleCount, rightOffset]);
 
+  const timeframeLabel = useMemo(() => {
+    switch (perd) {
+      case UrlTaPerdOptions.Day: return "未來一月";
+      case UrlTaPerdOptions.Hour: return "下週趨勢";
+      case UrlTaPerdOptions.Week: return "未來半年";
+      default: return "未來26期";
+    }
+  }, [perd]);
+
   if (chartData.length === 0) {
     return (
-      <Box
-        height="100vh"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
+      <Box height="100vh" display="flex" alignItems="center" justifyContent="center">
         <CircularProgress />
       </Box>
     );
@@ -125,38 +132,12 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
         pb: 1,
       }}
     >
-      <Stack
-        direction="row"
-        spacing={2}
-        alignItems="center"
-        sx={{ mb: 1, flexShrink: 0 }}
-      >
-        <Tooltip
-          title={
-            <Box sx={{ p: 1 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: "bold" }}>
-                一目均衡表 + CMF 策略
-              </Typography>
-              <Typography variant="caption" display="block">
-                核心邏輯：
-              </Typography>
-              <Typography variant="caption" display="block">
-                1. 結構：價格 &gt; 雲層 (多頭結構)
-              </Typography>
-              <Typography variant="caption" display="block">
-                2. 動能：CMF 資金流入 & TK 金叉
-              </Typography>
-              <Typography variant="caption" display="block">
-                3. 風險：基準線不應下彎 & 無頂背離
-              </Typography>
-            </Box>
-          }
-          arrow
-        >
-          <Typography variant="h6" component="h1" fontWeight="bold" color="white">
-            Ichimoku Cloud
-          </Typography>
-        </Tooltip>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+        <IchimokuHeader
+          activeStep={activeStep}
+          steps={[]}
+          onStepChange={setActiveStep}
+        />
       </Stack>
 
       <IchimokuChart
@@ -164,6 +145,7 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
         data={chartData}
         signals={signals}
         cmfEmaPeriod={settings.cmfEma}
+        timeframeLabel={timeframeLabel}
       />
     </Container>
   );

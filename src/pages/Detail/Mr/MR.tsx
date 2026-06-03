@@ -23,9 +23,17 @@ import {
 import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
 import { DealsContext } from "../../../context/DealsContext";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
-import { UrlTaPerdOptions } from "../../../types";
+import { DivergenceSignalType, UrlTaPerdOptions } from "../../../types";
+import detectMacdDivergence from "../../../utils/detectMacdDivergence";
+import detectRsiDivergence from "../../../utils/detectRsiDivergence";
 import { calculateIndicators } from "../../../utils/indicatorUtils";
 import ChartTooltip from "../Tooltip/ChartTooltip";
+
+interface Signal {
+  t: number;
+  type: string;
+  price: number;
+}
 
 interface MrChartData extends Partial<{
   t: number | string;
@@ -40,12 +48,11 @@ interface MrChartData extends Partial<{
   bollMa: number | null;
   bollUb: number | null;
   bollLb: number | null;
-  longZone: number | null; // For Area chart
-  shortZone: number | null; // For Area chart
+  overboughtZone: number | null;
+  oversoldZone: number | null;
   positiveOsc: number | null;
   negativeOsc: number | null;
 }
-
 
 export default function MR({
   perd,
@@ -145,16 +152,14 @@ export default function MR({
       .map((item) => {
         const { rsi: rsiVal, osc } = item;
 
-        // Logic:
-        // Long Zone: RSI > 50 && Osc > 0
-        // Short Zone: RSI < 50 && Osc < 0
-        const isLong = (rsiVal || 0) > 50 && (osc || 0) > 0;
-        const isShort = (rsiVal || 0) < 50 && (osc || 0) < 0;
+        // Overbought/Oversold Zones for reference
+        const isOverbought = (rsiVal || 0) >= 70;
+        const isOversold = (rsiVal || 0) <= 30;
 
         return {
           ...item,
-          longZone: isLong ? rsiVal : null,
-          shortZone: isShort ? rsiVal : null,
+          overboughtZone: isOverbought ? rsiVal : null,
+          oversoldZone: isOversold ? rsiVal : null,
           positiveOsc: (osc || 0) > 0 ? osc : 0,
           negativeOsc: (osc || 0) < 0 ? osc : 0,
         };
@@ -165,39 +170,84 @@ export default function MR({
       );
   }, [deals, visibleCount, rightOffset, settings]);
 
-  // Calculate Entry Signals (State Transition)
+  // Calculate Entry Signals (RSI Divergence + MACD Divergence + Weekly Oversold)
   const signals = useMemo(() => {
-    const result = [];
+    // Helper to find price by timestamp safely
+    const findPrice = (t: string | number, type: DivergenceSignalType): number | undefined => {
+      const target = chartData.find((d) => String(d.t) === String(t));
+      if (!target) return undefined;
+      const price = type === DivergenceSignalType.BULLISH_DIVERGENCE ? target.l : target.h;
+      return price ?? undefined;
+    };
+
+    // 1. Detect RSI Divergences
+    const rsiDivergences = detectRsiDivergence(
+      chartData.map((d) => ({
+        t: d.t || 0,
+        h: d.h || 0,
+        l: d.l || 0,
+        rsi: d.rsi,
+        osc: d.osc,
+      })),
+    );
+
+    const rsiResults = rsiDivergences
+      .map((sig) => {
+        const price = findPrice(sig.t, sig.type);
+        if (price === undefined) return null;
+        return {
+          t: Number(sig.t),
+          type: `rsi_${sig.type}`,
+          price,
+        };
+      })
+      .filter((s): s is Signal => s !== null);
+
+    // 2. Detect MACD Divergences
+    const macdDivergences = detectMacdDivergence(
+      chartData.map((d) => ({
+        t: d.t || 0,
+        h: d.h || 0,
+        l: d.l || 0,
+        osc: d.osc,
+      })),
+    );
+
+    const macdResults = macdDivergences
+      .map((sig) => {
+        const price = findPrice(sig.t, sig.type);
+        if (price === undefined) return null;
+        return {
+          t: Number(sig.t),
+          type: `macd_${sig.type}`,
+          price,
+        };
+      })
+      .filter((s): s is Signal => s !== null);
+
+    // Merge results
+    const result: Signal[] = [...rsiResults, ...macdResults];
+
+    // 3. Weekly Oversold Signal (RSI < 25)
     for (let i = 1; i < chartData.length; i++) {
       const curr = chartData[i];
       const prev = chartData[i - 1];
 
-      const currLong =
-        (curr.rsi || 0) > 50 && (curr.rsi || 0) < 75 && (curr.osc || 0) > 0;
-      const prevLong =
-        (prev.rsi || 0) > 50 && (prev.rsi || 0) < 75 && (prev.osc || 0) > 0;
-
-      const currShort = (curr.rsi || 0) < 50 && (curr.osc || 0) < 0;
-      const prevShort = (prev.rsi || 0) < 50 && (prev.osc || 0) < 0;
-
-      if (currLong && !prevLong) {
-        result.push({ t: curr.t, type: "entry_long", price: curr.c });
-      } else if (currShort && !prevShort) {
-        result.push({ t: curr.t, type: "entry_short", price: curr.c });
-      }
-
-      // Weekly Oversold Signal (RSI < 25)
       if (
         perd === UrlTaPerdOptions.Week &&
+        curr.t !== undefined &&
         (curr.rsi || 100) < 25 &&
         (prev.rsi || 0) >= 25
       ) {
-        result.push({ t: curr.t, type: "oversold", price: curr.l });
+        result.push({ 
+          t: Number(curr.t), 
+          type: "oversold", 
+          price: curr.l ?? 0 
+        });
       }
     }
-    return result;
+    return result.sort((a, b) => a.t - b.t);
   }, [chartData, perd]);
-
 
   if (chartData.length === 0) {
     return (
@@ -231,7 +281,6 @@ export default function MR({
         </Typography>
       </Stack>
 
-
       <Box
         ref={chartContainerRef}
         sx={{ flexGrow: 1, minHeight: 0, width: "100%" }}
@@ -262,7 +311,9 @@ export default function MR({
               width={0}
             />
             <Tooltip
-              content={<ChartTooltip hideKeys={["longZone", "shortZone"]} />}
+              content={
+                <ChartTooltip hideKeys={["overboughtZone", "oversoldZone"]} />
+              }
               offset={50}
             />
             <Line
@@ -325,104 +376,156 @@ export default function MR({
 
             <Line
               dataKey="bollMa"
-              stroke="#2196f3"
-              strokeWidth={1.5}
+              stroke="rgba(33, 150, 243, 0.5)"
+              strokeWidth={1.2}
               dot={false}
               activeDot={false}
               name={`${settings.boll} MA (Mid)`}
             />
             <Line
               dataKey="bollUb"
-              stroke="#ff9800"
-              strokeDasharray="3 3"
+              stroke="rgba(140, 140, 140, 0.45)"
+              strokeWidth={1.2}
               dot={false}
               activeDot={false}
               name="Upper Band"
             />
             <Line
               dataKey="bollLb"
-              stroke="#ff9800"
-              strokeDasharray="3 3"
+              stroke="rgba(140, 140, 140, 0.45)"
+              strokeWidth={1.2}
               dot={false}
               activeDot={false}
               name="Lower Band"
             />
 
             {/* Entry Signal Markers */}
-            {signals.map((signal) => {
-              const isLong = signal.type === "entry_long";
-              const isOversold = signal.type === "oversold";
+            {(() => {
+              // Group signals by timestamp to handle overlaps
+              const groupedSignals: Record<string, any[]> = {};
+              signals.forEach((s) => {
+                const key = String(s.t);
+                if (!groupedSignals[key]) groupedSignals[key] = [];
+                groupedSignals[key].push(s);
+              });
 
-              let color = isLong ? "#f44336" : "#4caf50";
-              let label = isLong ? "買進" : "賣出";
-              let yPos = isLong ? signal.price! * 0.99 : signal.price! * 1.01;
+              return Object.entries(groupedSignals).map(([t, sigs]) => {
+                const isRsiBullish = sigs.some(
+                  (s) =>
+                    s.type === `rsi_${DivergenceSignalType.BULLISH_DIVERGENCE}`,
+                );
+                const isRsiBearish = sigs.some(
+                  (s) =>
+                    s.type === `rsi_${DivergenceSignalType.BEARISH_DIVERGENCE}`,
+                );
+                const isMacdBullish = sigs.some(
+                  (s) =>
+                    s.type ===
+                    `macd_${DivergenceSignalType.BULLISH_DIVERGENCE}`,
+                );
+                const isMacdBearish = sigs.some(
+                  (s) =>
+                    s.type ===
+                    `macd_${DivergenceSignalType.BEARISH_DIVERGENCE}`,
+                );
+                const isOversold = sigs.some((s) => s.type === "oversold");
 
-              if (isOversold) {
-                color = "#2196f3";
-                label = "超賣";
-                yPos = signal.price! * 0.97;
-              }
+                const hasBullish = isRsiBullish || isMacdBullish || isOversold;
 
-              return (
-                <ReferenceDot
-                  key={signal.t}
-                  x={signal.t}
-                  y={yPos}
-                  r={4}
-                  stroke="none"
-                  shape={(props: any) => {
-                    const { cx, cy } = props;
-                    if (!cx || !cy) return <g />;
+                // Resonance detection
+                const isBullResonance = isRsiBullish && isMacdBullish;
+                const isBearResonance = isRsiBearish && isMacdBearish;
 
-                    return (
-                      <g>
-                        {isLong || isOversold ? (
-                          // Long Entry or Oversold
-                          <>
+                const firstSignal = sigs[0];
+                const color = hasBullish ? "#f44336" : "#4caf50";
+
+                return (
+                  <ReferenceDot
+                    key={t}
+                    x={firstSignal.t}
+                    y={
+                      hasBullish
+                        ? firstSignal.price! * 0.99
+                        : firstSignal.price! * 1.01
+                    }
+                    r={6}
+                    stroke="none"
+                    shape={(props: any) => {
+                      const { cx, cy } = props;
+                      if (!cx || !cy) return <g />;
+
+                      return (
+                        <g>
+                          {/* 1. Main Icon Shape */}
+                          {isBullResonance || isBearResonance ? (
+                            // Resonance: Star
                             <path
-                              d={`M${cx - 5},${cy + 10} L${cx + 5},${
-                                cy + 10
-                              } L${cx},${cy} Z`}
+                              d={`M${cx},${cy - 8} L${cx + 2},${cy - 2} L${cx + 8},${cy - 2} L${cx + 3},${cy + 2} L${cx + 5},${cy + 8} L${cx},${cy + 4} L${cx - 5},${cy + 8} L${cx - 3},${cy + 2} L${cx - 8},${cy - 2} L${cx - 2},${cy - 2} Z`}
+                              fill={color}
+                              filter="drop-shadow(0 0 3px rgba(255,255,255,0.8))"
+                            />
+                          ) : isMacdBullish || isMacdBearish ? (
+                            // MACD: Diamond
+                            <path
+                              d={`M${cx},${cy - 7} L${cx + 7},${cy} L${cx},${cy + 7} L${cx - 7},${cy} Z`}
                               fill={color}
                             />
-                            <text
-                              x={cx}
-                              y={cy + 22}
-                              textAnchor="middle"
-                              fill={color}
-                              fontSize={11}
-                              fontWeight="bold"
-                            >
-                              {label}
-                            </text>
-                          </>
-                        ) : (
-                          // Short Entry
-                          <>
+                          ) : (
+                            // RSI or Oversold: Triangle
                             <path
-                              d={`M${cx - 5},${cy - 10} L${cx + 5},${
-                                cy - 10
-                              } L${cx},${cy} Z`}
+                              d={
+                                hasBullish
+                                  ? `M${cx - 6},${cy + 8} L${cx + 6},${cy + 8} L${cx},${cy - 2} Z`
+                                  : `M${cx - 6},${cy - 8} L${cx + 6},${cy - 8} L${cx},${cy + 2} Z`
+                              }
                               fill={color}
                             />
-                            <text
-                              x={cx}
-                              y={cy - 15}
-                              textAnchor="middle"
-                              fill={color}
-                              fontSize={11}
-                              fontWeight="bold"
-                            >
-                              {label}
-                            </text>
-                          </>
-                        )}
-                      </g>
-                    );
-                  }}
-                />
-              );
-            })}
+                          )}
+
+                          {/* 2. Layered Labels */}
+                          <g
+                            transform={`translate(${cx}, ${hasBullish ? cy + 18 : cy - 15})`}
+                          >
+                            {sigs.map((s, idx) => {
+                              let label = "";
+                              if (s.type.startsWith("rsi_"))
+                                label = s.type.includes("BULL") ? "R底" : "R頂";
+                              else if (s.type.startsWith("macd_"))
+                                label = s.type.includes("BULL") ? "M底" : "M頂";
+                              else if (s.type === "oversold") label = "超賣";
+
+                              if (isBullResonance && s.type.includes("BULL")) {
+                                if (idx > 0) return null; // Only show one label for resonance
+                                label = "強共振";
+                              }
+                              if (isBearResonance && s.type.includes("BEAR")) {
+                                if (idx > 0) return null;
+                                label = "弱共振";
+                              }
+
+                              return (
+                                <text
+                                  key={idx}
+                                  x={0}
+                                  y={hasBullish ? idx * 12 : -idx * 12}
+                                  textAnchor="middle"
+                                  fill={color}
+                                  fontSize={10}
+                                  fontWeight="bold"
+                                  style={{ pointerEvents: "none" }}
+                                >
+                                  {label}
+                                </text>
+                              );
+                            })}
+                          </g>
+                        </g>
+                      );
+                    }}
+                  />
+                );
+              });
+            })()}
           </ComposedChart>
         </ResponsiveContainer>
 
@@ -460,7 +563,9 @@ export default function MR({
             />
 
             <Tooltip
-              content={<ChartTooltip hideKeys={["longZone", "shortZone"]} />}
+              content={
+                <ChartTooltip hideKeys={["overboughtZone", "oversoldZone"]} />
+              }
               offset={50}
             />
 
@@ -503,24 +608,26 @@ export default function MR({
               name="Osc -"
             />
 
-            {/* RSI Zones (Left Axis) */}
+            {/* RSI Overbought/Oversold Zones (Left Axis) */}
             <Area
               yAxisId="left"
               type="monotone"
-              dataKey="longZone"
-              fill="#ffcdd2"
+              dataKey="overboughtZone"
+              fill="#f44336"
               stroke="none"
-              baseValue={50}
-              opacity={0.3}
+              baseValue={70}
+              opacity={0.2}
+              name="Overbought Zone"
             />
             <Area
               yAxisId="left"
               type="monotone"
-              dataKey="shortZone"
-              fill="#c8e6c9"
+              dataKey="oversoldZone"
+              fill="#4caf50"
               stroke="none"
-              baseValue={50}
-              opacity={0.3}
+              baseValue={30}
+              opacity={0.2}
+              name="Oversold Zone"
             />
             <Line
               yAxisId="left"

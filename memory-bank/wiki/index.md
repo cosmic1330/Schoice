@@ -49,3 +49,5 @@
 - 🔵 REQ-013: [修正回測週資料選擇邏輯](../active-tasks/REQ-013_FixBacktestWeeklyDataSelection.md) (Completed)
 - 🔵 REQ-014: [重構 weekDate 為 weekIndex](../active-tasks/REQ-014_RefactorWeekDateToWeekIndex.md) (Completed)
 - 🔵 REQ-015: [修正 Yahoo 基本面爬蟲同步失效及改版適應](../active-tasks/REQ-015_FixScraperRevenueSync.md) (Completed)
+- 🔵 REQ-016: 同步 Detail 頁面自 SLstening 專案 (Completed)
+

@@ -23,10 +23,12 @@ interface IchimokuChartProps {
   data: IchimokuCombinedData[];
   signals: SignalResult[];
   cmfEmaPeriod?: number;
+  timeframeLabel: string;
+  onHoverChange?: (index: number | null) => void;
 }
 
 const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
-  ({ data, signals, cmfEmaPeriod = 5 }, ref) => {
+  ({ data, signals, cmfEmaPeriod = 5, timeframeLabel, onHoverChange }, ref) => {
     // Map signals for easy lookup
     const signalMap = useMemo(
       () => new Map(signals.map((s) => [String(s.t), s])),
@@ -103,6 +105,19 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
           }
         }
 
+        const cmfBull =
+          d.cmf !== null && d.cmf !== undefined
+            ? d.cmf >= 0
+              ? d.cmf
+              : 0
+            : null;
+        const cmfBear =
+          d.cmf !== null && d.cmf !== undefined
+            ? d.cmf < 0
+              ? d.cmf
+              : 0
+            : null;
+
         return {
           ...d,
           signalReason: sig ? sig.reason : undefined,
@@ -111,6 +126,8 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
             isBull || d.senkouA === d.senkouB ? [d.senkouB, d.senkouA] : null,
           bearCloud:
             isBear || d.senkouA === d.senkouB ? [d.senkouA, d.senkouB] : null,
+          cmfBull,
+          cmfBear,
           isFuture,
           futureTrend,
           futureReason,
@@ -137,64 +154,69 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
       if (futureData.length === 0) return null;
 
       let hasTwist = false;
+      let twistIdx = -1;
       let maxThickness = 0;
-      let sumThickness = 0;
-      let bullCount = 0;
+      let firstThickness = 0;
+      let lastThickness = 0;
 
       for (let i = 0; i < futureData.length; i++) {
         const d = futureData[i];
         if (d.senkouA === null || d.senkouB === null) continue;
 
         const currentBull = d.senkouA > d.senkouB;
-        if (currentBull) bullCount++;
+        const thickness = Math.abs(d.senkouA - d.senkouB);
+
+        if (i === 0) firstThickness = thickness;
+        if (i === futureData.length - 1) lastThickness = thickness;
+        if (thickness > maxThickness) maxThickness = thickness;
 
         // 檢查翻轉 (Kumo Twist)
         if (i > 0) {
           const prev = futureData[i - 1];
           if (prev.senkouA !== null && prev.senkouB !== null) {
             const prevBull = prev.senkouA > prev.senkouB;
-            if (currentBull !== prevBull) hasTwist = true;
+            if (currentBull !== prevBull) {
+              hasTwist = true;
+              twistIdx = i;
+            }
           }
         }
-
-        const thickness = Math.abs(d.senkouA - d.senkouB);
-        sumThickness += thickness;
-        if (thickness > maxThickness) maxThickness = thickness;
       }
 
       const lastBar = futureData[futureData.length - 1];
       if (!lastBar || lastBar.senkouA === null || lastBar.senkouB === null)
         return null;
 
-      // 判斷未來主要趨勢：以「最後一根預測」為準，這最符合視覺直覺
       const isLastBull = lastBar.senkouA > lastBar.senkouB;
-      const trendSymbol = isLastBull ? "看漲(有支撐)" : "看跌(遇壓力)";
+      const isExpanding = lastThickness > firstThickness * 1.1;
 
-      // 使用 MaxThickness 來判斷未來最大的助力/支撐力道
-      const maxThicknessRatio = maxThickness / (avgPrice || 1);
-      const isStrongStructure = maxThicknessRatio > 0.02;
+      // 計算預期壓力/支撐點位 (取最後一期的邊界)
+      const cloudTop = Math.max(lastBar.senkouA, lastBar.senkouB);
+      const cloudBottom = Math.min(lastBar.senkouA, lastBar.senkouB);
+      const targetPrice = isLastBull ? cloudBottom : cloudTop;
+      const priceLabel = isLastBull ? "支撐位" : "壓力位";
 
-      let structureStr = "";
-      if (isLastBull) {
-        structureStr = isStrongStructure ? "底部支撐強勁" : "底部支撐薄弱";
-      } else {
-        structureStr = isStrongStructure ? "上方壓力沉重" : "上方壓力較輕";
-      }
+      // 專業術語判定 (精簡版)
+      let trendStatus = isLastBull ? "多方主導 (支撐)" : "空方主導 (壓力)";
+      let structureStr = `${priceLabel}: ${targetPrice.toFixed(2)}`;
 
-      if (hasTwist) {
-        structureStr = `★近期可能變盤 | ${structureStr}`;
+      if (isExpanding) structureStr += " | 力道強化";
+      else if (lastThickness < firstThickness * 0.9)
+        structureStr += " | 趨勢轉弱";
+      else structureStr += " | 走勢穩";
+
+      if (hasTwist && twistIdx !== -1) {
+        structureStr = `★ 第 ${twistIdx} 期預期轉向 | ${structureStr}`;
+      } else if (hasTwist) {
+        structureStr = `★ 預期轉向 | ${structureStr}`;
       }
 
       return {
         isBull: isLastBull,
-        trendSymbol,
+        trendSymbol: trendStatus,
         structureSymbol: structureStr,
-        trend: isLastBull
-          ? "未來趨勢：樂觀 (支撐雲帶)"
-          : "未來趨勢：悲觀 (壓力雲帶)",
-        structure: structureStr,
+        targetPrice,
         lastBarT: lastBar.t,
-        lastBarY: (lastBar.senkouA + lastBar.senkouB) / 2,
         midBarT: futureData[Math.floor(futureData.length / 2)]?.t || lastBar.t,
         midBarY:
           ((futureData[Math.floor(futureData.length / 2)]?.senkouA || 0) +
@@ -203,7 +225,7 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
         futureStart: futureData[0].t,
         futureEnd: lastBar.t,
       };
-    }, [mergedData, todayBarT, avgPrice]);
+    }, [mergedData, todayBarT, avgPrice, timeframeLabel]);
 
     // Calculate max absolute value for CMF y-axis to center 0
     const cmfDomain = useMemo(() => {
@@ -241,6 +263,14 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
             data={mergedData}
             margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
             syncId="ichiSync"
+            onMouseMove={(e) => {
+              if (e.activeTooltipIndex !== undefined && onHoverChange) {
+                onHoverChange(e.activeTooltipIndex);
+              }
+            }}
+            onMouseLeave={() => {
+              if (onHoverChange) onHoverChange(null);
+            }}
           >
             <CartesianGrid strokeDasharray="3 3" opacity={0.1} stroke="#fff" />
             <XAxis dataKey="t" hide />
@@ -250,7 +280,10 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
               stroke="rgba(255,255,255,0.3)"
             />
 
-            <RechartsTooltip content={<ChartTooltip showSignals={true} />} />
+            <RechartsTooltip
+              content={<ChartTooltip showSignals={true} />}
+              isAnimationActive={false}
+            />
 
             {/* Invisible Lines for Tooltip Value Access & Candlestick Order */}
             {/* Order MUST be: High, Close, Low, Open for BaseCandlestickRectangle */}
@@ -358,13 +391,24 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
                 strokeDasharray="3 3"
               >
                 <Label
-                  value="← 歷史數據 | 未來預測區 →"
+                  value={`歷史 | ${timeframeLabel}預測`}
                   position="top"
                   fill="#90caf9"
                   fontSize={10}
                   offset={10}
                 />
               </ReferenceLine>
+            )}
+
+            {/* 2.5 Support/Resistance Target Line */}
+            {futureAnalysis && (
+              <ReferenceLine
+                y={futureAnalysis.targetPrice}
+                stroke={futureAnalysis.isBull ? "#4caf50" : "#f44336"}
+                strokeDasharray="3 3"
+                strokeOpacity={0.6}
+                strokeWidth={1}
+              />
             )}
 
             {/* 3. Future Trend Analysis Labels */}
@@ -379,7 +423,6 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
                   x={futureAnalysis.midBarT}
                   y={futureAnalysis.midBarY}
                   r={0}
-                  // 使用自訂 SVG g 元素來精準控制多行文字與排版
                   shape={(props: any) => {
                     const { cx, cy } = props;
                     const structureParts =
@@ -387,41 +430,54 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
 
                     return (
                       <g>
-                        {/* 1. 趨勢狀態 (例：看漲(有支撐)) */}
+                        {/* 1. 時間區間 */}
                         <text
                           x={cx}
                           y={cy}
-                          dy={-35}
+                          dy={-45}
+                          textAnchor="middle"
+                          fill="rgba(255,255,255,0.7)"
+                          fontSize={11}
+                          fontWeight="bold"
+                        >
+                          {`[ ${timeframeLabel}展望 ]`}
+                        </text>
+
+                        {/* 2. 趨勢狀態 */}
+                        <text
+                          x={cx}
+                          y={cy}
+                          dy={-25}
                           textAnchor="middle"
                           fill="#fff"
-                          fontSize={14}
+                          fontSize={13}
                           fontWeight="bold"
                         >
                           {futureAnalysis.trendSymbol}
                         </text>
 
-                        {/* 2. 結構與力道 (例：★近期可能變盤) */}
+                        {/* 3. 結構與力道 (行1) */}
                         {structureParts.length > 1 && (
                           <text
                             x={cx}
                             y={cy}
-                            dy={-15}
+                            dy={-5}
                             textAnchor="middle"
                             fill="#ffeb3b"
-                            fontSize={12}
+                            fontSize={11}
                           >
                             {structureParts[0]}
                           </text>
                         )}
 
-                        {/* 3. 結構與力道 (例：底部支撐強勁) */}
+                        {/* 4. 結構與力道 (行2) */}
                         <text
                           x={cx}
                           y={cy}
-                          dy={structureParts.length > 1 ? 5 : -15}
+                          dy={structureParts.length > 1 ? 12 : -5}
                           textAnchor="middle"
                           fill="#ffeb3b"
-                          fontSize={12}
+                          fontSize={11}
                         >
                           {structureParts[structureParts.length - 1]}
                         </text>
@@ -435,7 +491,7 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
                           fill="rgba(255,255,255,0.4)"
                           fontSize={10}
                         >
-                          - 未來趨勢預估 -
+                          {`- ${timeframeLabel}格局預估 -`}
                         </text>
                       </g>
                     );
@@ -461,25 +517,20 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
               let label = "Sig";
 
               switch (sig.type) {
-                case "BUY":
-                  color = "#FFD700";
-                  icon = "▲";
-                  label = "Buy";
-                  break;
-                case "FAKE":
-                  color = "#f44336";
-                  icon = "▼";
-                  label = "Fake";
-                  break;
                 case "ACCUMULATION":
                   color = "#2196f3";
                   icon = "●";
                   label = "Accum";
                   break;
-                case "WEAKNESS":
-                  color = "#ff9800";
-                  icon = "X";
-                  label = "Weak";
+                case "DIVERGENCE_BULL":
+                  color = "#ff5252"; // Taiwan Red for Buy
+                  icon = "▲";
+                  label = "底背離";
+                  break;
+                case "DIVERGENCE_BEAR":
+                  color = "#00e676"; // Taiwan Green for Sell
+                  icon = "▼";
+                  label = "頂背離";
                   break;
                 case "EXIT":
                   color = "#4caf50";
@@ -543,7 +594,24 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
             margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
             syncId="ichiSync"
           >
-            <CartesianGrid strokeDasharray="3 3" opacity={0.1} stroke="#fff" />
+            <defs>
+              {/* Bullish CMF Area Gradient (Taiwan Red) */}
+              <linearGradient id="colorCmfBull" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#ff4d4f" stopOpacity={0.24} />
+                <stop offset="100%" stopColor="#ff4d4f" stopOpacity={0.0} />
+              </linearGradient>
+              {/* Bearish CMF Area Gradient (Taiwan Green) - Fades from bottom up to 0 */}
+              <linearGradient id="colorCmfBear" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0%" stopColor="#52c41a" stopOpacity={0.24} />
+                <stop offset="100%" stopColor="#52c41a" stopOpacity={0.0} />
+              </linearGradient>
+              {/* Premium Glow Filter for CMF Line */}
+              <filter id="cmfGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="1.5" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.06} stroke="#fff" />
             <XAxis dataKey="t" hide />
             <YAxis
               domain={cmfDomain as any}
@@ -554,49 +622,97 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
                 value: "CMF",
                 angle: -90,
                 position: "insideLeft",
-                fill: "#9c27b0",
+                fill: "rgba(255, 255, 255, 0.7)",
+                style: { fontSize: 10, fontWeight: "bold" },
               }}
             />
             <RechartsTooltip
               content={<ChartTooltip showSignals={true} showIchimoku={false} />}
+              isAnimationActive={false}
             />
 
-            <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" />
+            {/* Base Reference Lines */}
+            <ReferenceLine
+              y={0}
+              stroke="rgba(255, 255, 255, 0.4)"
+              strokeWidth={1}
+            />
             <ReferenceLine
               y={0.1}
-              stroke="#4caf50"
+              stroke="rgba(255, 77, 79, 0.45)"
               strokeDasharray="3 3"
-              strokeOpacity={0.5}
+              label={{
+                value: "+0.10 強勢吸籌",
+                position: "insideBottomLeft",
+                fill: "rgba(255, 77, 79, 0.75)",
+                fontSize: 10,
+                fontWeight: "bold",
+              }}
             />
             <ReferenceLine
               y={-0.1}
-              stroke="#f44336"
+              stroke="rgba(82, 196, 26, 0.45)"
               strokeDasharray="3 3"
-              strokeOpacity={0.5}
+              label={{
+                value: "-0.10 資金流出",
+                position: "insideTopLeft",
+                fill: "rgba(82, 196, 26, 0.75)",
+                fontSize: 10,
+                fontWeight: "bold",
+              }}
             />
 
+            {/* Bullish Positive Flow Area */}
             <Area
               type="monotone"
+              dataKey="cmfBull"
+              stroke="none"
+              fill="url(#colorCmfBull)"
+              baseValue={0}
+              connectNulls={false}
+              isAnimationActive={false}
+              legendType="none"
+            />
+
+            {/* Bearish Negative Flow Area */}
+            <Area
+              type="monotone"
+              dataKey="cmfBear"
+              stroke="none"
+              fill="url(#colorCmfBear)"
+              baseValue={0}
+              connectNulls={false}
+              isAnimationActive={false}
+              legendType="none"
+            />
+
+            {/* Premium Silver-White CMF Line */}
+            <Line
+              type="monotone"
               dataKey="cmf"
-              stroke="#9c27b0"
-              fill="url(#colorCmf)"
-              strokeWidth={1.5}
+              stroke="rgba(255, 255, 255, 0.85)"
+              strokeWidth={1.8}
+              dot={false}
+              activeDot={{
+                r: 4,
+                stroke: "rgba(255, 255, 255, 0.95)",
+                strokeWidth: 1,
+                fill: "#fff",
+              }}
               name="CMF"
             />
+
+            {/* Muted and Subdued CMF EMA Line */}
             <Line
               type="monotone"
               dataKey="cmfEma5"
-              stroke="#ff9800"
-              strokeWidth={1}
+              stroke="rgba(255, 183, 77, 0.45)"
+              strokeWidth={1.2}
+              strokeDasharray="4 3"
               dot={false}
+              activeDot={false}
               name={`EMA${cmfEmaPeriod}`}
             />
-            <defs>
-              <linearGradient id="colorCmf" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#9c27b0" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#9c27b0" stopOpacity={0} />
-              </linearGradient>
-            </defs>
           </ComposedChart>
         </ResponsiveContainer>
       </Box>

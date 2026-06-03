@@ -2,15 +2,14 @@ import {
   Box,
   CircularProgress,
   Container,
-  Tooltip as MuiTooltip,
   Stack,
   Typography,
 } from "@mui/material";
 import { useContext, useEffect, useMemo, useRef } from "react";
 import {
+  Area,
   Bar,
   CartesianGrid,
-  Cell,
   ComposedChart,
   Customized,
   Line,
@@ -24,26 +23,26 @@ import {
 import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
 import { DealsContext } from "../../../context/DealsContext";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
-import {
-  calculateIndicators,
-  EnhancedDealData,
-} from "../../../utils/indicatorUtils";
+import { calculateIndicators } from "../../../utils/indicatorUtils";
 import ChartTooltip from "../Tooltip/ChartTooltip";
 
-interface MfiChartData extends Partial<EnhancedDealData> {
-  buySignal?: number | null;
-  exitSignal?: number | null;
-  buyReason?: string;
-  exitReason?: string;
-  // Accumulation
-  accumulationSignal?: number | null;
-  accumulationReason?: string;
-  // MACD
-  macdOsc?: number | null;
-  macdDif?: number | null;
+interface CciChartData extends Partial<{
+  t: number | string;
+  o: number | null;
+  h: number | null;
+  l: number | null;
+  c: number | null;
+  v: number | null;
+}> {
+  cci: number | null;
+  bollMa: number | null;
+  bollUb: number | null;
+  bollLb: number | null;
+  cciOverbought: number | null;
+  cciOversold: number | null;
 }
 
-export default function Mfi({
+export default function CCI({
   visibleCount,
   setVisibleCount,
   rightOffset,
@@ -61,7 +60,6 @@ export default function Mfi({
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const lastX = useRef(0);
-  const startOffset = useRef(0);
 
   useEffect(() => {
     const container = chartContainerRef.current;
@@ -88,7 +86,6 @@ export default function Mfi({
     const handleMouseDown = (e: MouseEvent) => {
       isDragging.current = true;
       lastX.current = e.clientX;
-      startOffset.current = rightOffset;
       e.preventDefault();
     };
 
@@ -130,54 +127,72 @@ export default function Mfi({
     };
   }, [deals.length, visibleCount, rightOffset]);
 
-  const chartData = useMemo((): MfiChartData[] => {
-    if (!deals || deals.length === 0) return [];
+  const allData = useMemo(() => {
+    return calculateIndicators(deals, settings);
+  }, [deals, settings]);
 
-    const enhancedData = calculateIndicators(deals, settings);
+  const chartData = useMemo((): CciChartData[] => {
+    return allData
+      .map((item) => ({
+        ...item,
+        cciOverbought: (item.cci || 0) > 100 ? item.cci : null,
+        cciOversold: (item.cci || 0) < -100 ? item.cci : null,
+      }))
+      .slice(
+        -(visibleCount + rightOffset),
+        rightOffset === 0 ? undefined : -rightOffset,
+      );
+  }, [allData, visibleCount, rightOffset]);
 
-    // Map MACD fields for compatibility
-    const dataWithMacd = enhancedData.map((d) => ({
-      ...d,
-      macdOsc: d.osc,
-      macdDif: d.dif,
-    }));
+  // Calculate Signals based on CCI crossings (+100, -100)
+  const signals = useMemo(() => {
+    const result = [];
+    const startIndex = Math.max(1, deals.length - (visibleCount + rightOffset));
+    const endIndex = deals.length - rightOffset;
 
-    const fullDataWithSignals = dataWithMacd.map((d, i, arr) => {
-      let buySignal: number | null = null;
-      let exitSignal: number | null = null;
-      let accumulationSignal: number | null = null;
-      let buyReason: string | undefined;
-      let exitReason: string | undefined;
-      let accumulationReason: string | undefined;
+    for (let i = startIndex; i < endIndex; i++) {
+      const curr = allData[i];
+      const prev = allData[i - 1];
 
-      if (i > 0) {
-        const prev = arr[i - 1];
-        const currMfi = d.mfi || 50;
-        const prevMfi = prev.mfi || 50;
+      if (!curr || !prev) continue;
 
-        // Buy: Oversold (<20) and Turning Up
-        if (prevMfi < 20 && currMfi > prevMfi) {
-          buySignal = d.l ? d.l * 0.98 : null;
-          buyReason = "超賣反轉";
+      const cciVal = curr.cci || 0;
+      const prevCciVal = prev.cci || 0;
+
+      // 1. CCI 向上突破 +100
+      if (prevCciVal < 100 && cciVal >= 100) {
+        result.push({
+          t: curr.t,
+          type: "cci_buy",
+          price: curr.l,
+          text: "CCI 突破",
+        });
+      }
+      // 2. CCI 向下跌破 -100
+      else if (prevCciVal > -100 && cciVal <= -100) {
+        result.push({
+          t: curr.t,
+          type: "cci_sell",
+          price: curr.h,
+          text: "CCI 跌破",
+        });
+      }
+      // 3. CCI 從超賣區拉回 (-100 以下勾頭向上)
+      else if (prevCciVal < -100 && cciVal > prevCciVal && cciVal < -80) {
+        const prevPrev = i > 1 ? allData[i - 2] : null;
+        const prevPrevCciVal = prevPrev ? prevPrev.cci || 0 : -100;
+        if (prevCciVal < prevPrevCciVal) {
+          result.push({
+            t: curr.t,
+            type: "cci_rebound",
+            price: curr.l,
+            text: "CCI 勾頭",
+          });
         }
       }
-
-      return {
-        ...d,
-        buySignal,
-        exitSignal,
-        accumulationSignal,
-        buyReason,
-        exitReason,
-        accumulationReason,
-      };
-    });
-
-    return fullDataWithSignals.slice(
-      -(visibleCount + rightOffset),
-      rightOffset === 0 ? undefined : -rightOffset,
-    );
-  }, [deals, settings, visibleCount, rightOffset]);
+    }
+    return result;
+  }, [allData, deals.length, visibleCount, rightOffset]);
 
   if (chartData.length === 0) {
     return (
@@ -206,42 +221,42 @@ export default function Mfi({
       }}
     >
       <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
-        <MuiTooltip title="MFI 較敏感，MACD 較穩重。兩者結合可減少 MFI 頻繁震盪產生的雜訊。\n 價格是否觸碰布林軌道邊界?MACD 是否出現轉向交叉? 有的話可信度越高">
-          <Typography variant="h6" component="div" color="white" sx={{ mr: 2 }}>
-            MFI
-          </Typography>
-        </MuiTooltip>
+        <Typography variant="h6" component="div" color="white" sx={{ mr: 2 }}>
+          CCI
+        </Typography>
       </Stack>
 
       <Box
         ref={chartContainerRef}
-        sx={{
-          flexGrow: 1,
-          minHeight: 0,
-          width: "100%",
-          display: "flex",
-          flexDirection: "column",
-        }}
+        sx={{ flexGrow: 1, minHeight: 0, width: "100%" }}
       >
-        {/* Price Chart */}
-        <ResponsiveContainer width="100%" height="65%">
+        {/* Main Price Chart (60%) */}
+        <ResponsiveContainer width="100%" height="60%">
           <ComposedChart
             data={chartData}
-            syncId="mfiSync"
+            syncId="cciSync"
             margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
           >
-            <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
             <XAxis dataKey="t" hide />
-            <YAxis domain={["auto", "auto"]} />
             <YAxis
-              yAxisId="volAxis"
-              orientation="right"
-              domain={[0, (dataMax: number) => dataMax * 4]}
-              tick={false}
-              axisLine={false}
-              width={0}
+              domain={[
+                (dataMin: number) => dataMin * 0.98,
+                (dataMax: number) => dataMax * 1.02,
+              ]}
+              orientation="left"
+              stroke="#888"
+              fontSize={10}
             />
-            <Tooltip content={<ChartTooltip />} offset={50} />
+            <YAxis
+              yAxisId="vol"
+              orientation="right"
+              domain={[0, (max: number) => max * 5]}
+              hide
+            />
+
+            <Tooltip content={<ChartTooltip />} />
+
             <Line
               dataKey="h"
               stroke="#fff"
@@ -278,12 +293,14 @@ export default function Mfi({
               legendType="none"
               name="開"
             />
+
             <Customized component={BaseCandlestickRectangle} />
 
+            {/* Volume */}
             <Bar
               dataKey="v"
-              yAxisId="volAxis"
-              name="Volume"
+              yAxisId="vol"
+              opacity={0.1}
               shape={(props: any) => {
                 const { x, y, width, height, payload } = props;
                 const isUp = payload.c > payload.o;
@@ -293,13 +310,13 @@ export default function Mfi({
                     y={y}
                     width={width}
                     height={height}
-                    fill={isUp ? "#f44336" : "#4caf50"}
-                    opacity={0.2}
+                    fill={isUp ? "#ff4d4f" : "#52c41a"}
                   />
                 );
               }}
             />
 
+            {/* Bollinger Bands */}
             <Line
               dataKey="bollMa"
               stroke="rgba(33, 150, 243, 0.5)"
@@ -325,76 +342,42 @@ export default function Mfi({
               name="Lower Band"
             />
 
-            {chartData.map((d) => {
-              const isBuy = typeof d.buySignal === "number";
-              const isExit = typeof d.exitSignal === "number";
-              const isAccum = typeof d.accumulationSignal === "number";
-              if (!isBuy && !isExit && !isAccum) return null;
-
-              let yPos = 0;
-              let color = "";
-              let label = ""; // Optional visualization
-
-              if (isBuy) {
-                yPos = d.buySignal!;
-                color = "#f44336";
-                label = "Buy";
-              } else if (isExit) {
-                yPos = d.exitSignal!;
-                color = "#4caf50";
-                label = "Sell";
-              } else if (isAccum) {
-                yPos = d.accumulationSignal!;
-                color = "#2196f3"; // Blue
-                label = "Accum";
-              }
+            {/* Signal Markers */}
+            {signals.map((signal) => {
+              const isBuy = signal.type.includes("buy") || signal.type.includes("rebound");
+              const color = isBuy ? "#ff4d4f" : "#52c41a";
+              const yPos = isBuy ? signal.price * 0.99 : signal.price * 1.01;
 
               return (
                 <ReferenceDot
-                  key={`signal-${d.t}`}
-                  x={d.t}
+                  key={`${signal.t}-${signal.type}`}
+                  x={signal.t}
                   y={yPos}
-                  r={4}
-                  stroke="none"
                   shape={(props: any) => {
                     const { cx, cy } = props;
                     if (!cx || !cy) return <g />;
-
-                    let icon = "";
-                    if (isBuy) icon = "▲";
-                    else if (isExit) icon = "▼";
-                    else if (isAccum) icon = "●";
-
                     return (
                       <g>
-                        <circle
-                          cx={cx}
-                          cy={cy}
-                          r={12} // Slightly larger for visibility
-                          fill={color}
-                          fillOpacity={0.2}
-                        />
+                        {isBuy ? (
+                          <path
+                            d={`M${cx - 6},${cy + 12} L${cx + 6},${cy + 12} L${cx},${cy} Z`}
+                            fill={color}
+                          />
+                        ) : (
+                          <path
+                            d={`M${cx - 6},${cy - 12} L${cx + 6},${cy - 12} L${cx},${cy} Z`}
+                            fill={color}
+                          />
+                        )}
                         <text
                           x={cx}
-                          y={cy}
-                          dy={5}
+                          y={isBuy ? cy + 20 : cy - 15}
                           textAnchor="middle"
                           fill={color}
-                          fontSize={12}
+                          fontSize={11}
                           fontWeight="bold"
                         >
-                          {icon}
-                        </text>
-                        <text
-                          x={cx}
-                          y={cy}
-                          dy={20}
-                          textAnchor="middle"
-                          fill={color}
-                          fontSize={9}
-                          fontWeight="bold"
-                        >
-                          {label}
+                          {signal.text}
                         </text>
                       </g>
                     );
@@ -405,95 +388,71 @@ export default function Mfi({
           </ComposedChart>
         </ResponsiveContainer>
 
-        {/* Combined MFI & MACD Chart */}
-        <ResponsiveContainer width="100%" height="35%">
+        {/* CCI Chart (40%) */}
+        <ResponsiveContainer width="100%" height="40%">
           <ComposedChart
             data={chartData}
-            syncId="mfiSync"
+            syncId="cciSync"
             margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
           >
-            <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
             <XAxis dataKey="t" hide />
+            <YAxis domain={[-250, 250]} stroke="#888" fontSize={10} />
 
-            {/* Left Axis: MACD Osc */}
-            <YAxis
-              yAxisId="left"
-              orientation="left"
-              stroke="#666"
-              fontSize={10}
-            />
+            <Tooltip content={<ChartTooltip />} />
 
-            {/* Right Axis: MFI */}
-            <YAxis
-              yAxisId="right"
-              orientation="right"
-              domain={[0, 100]}
-              ticks={[20, 50, 80]}
-              stroke="#2196f3"
-              fontSize={10}
-              width={0}
-            />
-
-            <Tooltip content={<ChartTooltip />} offset={50} />
-
+            {/* Threshold Lines */}
             <ReferenceLine
-              y={80}
-              yAxisId="right"
-              stroke="#f44336"
+              y={100}
+              stroke="#ff4d4f"
               strokeDasharray="3 3"
+              opacity={0.5}
               label={{
-                value: "Overbought",
-                fill: "#f44336",
+                value: "100",
+                position: "right",
+                fill: "#ff4d4f",
                 fontSize: 10,
-                position: "insideRight",
               }}
             />
             <ReferenceLine
-              y={20}
-              yAxisId="right"
-              stroke="#4caf50"
+              y={-100}
+              stroke="#52c41a"
               strokeDasharray="3 3"
+              opacity={0.5}
               label={{
-                value: "Oversold",
-                fill: "#4caf50",
+                value: "-100",
+                position: "right",
+                fill: "#52c41a",
                 fontSize: 10,
-                position: "insideRight",
               }}
             />
-            <ReferenceLine
-              y={50}
-              yAxisId="right"
-              stroke="#666"
-              strokeDasharray="3 3"
+            <ReferenceLine y={0} stroke="#666" opacity={0.3} />
+
+            {/* CCI Areas */}
+            <Area
+              dataKey="cciOverbought"
+              fill="#ff4d4f"
+              stroke="none"
+              opacity={0.2}
+              baseValue={100}
             />
-            <ReferenceLine y={0} yAxisId="left" stroke="#666" opacity={0.5} />
+            <Area
+              dataKey="cciOversold"
+              fill="#52c41a"
+              stroke="none"
+              opacity={0.2}
+              baseValue={-100}
+            />
 
-            {/* MACD Bars (Left Axis) */}
-            <Bar
-              dataKey="macdOsc"
-              yAxisId="left"
-              name="Osc"
-              fill="#ffeb3b"
-              barSize={3}
-            >
-              {chartData.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={(entry.macdOsc || 0) > 0 ? "#f44336" : "#4caf50"}
-                  opacity={0.5}
-                />
-              ))}
-            </Bar>
-
-            {/* MFI Line (Right Axis) */}
+            {/* Indicators */}
             <Line
-              dataKey="mfi"
-              yAxisId="right"
-              stroke="#2196f3"
-              dot={false}
-              activeDot={false}
+              type="monotone"
+              dataKey="cci"
+              stroke="#fff"
               strokeWidth={2}
-              name="MFI"
+              dot={false}
+              activeDot={{ r: 4 }}
+              name="CCI"
             />
           </ComposedChart>
         </ResponsiveContainer>

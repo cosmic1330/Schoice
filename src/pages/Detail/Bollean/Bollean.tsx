@@ -1,5 +1,5 @@
-import LockIcon from "@mui/icons-material/Lock";
-import LockOpenIcon from "@mui/icons-material/LockOpen";
+import { dateFormat } from "@ch20026103/anysis";
+import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
 import SettingsIcon from "@mui/icons-material/Settings";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
@@ -9,7 +9,6 @@ import {
   Chip,
   CircularProgress,
   Container,
-  Divider,
   IconButton,
   Menu,
   Tooltip as MuiTooltip,
@@ -25,6 +24,7 @@ import {
   ComposedChart,
   Customized,
   Line,
+  ReferenceArea,
   ReferenceLine,
   ResponsiveContainer,
   Scatter,
@@ -34,10 +34,10 @@ import {
 } from "recharts";
 import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCandlestickRectangle";
 import { DealsContext } from "../../../context/DealsContext";
+import { useGapDetection } from "../../../hooks/useGapDetection";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
-import { calculateChannel } from "../../../utils/channelUtils";
+import { UrlTaPerdOptions } from "../../../types";
 import { calculateIndicators } from "../../../utils/indicatorUtils";
-import ChartTooltip from "../Tooltip/ChartTooltip";
 import Fundamental from "../Tooltip/Fundamental";
 
 interface BolleanChartData extends Partial<{
@@ -55,12 +55,8 @@ interface BolleanChartData extends Partial<{
   buySignal?: number | null;
   exitSignal?: number | null;
   buyReason?: string;
-  exitReason?: string;
-  channelUb?: number | null;
-  channelLb?: number | null;
-  kcDynamicStop?: number | null;
-  kcExitSignal?: number | null;
-  kcMiddle?: number | null;
+  ema200?: number | null;
+  rsi?: number | null;
 }
 
 const BuyArrow = (props: any) => {
@@ -113,47 +109,14 @@ const ExitArrow = (props: any) => {
   );
 };
 
-const KcXMarker = (props: any) => {
-  const { cx, cy } = props;
-  if (!cx || !cy) return null;
-  return (
-    <g>
-      <line
-        x1={cx - 5}
-        y1={cy - 5}
-        x2={cx + 5}
-        y2={cy + 5}
-        stroke="#ff1744"
-        strokeWidth={3}
-      />
-      <line
-        x1={cx + 5}
-        y1={cy - 5}
-        x2={cx - 5}
-        y2={cy + 5}
-        stroke="#ff1744"
-        strokeWidth={3}
-      />
-      <text
-        x={cx}
-        y={cy - 12}
-        textAnchor="middle"
-        fill="#ff1744"
-        fontSize="10px"
-        fontWeight="bold"
-      >
-        跌破
-      </text>
-    </g>
-  );
-};
-
 export default function Bollean({
+  perd,
   visibleCount,
   setVisibleCount,
   rightOffset,
   setRightOffset,
 }: {
+  perd?: UrlTaPerdOptions;
   visibleCount: number;
   setVisibleCount: React.Dispatch<React.SetStateAction<number>>;
   rightOffset: number;
@@ -161,42 +124,18 @@ export default function Bollean({
 }) {
   const { settings, updateSetting, resetSettings } = useIndicatorSettings();
   const deals = useContext(DealsContext);
-  const [showChannel, setShowChannel] = useState(false);
-  const [showKc, setShowKc] = useState(true);
-  const [isLocked, setIsLocked] = useState(false);
-  const [lockedInfo, setLockedInfo] = useState<{
-    slope: number;
-    upperIntercept: number;
-    lowerIntercept: number;
-    anchorTime: number | string;
-    type: string;
-  } | null>(null);
+  const [showGaps, setShowGaps] = useState(true);
+  const [showOnlyUnfilled, setShowOnlyUnfilled] = useState(true);
+  const [hoveredGapDate, setHoveredGapDate] = useState<
+    number | string | undefined
+  >(undefined);
+  const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null);
 
-  // LRC Dynamic Parameters
-  const [channelPeriod, setChannelPeriod] = useState(60);
-  const [channelMultiplier, setChannelMultiplier] = useState(2.0);
-  const [channelAnchorEl, setChannelAnchorEl] = useState<null | HTMLElement>(
-    null,
-  );
-  const [kcAnchorEl, setKcAnchorEl] = useState<null | HTMLElement>(null);
-
-  const handleOpenChannelSettings = (event: React.MouseEvent<HTMLElement>) => {
-    setChannelAnchorEl(event.currentTarget);
+  const handleOpenSettings = (event: React.MouseEvent<HTMLElement>) => {
+    setSettingsAnchorEl(event.currentTarget);
   };
-  const handleCloseChannelSettings = () => {
-    setChannelAnchorEl(null);
-  };
-
-  const handleOpenKcSettings = (event: React.MouseEvent<HTMLElement>) => {
-    setKcAnchorEl(event.currentTarget);
-  };
-  const handleCloseKcSettings = () => {
-    setKcAnchorEl(null);
-  };
-
-  const handleResetChannel = () => {
-    setChannelPeriod(60);
-    setChannelMultiplier(2.0);
+  const handleCloseSettings = () => {
+    setSettingsAnchorEl(null);
   };
 
   const { id } = useParams();
@@ -277,7 +216,6 @@ export default function Bollean({
   const allPointsWithIndicators = useMemo((): BolleanChartData[] => {
     if (!deals || deals.length === 0) return [];
     const baseData = calculateIndicators(deals, settings);
-    let lastSignalState: "buy" | "neutral" = "neutral";
     const isNum = (n: any): n is number => typeof n === "number";
 
     return baseData.map((d, i) => {
@@ -287,49 +225,36 @@ export default function Bollean({
       const ub = d.bollUb;
       const lb = d.bollLb;
       const ma = d.bollMa;
-      const width = d.bandWidth;
 
-      if (
-        !isNum(price) ||
-        ub === null ||
-        lb === null ||
-        ma === null ||
-        width === null
-      )
+      if (!isNum(price) || ub === null || lb === null || ma === null) {
         return d as BolleanChartData;
+      }
 
-      const maRising = ma > (prev.bollMa || 0);
-      const priceAboveMa = price > ma;
-      const isSqueeze = width < 0.15;
-      const breakoutUp =
-        isSqueeze && price > ub && (d.v || 0) > (prev.v || 0) * 1.3;
-      const touchedLb = (d.l || 0) <= lb;
-      const closeHigh = price > (d.o || 0);
-      const reversalLong = touchedLb && closeHigh && maRising;
+      const rsi = d.rsi || 0;
+      const ema200 = d.ema200 || 0;
+      const prevClose = prev.c || 0;
+      const prevLb = prev.bollLb || 0;
+      const prevUb = prev.bollUb || 0;
 
-      let score = 0;
-      if (maRising) score += 20;
-      if (priceAboveMa) score += 20;
-      if (breakoutUp) score += 40;
-      if (reversalLong) score += 30;
+      const crossoverLower = prevClose <= prevLb && price > lb;
+      const buySignalTrigger = crossoverLower && rsi > 35 && price > ema200;
+
+      const crossunderUpper = prevClose >= prevUb && price < ub;
+      const sellSignalTrigger = crossunderUpper && rsi < 65;
 
       let buySignal: number | null = null;
       let exitSignal: number | null = null;
       let buyReason: string | undefined;
       let exitReason: string | undefined;
 
-      if (lastSignalState === "buy") {
-        if (price < ma) {
-          exitSignal = (d.h || 0) * 1.02;
-          exitReason = "跌破中軌";
-          lastSignalState = "neutral";
-        }
-      } else {
-        if ((breakoutUp || reversalLong) && score >= 50) {
-          buySignal = (d.l || 0) * 0.98;
-          buyReason = "突破/反轉";
-          lastSignalState = "buy";
-        }
+      if (buySignalTrigger) {
+        buySignal = (d.l || 0) * 0.98;
+        buyReason = "買";
+      }
+
+      if (sellSignalTrigger) {
+        exitSignal = (d.h || 0) * 1.02;
+        exitReason = "賣";
       }
 
       return {
@@ -349,6 +274,12 @@ export default function Bollean({
     );
   }, [allPointsWithIndicators, visibleCount, rightOffset]);
 
+  // Gap Detection
+  const { gapsWithFillStatus, unfilledGaps } = useGapDetection(
+    chartData as any,
+    0.7,
+  );
+
   const yDomain = useMemo(() => {
     if (chartData.length === 0) return ["auto", "auto"];
 
@@ -363,10 +294,6 @@ export default function Bollean({
       // Include Bollinger Bands
       if (d.bollUb != null && d.bollUb > max) max = d.bollUb;
       if (d.bollLb != null && d.bollLb < min) min = d.bollLb;
-      if (d.kcDynamicStop != null && d.kcDynamicStop < min)
-        min = d.kcDynamicStop;
-      if (d.kcDynamicStop != null && d.kcDynamicStop > max)
-        max = d.kcDynamicStop;
     });
 
     if (min === Infinity || max === -Infinity) return ["auto", "auto"];
@@ -376,75 +303,99 @@ export default function Bollean({
     return [min - padding, max + padding];
   }, [chartData]);
 
-  const channelInfo = useMemo(() => {
-    if (isLocked && lockedInfo) return lockedInfo;
-    if (chartData.length === 0) return null;
 
-    // Requirements: dynamic points based on channelPeriod
-    const n = Math.min(channelPeriod, chartData.length);
-    const calculationSlice = chartData.slice(-n);
 
-    const highs = calculationSlice.map((d) => d.h as number | null);
-    const lows = calculationSlice.map((d) => d.l as number | null);
+  // 自定義 Tooltip 組件來處理 hover 事件與缺口顯示
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      // 檢查當前 hover 的位置是否有缺口
+      const currentGaps = (
+        showOnlyUnfilled ? unfilledGaps : gapsWithFillStatus
+      ).filter((gap) => gap.date === label);
 
-    return calculateChannel(highs, lows, channelMultiplier);
-  }, [chartData, isLocked, lockedInfo, channelPeriod, channelMultiplier]);
+      if (currentGaps.length > 0) {
+        // 如果有缺口，設置高亮
+        if (hoveredGapDate !== label) {
+          setHoveredGapDate(label);
+        }
+      } else {
+        // 如果沒有缺口，清除高亮
+        if (hoveredGapDate !== undefined) {
+          setHoveredGapDate(undefined);
+        }
+      }
 
-  const handleToggleLock = (checked: boolean) => {
-    if (checked) {
-      if (!channelInfo || chartData.length === 0) return;
-      const n = Math.min(channelPeriod, chartData.length);
-      const anchorPoint = chartData[chartData.length - n];
-      if (!anchorPoint || anchorPoint.t === undefined) return;
-      setLockedInfo({
-        ...channelInfo,
-        anchorTime: anchorPoint.t,
-      });
-      setIsLocked(true);
-    } else {
-      setIsLocked(false);
-      setLockedInfo(null);
+      return (
+        <div
+          style={{
+            backgroundColor: "#222",
+            padding: "10px",
+            borderRadius: "4px",
+            border: "1px solid #444",
+            fontSize: "12px",
+            lineHeight: 1.4,
+          }}
+        >
+          <p style={{ color: "#eee", margin: "0 0 5px 0" }}>
+            {perd === UrlTaPerdOptions.Hour
+              ? label
+              : dateFormat(label, Mode.NumberToString)}
+          </p>
+          {payload.map((entry: any, index: number) => {
+            if (entry.name && entry.name.includes("gap")) return null;
+            // Filter out internal hidden keys
+            const hideKeys = ["buySignal", "exitSignal", "supertrend", "trailStop", "direction"];
+            if (hideKeys.includes(entry.dataKey)) return null;
+            return (
+              <p key={index} style={{ color: entry.color, margin: 0 }}>
+                {entry.name}:{" "}
+                {typeof entry.value === "number"
+                  ? entry.value.toFixed(2)
+                  : entry.value}
+              </p>
+            );
+          })}
+          {currentGaps.length > 0 && (
+            <div
+              style={{
+                marginTop: 8,
+                borderTop: "1px solid #555",
+                paddingTop: 4,
+              }}
+            >
+              {currentGaps.map((g) => (
+                <div key={g.date} style={{ marginTop: 4 }}>
+                  <p
+                    style={{
+                      color: g.type === "up" ? "#ff5252" : "#69f0ae",
+                      margin: 0,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {g.type === "up" ? "支撐缺口" : "壓力缺口"} (
+                    {g.size.toFixed(2)}, {g.sizePercent.toFixed(1)}%)
+                  </p>
+                  <p style={{ color: "#eee", margin: 0 }}>
+                    缺口上緣: {g.high.toFixed(2)}
+                  </p>
+                  <p style={{ color: "#eee", margin: 0 }}>
+                    缺口下緣: {g.low.toFixed(2)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
     }
+    // 當沒有 hover 時清除高亮
+    if (hoveredGapDate !== undefined) {
+      setHoveredGapDate(undefined);
+    }
+    return null;
   };
 
-  const finalChartData = useMemo(() => {
-    if (!channelInfo) return chartData;
 
-    let anchorIdx = -1;
-    if (isLocked && lockedInfo) {
-      anchorIdx = allPointsWithIndicators.findIndex(
-        (p) => p.t === lockedInfo.anchorTime,
-      );
-    } else {
-      const n = Math.min(channelPeriod, chartData.length);
-      const startIndex = chartData.length - n;
-      return chartData.map((d, i) => {
-        const relativeIndex = i - startIndex;
-        const channelUb =
-          channelInfo.slope * relativeIndex + channelInfo.upperIntercept;
-        const channelLb =
-          channelInfo.slope * relativeIndex + channelInfo.lowerIntercept;
-        return { ...d, channelUb, channelLb };
-      });
-    }
-
-    if (anchorIdx === -1) return chartData;
-
-    return chartData.map((d) => {
-      const currentFullIdx = allPointsWithIndicators.findIndex(
-        (p) => p.t === d.t,
-      );
-      if (currentFullIdx === -1) return d;
-
-      const relativeIndex = currentFullIdx - anchorIdx;
-      const channelUb =
-        channelInfo.slope * relativeIndex + channelInfo.upperIntercept;
-      const channelLb =
-        channelInfo.slope * relativeIndex + channelInfo.lowerIntercept;
-
-      return { ...d, channelUb, channelLb };
-    });
-  }, [chartData, channelInfo, isLocked, lockedInfo, allPointsWithIndicators]);
 
   const maDeductionPoints = useMemo(() => {
     if (chartData.length === 0) return [];
@@ -515,140 +466,62 @@ export default function Bollean({
       <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
         <MuiTooltip title={<Fundamental id={id} />} arrow>
           <Typography variant="h6" component="div" color="white" sx={{ mr: 2 }}>
-            Bolling
+            Bolling ({settings.boll})
           </Typography>
         </MuiTooltip>
+
+        <IconButton size="small" onClick={handleOpenSettings} color="primary" sx={{ mr: 1 }}>
+          <SettingsIcon fontSize="small" />
+        </IconButton>
 
         <Box
           sx={{ flexGrow: 1, display: "flex", gap: 2, alignItems: "center" }}
         >
-          {channelInfo && (
-            <Chip
-              label={
-                channelInfo.type === "ascending"
-                  ? "上升通道"
-                  : channelInfo.type === "descending"
-                    ? "下降通道"
-                    : "橫盤通道"
-              }
-              color="secondary"
-              variant="filled"
-              size="small"
-              sx={{ height: 24, fontSize: "0.75rem" }}
-            />
-          )}
-
-          <Divider orientation="vertical" flexItem sx={{ mx: 1, height: 24 }} />
-
           <Stack direction="row" spacing={1} alignItems="center">
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Chip
+              icon={
+                showGaps ? (
+                  <VisibilityIcon fontSize="small" />
+                ) : (
+                  <VisibilityOffIcon fontSize="small" />
+                )
+              }
+              label="顯示缺口"
+              size="small"
+              onClick={() => setShowGaps(!showGaps)}
+              variant={showGaps ? "filled" : "outlined"}
+              color={showGaps ? "primary" : "default"}
+              sx={{
+                height: 24,
+                fontSize: "0.75rem",
+                fontWeight: showGaps ? "bold" : "normal",
+                transition: "all 0.2s",
+                borderColor: showGaps ? "primary.main" : "#444",
+                "&:hover": {
+                  transform: "translateY(-1px)",
+                  boxShadow: showGaps
+                    ? "0 2px 8px rgba(33, 150, 243, 0.3)"
+                    : "none",
+                },
+              }}
+            />
+            {showGaps && (
               <Chip
-                icon={
-                  showChannel ? (
-                    <VisibilityIcon fontSize="small" />
-                  ) : (
-                    <VisibilityOffIcon fontSize="small" />
-                  )
-                }
-                label="通道"
+                label={showOnlyUnfilled ? "僅未補缺口" : "顯示所有缺口"}
                 size="small"
-                onClick={() => setShowChannel(!showChannel)}
-                variant={showChannel ? "filled" : "outlined"}
-                color={showChannel ? "secondary" : "default"}
+                onClick={() => setShowOnlyUnfilled(!showOnlyUnfilled)}
+                variant={showOnlyUnfilled ? "filled" : "outlined"}
+                color={showOnlyUnfilled ? "info" : "default"}
                 sx={{
                   height: 24,
                   fontSize: "0.75rem",
-                  fontWeight: showChannel ? "bold" : "normal",
+                  fontWeight: showOnlyUnfilled ? "bold" : "normal",
                   transition: "all 0.2s",
-                  borderColor: showChannel ? "secondary.main" : "#444",
+                  borderColor: showOnlyUnfilled ? "info.main" : "#444",
                   "&:hover": {
                     transform: "translateY(-1px)",
-                    boxShadow: showChannel
-                      ? "0 2px 8px rgba(156, 39, 176, 0.3)"
-                      : "none",
-                  },
-                }}
-              />
-              <IconButton
-                size="small"
-                onClick={handleOpenChannelSettings}
-                color="secondary"
-                sx={{
-                  p: 0.4,
-                  transition: "transform 0.2s",
-                  "&:hover": { transform: "rotate(45deg)" },
-                }}
-              >
-                <SettingsIcon sx={{ fontSize: "1rem" }} />
-              </IconButton>
-            </Box>
-
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <Chip
-                icon={
-                  showKc ? (
-                    <VisibilityIcon fontSize="small" />
-                  ) : (
-                    <VisibilityOffIcon fontSize="small" />
-                  )
-                }
-                label="動態防線"
-                size="small"
-                onClick={() => setShowKc(!showKc)}
-                variant={showKc ? "filled" : "outlined"}
-                color={showKc ? "warning" : "default"}
-                sx={{
-                  height: 24,
-                  fontSize: "0.75rem",
-                  fontWeight: showKc ? "bold" : "normal",
-                  transition: "all 0.2s",
-                  borderColor: showKc ? "warning.main" : "#444",
-                  "&:hover": {
-                    transform: "translateY(-1px)",
-                    boxShadow: showKc
-                      ? "0 2px 8px rgba(255, 152, 0, 0.3)"
-                      : "none",
-                  },
-                }}
-              />
-              <IconButton
-                size="small"
-                onClick={handleOpenKcSettings}
-                color="warning"
-                sx={{
-                  p: 0.4,
-                  transition: "transform 0.2s",
-                  "&:hover": { transform: "rotate(45deg)" },
-                }}
-              >
-                <SettingsIcon sx={{ fontSize: "1rem" }} />
-              </IconButton>
-            </Box>
-
-            {showChannel && (
-              <Chip
-                icon={
-                  isLocked ? (
-                    <LockIcon fontSize="small" />
-                  ) : (
-                    <LockOpenIcon fontSize="small" />
-                  )
-                }
-                label="固定"
-                size="small"
-                onClick={() => handleToggleLock(!isLocked)}
-                variant={isLocked ? "filled" : "outlined"}
-                color={isLocked ? "warning" : "default"}
-                sx={{
-                  height: 24,
-                  fontSize: "0.75rem",
-                  fontWeight: isLocked ? "bold" : "normal",
-                  transition: "all 0.2s",
-                  borderColor: isLocked ? "warning.main" : "#444",
-                  "&:hover": {
-                    transform: "translateY(-1px)",
-                    boxShadow: isLocked
-                      ? "0 2px 8px rgba(237, 108, 2, 0.3)"
+                    boxShadow: showOnlyUnfilled
+                      ? "0 2px 8px rgba(2, 136, 209, 0.3)"
                       : "none",
                   },
                 }}
@@ -656,102 +529,27 @@ export default function Bollean({
             )}
           </Stack>
         </Box>
-        <Menu
-          anchorEl={channelAnchorEl}
-          open={Boolean(channelAnchorEl)}
-          onClose={handleCloseChannelSettings}
-          PaperProps={{
-            sx: { p: 2, width: 250, bgcolor: "background.paper" },
-          }}
-        >
-          <Typography variant="subtitle2" gutterBottom>
-            通道參數調校
-          </Typography>
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="caption" color="text.secondary">
-              計算長度: {channelPeriod} 根
-            </Typography>
-            <Slider
-              value={channelPeriod}
-              min={10}
-              max={200}
-              step={1}
-              onChange={(_, v) => setChannelPeriod(v as number)}
-              size="small"
-            />
-          </Box>
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="caption" color="text.secondary">
-              標準差倍數: {channelMultiplier.toFixed(1)}
-            </Typography>
-            <Slider
-              value={channelMultiplier}
-              min={0.5}
-              max={5.0}
-              step={0.1}
-              onChange={(_, v) => setChannelMultiplier(v as number)}
-              size="small"
-              color="secondary"
-            />
-          </Box>
-          <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
-            <Button
-              size="small"
-              onClick={handleResetChannel}
-              sx={{ color: "secondary.main", fontWeight: "bold" }}
-            >
-              回復預設
-            </Button>
-          </Box>
-        </Menu>
 
         <Menu
-          anchorEl={kcAnchorEl}
-          open={Boolean(kcAnchorEl)}
-          onClose={handleCloseKcSettings}
-          PaperProps={{
-            sx: { p: 2, width: 250, bgcolor: "background.paper" },
-          }}
+          anchorEl={settingsAnchorEl}
+          open={Boolean(settingsAnchorEl)}
+          onClose={handleCloseSettings}
+          PaperProps={{ sx: { p: 2, width: 250, bgcolor: "background.paper" } }}
         >
-          <Typography variant="subtitle2" gutterBottom>
-            動態防線 (KC)
-          </Typography>
+          <Typography variant="subtitle2" gutterBottom>布林通道參數</Typography>
           <Box sx={{ mt: 2 }}>
-            <Typography variant="caption" color="text.secondary">
-              計算長度: {settings.kcLength} 根
-            </Typography>
+            <Typography variant="caption" color="text.secondary">長度: {settings.boll} 根</Typography>
             <Slider
-              value={settings.kcLength}
-              min={5}
+              value={settings.boll}
+              min={10}
               max={100}
               step={1}
-              onChange={(_, v) => updateSetting("kcLength", v as number)}
+              onChange={(_, v) => updateSetting("boll", v as number)}
               size="small"
-              color="warning"
-            />
-          </Box>
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="caption" color="text.secondary">
-              標準差倍數: {settings.kcMult.toFixed(1)}
-            </Typography>
-            <Slider
-              value={settings.kcMult}
-              min={0.5}
-              max={5.0}
-              step={0.1}
-              onChange={(_, v) => updateSetting("kcMult", v as number)}
-              size="small"
-              color="warning"
             />
           </Box>
           <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
-            <Button
-              size="small"
-              onClick={resetSettings}
-              sx={{ color: "warning.main", fontWeight: "bold" }}
-            >
-              全部回復預設
-            </Button>
+            <Button size="small" onClick={resetSettings}>回復預設</Button>
           </Box>
         </Menu>
       </Stack>
@@ -762,7 +560,7 @@ export default function Bollean({
       >
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
-            data={finalChartData}
+            data={chartData}
             margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
@@ -777,14 +575,7 @@ export default function Bollean({
               axisLine={false}
             />
 
-            <Tooltip
-              content={
-                <ChartTooltip
-                  hideKeys={["buySignal", "exitSignal", "kcExitSignal"]}
-                />
-              }
-              offset={50}
-            />
+            <Tooltip content={<CustomTooltip />} offset={50} />
 
             <Line
               dataKey="h"
@@ -824,6 +615,42 @@ export default function Bollean({
             />
             <Customized component={BaseCandlestickRectangle} />
 
+            {/* Gap Visualization (Premium Support/Resistance Area Zones) */}
+            {showGaps &&
+              (showOnlyUnfilled ? unfilledGaps : gapsWithFillStatus).map(
+                (gap) => {
+                  const latestDate =
+                    chartData[chartData.length - 1]?.t;
+                  const endDate =
+                    gap.filled && gap.fillDate ? gap.fillDate : latestDate;
+
+                  // Traditional Taiwan stock market: Red is support (up gap), Green is resistance (down gap)
+                  const strokeColor =
+                    gap.type === "up"
+                      ? "rgba(255, 77, 79, 0.6)"
+                      : "rgba(82, 196, 26, 0.6)";
+                  const fillColor =
+                    gap.type === "up"
+                      ? "rgba(255, 77, 79, 0.2)"
+                      : "rgba(82, 196, 26, 0.2)";
+
+                  return (
+                    <ReferenceArea
+                      key={`gap-area-${gap.date}`}
+                      x1={gap.date}
+                      x2={endDate}
+                      y1={gap.low}
+                      y2={gap.high}
+                      fill={fillColor}
+                      stroke={strokeColor}
+                      strokeDasharray="4 3"
+                      strokeWidth={1.2}
+                      isFront={false}
+                    />
+                  );
+                },
+              )}
+
             <Bar
               dataKey="v"
               yAxisId="right"
@@ -835,69 +662,38 @@ export default function Bollean({
 
             <Line
               dataKey="bollMa"
-              stroke="#2196f3"
-              strokeWidth={1}
+              stroke="#1976d2"
+              strokeWidth={1.5}
               dot={false}
               activeDot={false}
-              name={`${settings.boll} MA (Mid)`}
+              name="中線 (Basis)"
             />
             <Line
               dataKey="bollUb"
-              stroke="#00bcd4"
+              stroke="#808080"
               strokeWidth={1.7}
               dot={false}
               activeDot={false}
-              name="Upper Band"
+              name="上軌"
             />
             <Line
               dataKey="bollLb"
-              stroke="#00bcd4"
+              stroke="#808080"
               strokeWidth={1.7}
               dot={false}
               activeDot={false}
-              name="Lower Band"
+              name="下軌"
+            />
+            <Line
+              dataKey="ema200"
+              stroke="#ffeb3b"
+              strokeWidth={1}
+              dot={false}
+              activeDot={false}
+              name="EMA 200"
             />
 
-            {/* Price Channel lines */}
-            {showChannel && (
-              <>
-                <Line
-                  dataKey="channelUb"
-                  stroke="#d286ee"
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={false}
-                  name="Channel Upper"
-                />
-                <Line
-                  dataKey="channelLb"
-                  stroke="#d286ee"
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={false}
-                  name="Channel Lower"
-                />
-              </>
-            )}
 
-            {/* KC Dynamic Defense Line */}
-            {showKc && (
-              <>
-                <Line
-                  dataKey="kcDynamicStop"
-                  stroke="#ff9800"
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={false}
-                  name="動態防線"
-                />
-                <Scatter
-                  dataKey="kcExitSignal"
-                  shape={<KcXMarker />}
-                  legendType="none"
-                />
-              </>
-            )}
 
             {/* Signals */}
             <Scatter

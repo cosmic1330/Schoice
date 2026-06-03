@@ -8,9 +8,9 @@ import {
 } from "@mui/material";
 import { useContext, useEffect, useMemo, useRef } from "react";
 import {
+  Area,
   Bar,
   CartesianGrid,
-  Cell,
   ComposedChart,
   Customized,
   Line,
@@ -27,7 +27,6 @@ import { calculateIndicators } from "../../../utils/indicatorUtils";
 import ChartTooltip from "../Tooltip/ChartTooltip";
 import { calculateObvSignals } from "./obvStrategy";
 
-
 // Types
 interface ObvChartData extends Partial<{
   t: number | string;
@@ -40,7 +39,9 @@ interface ObvChartData extends Partial<{
   // Price Indicators
   ma60: number | null;
   ma20: number | null; // Keep for reference
-  volMa20: number | null;
+  bollMa?: number | null;
+  bollUb?: number | null;
+  bollLb?: number | null;
   // OBV Indicators
   obv: number | null;
   obvMa20: number | null;
@@ -55,8 +56,8 @@ interface ObvChartData extends Partial<{
   exitWeakness?: number | null;
   stopLoss?: number | null;
   signalReason?: string | null;
-  // Others
-  obvHist?: number | null;
+  obvUpArea?: [number, number] | null;
+  obvDownArea?: [number, number] | null;
 }
 
 export default function Obv({
@@ -174,6 +175,21 @@ export default function Obv({
     const allData = enhancedData.map((d) => {
       const signal = signalMap.get(d.t);
 
+      const obv = d.obv;
+      const obvMa20 = d.obvMa20;
+      let obvUpArea: [number, number] | null = null;
+      let obvDownArea: [number, number] | null = null;
+
+      if (obv !== null && obvMa20 !== null) {
+        if (obv > obvMa20) {
+          obvUpArea = [obvMa20, obv];
+          obvDownArea = [obvMa20, obvMa20];
+        } else {
+          obvUpArea = [obvMa20, obvMa20];
+          obvDownArea = [obv, obvMa20];
+        }
+      }
+
       return {
         ...d,
         obvDivergenceEntry:
@@ -183,7 +199,8 @@ export default function Obv({
         exitWeakness: signal?.type === "EXIT_WEAKNESS" ? d.l * 0.98 : null,
         stopLoss: (signal as any)?.type === "STOP_LOSS" ? d.h * 1.02 : null,
         signalReason: signal?.reason || null,
-        obvHist: d.obv !== null && d.obvMa20 !== null ? d.obv - d.obvMa20 : null,
+        obvUpArea,
+        obvDownArea,
       } as ObvChartData;
     });
 
@@ -326,20 +343,27 @@ export default function Obv({
               name="開"
             />
 
-            {/* Price Indicators */}
+            {/* Price Indicators (Bollinger Bands) */}
             <Line
-              dataKey="ma60"
-              stroke="#64b5f6"
-              strokeWidth={1}
+              dataKey="bollUb"
+              stroke="rgba(140, 140, 140, 0.45)"
+              strokeWidth={1.2}
               dot={false}
-              name="MA60"
+              name="布林上軌"
             />
             <Line
-              dataKey="ma20"
-              stroke="#f1af20ff"
-              strokeWidth={0.5}
+              dataKey="bollMa"
+              stroke="rgba(33, 150, 243, 0.5)"
+              strokeWidth={1.2}
               dot={false}
-              name="MA20"
+              name="布林中軌"
+            />
+            <Line
+              dataKey="bollLb"
+              stroke="rgba(140, 140, 140, 0.45)"
+              strokeWidth={1.2}
+              dot={false}
+              name="布林下軌"
             />
 
             <Customized
@@ -477,6 +501,20 @@ export default function Obv({
               }}
             />
             <RechartsTooltip content={<ChartTooltip showSignals={false} />} />
+            <Area
+              dataKey="obvUpArea"
+              stroke="none"
+              fill="#f44336"
+              fillOpacity={0.3}
+              isAnimationActive={false}
+            />
+            <Area
+              dataKey="obvDownArea"
+              stroke="none"
+              fill="#52c41a"
+              fillOpacity={0.3}
+              isAnimationActive={false}
+            />
             <Line
               dataKey="obv"
               stroke="#2196f3"
@@ -493,15 +531,6 @@ export default function Obv({
               name="OBV MA20"
               opacity={0.5}
             />
-            <Bar dataKey="obvHist" name="OBV Histogram">
-              {chartData.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={(entry.obvHist || 0) >= 0 ? "#f44336" : "#52c41a"}
-                  fillOpacity={0.3}
-                />
-              ))}
-            </Bar>
           </ComposedChart>
         </ResponsiveContainer>
       </Box>

@@ -2,7 +2,6 @@ import { Box, createTheme, styled, ThemeProvider } from "@mui/material";
 import { listen } from "@tauri-apps/api/event";
 import { AnimatePresence, motion, Variants } from "framer-motion";
 import React, {
-  lazy,
   Suspense,
   useCallback,
   useEffect,
@@ -22,31 +21,8 @@ import {
   IndicatorsDateTimeType,
 } from "../../utils/analyzeIndicatorsData";
 import generateDealDataDownloadUrl from "../../utils/generateDealDataDownloadUrl";
-import Bollean from "./Bollean/Bollean";
-import AvgMaKbar from "./Ema/EmaKbar";
 import GlassBar from "./GlassBar";
-
-// Import doc assets
-import bolleanDoc from "./Bollean/Bollean.md?raw";
-import emaDoc from "./Ema/Ema.md?raw";
-import ichimokuDoc from "./IchimokuCloud/ichimoku.md?raw";
-import kdDoc from "./Kd/Kd.md?raw";
-import maDoc from "./Ma/Ma.md?raw";
-import mfiDoc from "./Mfi/Mfi.md?raw";
-import mjDoc from "./Mj/Mj.md?raw";
-import mrDoc from "./Mr/MR.md?raw";
-import obvDoc from "./Obv/Obv.md?raw";
-import atrDoc from "./ATR/ATR.md?raw";
-
-// lazy load components
-const MaKbar = lazy(() => import("./Ma/MaKbar"));
-const Obv = lazy(() => import("./Obv/Obv"));
-const IchimokuCloud = lazy(() => import("./IchimokuCloud/IchimokuCloud"));
-const MJ = lazy(() => import("./Mj/MJ"));
-const MR = lazy(() => import("./Mr/MR"));
-const Kd = lazy(() => import("./Kd/Kd"));
-const Mfi = lazy(() => import("./Mfi/Mfi"));
-const ATR = lazy(() => import("./ATR/ATR"));
+import { CHART_CONFIG } from "./constants/chartConfig";
 
 const PageContainer = styled(Box)`
   width: 100vw;
@@ -66,8 +42,6 @@ const PageContainer = styled(Box)`
     200px 200px;
   background-repeat: no-repeat, no-repeat, no-repeat, repeat;
 `;
-
-// --- Styled Components ---
 
 // Create a dark theme instance
 const darkTheme = createTheme({
@@ -110,142 +84,37 @@ const FullscreenVerticalCarousel: React.FC = () => {
   const pageRef = useRef(null);
 
   // Shared zoom and pan state
-  const [visibleCount, setVisibleCount] = useState(180);
+  const [visibleCount, setVisibleCount] = useState(120);
   const [rightOffset, setRightOffset] = useState(0);
 
   // Documentation modal state
   const [isDocOpen, setIsDocOpen] = useState(false);
 
-  const docMap = useMemo(
-    () => ({
-      bollean: { title: "布林通道策略", content: bolleanDoc },
-      ma_k: { title: "均線與缺口策略", content: maDoc },
-      ema: { title: "EMA趨勢策略", content: emaDoc },
-      obv: { title: "OBV動能策略", content: obvDoc },
-      mj: { title: "MJ雙指標共振", content: mjDoc },
-      mr: { title: "MR雙指標共振", content: mrDoc },
-      kd: { title: "KD隨機指標策略", content: kdDoc },
-      mfi: { title: "MFI資金流便覽", content: mfiDoc },
-      ichimoku_cloud: { title: "一目均衡表說明", content: ichimokuDoc },
-      atr: { title: "ATR Trend 策略說明", content: atrDoc },
-    }),
-    [],
-  );
+  const docMap = useMemo(() => {
+    const map: Record<string, { title: string; content: string }> = {};
+    CHART_CONFIG.forEach((cfg) => {
+      map[cfg.id] = { title: cfg.title, content: cfg.docContent };
+    });
+    return map;
+  }, []);
 
   const handleSetPerd = useCallback((newPerd: UrlTaPerdOptions) => {
     localStorage.setItem("detail:perd:type", newPerd);
     setPerd(newPerd);
   }, []);
 
-  // slides 需依賴 perd，移到 useMemo 內
   const slides = useMemo(
-    () => [
-      {
-        id: "bollean",
-        content: (
-          <Bollean
-            visibleCount={visibleCount}
-            setVisibleCount={setVisibleCount}
-            rightOffset={rightOffset}
-            setRightOffset={setRightOffset}
-          />
-        ),
-      },
-      {
-        id: "ma_k",
-        content: (
-          <MaKbar
-            perd={perd}
-            visibleCount={visibleCount}
-            setVisibleCount={setVisibleCount}
-            rightOffset={rightOffset}
-            setRightOffset={setRightOffset}
-          />
-        ),
-      },
-      {
-        id: "ema",
-        content: (
-          <AvgMaKbar
-            visibleCount={visibleCount}
-            setVisibleCount={setVisibleCount}
-            rightOffset={rightOffset}
-            setRightOffset={setRightOffset}
-          />
-        ),
-      },
-      {
-        id: "obv",
-        content: (
-          <Obv
-            visibleCount={visibleCount}
-            setVisibleCount={setVisibleCount}
-            rightOffset={rightOffset}
-            setRightOffset={setRightOffset}
-          />
-        ),
-      },
-      {
-        id: "mr",
-        content: (
-          <MR
-            perd={perd}
-            visibleCount={visibleCount}
-            setVisibleCount={setVisibleCount}
-            rightOffset={rightOffset}
-            setRightOffset={setRightOffset}
-          />
-        ),
-      },
-      {
-        id: "mj",
-        content: (
-          <MJ
-            visibleCount={visibleCount}
-            setVisibleCount={setVisibleCount}
-            rightOffset={rightOffset}
-            setRightOffset={setRightOffset}
-          />
-        ),
-      },
-      {
-        id: "kd",
-        content: (
-          <Kd
-            visibleCount={visibleCount}
-            setVisibleCount={setVisibleCount}
-            rightOffset={rightOffset}
-            setRightOffset={setRightOffset}
-          />
-        ),
-      },
-      {
-        id: "mfi",
-        content: (
-          <Mfi
-            visibleCount={visibleCount}
-            setVisibleCount={setVisibleCount}
-            rightOffset={rightOffset}
-            setRightOffset={setRightOffset}
-          />
-        ),
-      },
-      {
-        id: "ichimoku_cloud",
-        content: <IchimokuCloud perd={perd} />,
-      },
-      {
-        id: "atr",
-        content: (
-          <ATR
-            visibleCount={visibleCount}
-            setVisibleCount={setVisibleCount}
-            rightOffset={rightOffset}
-            setRightOffset={setRightOffset}
-          />
-        ),
-      },
-    ],
+    () =>
+      CHART_CONFIG.map((cfg) => ({
+        id: cfg.id,
+        content: cfg.component({
+          perd,
+          visibleCount,
+          setVisibleCount,
+          rightOffset,
+          setRightOffset,
+        }),
+      })),
     [perd, visibleCount, rightOffset],
   );
 
@@ -257,7 +126,7 @@ const FullscreenVerticalCarousel: React.FC = () => {
     } else if (index >= slides.length) {
       setCurrent(0);
     }
-  }, []);
+  }, [slides.length]);
 
   const handleWheel = useCallback(
     (e: WheelEvent) => {
@@ -336,16 +205,18 @@ const FullscreenVerticalCarousel: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // 监听股票添加事件
-    const unlisten = listen("detail", (event: any) => {
-      const { url } = event.payload;
-      navigate(url);
-    });
-
-    return () => {
-      unlisten.then((fn: any) => fn()); // 清理监听器
+    let unlisten: (() => void) | null = null;
+    const setup = async () => {
+      unlisten = await listen("detail", (event: any) => {
+        const { url } = event.payload;
+        navigate(url);
+      });
     };
-  }, []);
+    setup();
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, [navigate]);
 
   const { data } = useSWR(
     id === FutureIds.NASDAQ_FUTURE
@@ -427,16 +298,17 @@ const FullscreenVerticalCarousel: React.FC = () => {
             goToSlide={goToSlide}
             pageRef={pageRef}
             onOpenDoc={() => setIsDocOpen(true)}
+            currentId={slides[current]?.id || ""}
           />
 
           <DocModal
             open={isDocOpen}
             onClose={() => setIsDocOpen(false)}
             title={
-              docMap[slides[current].id as keyof typeof docMap]?.title || "文件"
+              docMap[slides[current]?.id as keyof typeof docMap]?.title || "文件"
             }
             markdown={
-              docMap[slides[current].id as keyof typeof docMap]?.content || ""
+              docMap[slides[current]?.id as keyof typeof docMap]?.content || ""
             }
           />
         </DealsContext.Provider>

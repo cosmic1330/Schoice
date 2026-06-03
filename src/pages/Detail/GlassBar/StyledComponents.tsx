@@ -54,7 +54,8 @@ export const NavIconButton = styled(IconButton)(() => ({
 export const MenuPopup = styled(Box)(() => ({
   position: "absolute",
   left: "100%",
-  top: 0,
+  top: "50%",
+  transform: "translateY(-50%)",
   display: "none",
   opacity: 0,
   transition: "all 0.2s ease-in-out",

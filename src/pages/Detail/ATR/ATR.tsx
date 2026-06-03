@@ -168,7 +168,32 @@ export default function ATR({
 
   const allPoints = useMemo(() => {
     if (!deals || deals.length === 0) return [];
-    return calculateIndicators(deals, settings);
+    const basePoints = calculateIndicators(deals, settings);
+
+    // Locally calculate Supertrend crossover signals for ATR display
+    return basePoints.map((d, i) => {
+      if (i === 0) return d;
+      const prev = basePoints[i - 1];
+      let buySignal = null;
+      let exitSignal = null;
+
+      if (prev.supertrend && d.supertrend) {
+        // 進場：價格站上 Supertrend (原本在線下，現在在線上)
+        if (prev.c < prev.supertrend && d.c > d.supertrend) {
+          buySignal = d.l * 0.98;
+        }
+        // 出場：價格跌破 Supertrend (原本在線上，現在在線下)
+        if (prev.c > prev.supertrend && d.c < d.supertrend) {
+          exitSignal = d.h * 1.02;
+        }
+      }
+
+      return {
+        ...d,
+        buySignal,
+        exitSignal,
+      };
+    });
   }, [deals, settings]);
 
   const chartData = useMemo(() => {
@@ -187,11 +212,12 @@ export default function ATR({
       if (d.l != null && d.l < min) min = d.l;
       if (d.supertrend != null && d.supertrend > max) max = d.supertrend;
       if (d.supertrend != null && d.supertrend < min) min = d.supertrend;
-      if (d.ema50 != null && d.ema50 > max) max = d.ema50;
-      if (d.ema50 != null && d.ema50 < min) min = d.ema50;
-      if (d.trailStop != null && d.trailStop > max) max = d.trailStop;
-      if (d.trailStop != null && d.trailStop < min) min = d.trailStop;
+      if (d.ma20 != null && d.ma20 > max) max = d.ma20;
+      if (d.ma20 != null && d.ma20 < min) min = d.ma20;
+      if (d.ema200 != null && d.ema200 > max) max = d.ema200;
+      if (d.ema200 != null && d.ema200 < min) min = d.ema200;
     });
+
     if (min === Infinity || max === -Infinity) return ["auto", "auto"];
     const padding = (max - min) * 0.05;
     return [min - padding, max + padding];
@@ -351,6 +377,16 @@ export default function ATR({
               name="開"
             />
 
+
+            <Line
+              dataKey="ma20"
+              stroke="rgba(241, 175, 32, 0.35)"
+              strokeWidth={1}
+              strokeDasharray="4 3"
+              dot={false}
+              activeDot={false}
+              name={`MA${settings.ma20}`}
+            />
             <Customized component={BaseCandlestickRectangle} />
 
             <Bar
@@ -363,21 +399,11 @@ export default function ATR({
 
             <Line
               dataKey="supertrend"
-              stroke="rgba(33, 150, 243, 0.8)"
+              stroke="#589bf3"
               strokeWidth={2}
               dot={false}
               activeDot={false}
               name="SuperTrend"
-            />
-
-            <Line
-              dataKey="trailStop"
-              stroke="#eda049"
-              strokeWidth={1}
-              dot={false}
-              activeDot={false}
-              name="EMA 30"
-              opacity={0.3}
             />
 
             <Scatter

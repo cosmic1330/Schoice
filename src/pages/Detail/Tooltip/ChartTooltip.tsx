@@ -16,10 +16,30 @@ interface ChartTooltipProps {
   showSignals?: boolean;
   hideKeys?: string[];
   dateFormatter?: (tick: number | string) => string;
-  sortKeys?: string[];
   showIchimoku?: boolean;
   showMESS?: boolean;
 }
+
+const SIGNAL_KEYS = [
+  "BUY",
+  "SELL",
+  "FAKE",
+  "ACCUMULATION",
+  "WEAKNESS",
+  "EXIT",
+  "buySignal",
+  "exitSignal",
+  "golden",
+  "death",
+  "obvDivergenceEntry",
+  "fakeBreakout",
+  "accumulation",
+  "exitWeakness",
+  "stopLoss",
+  "accumulationSignal",
+  "entry_long",
+  "entry_short",
+];
 
 const ChartTooltip = ({
   active,
@@ -37,14 +57,8 @@ const ChartTooltip = ({
 
     // Sort payload: Signal entries first, then Indicators
     const sortedPayload = [...payload].sort((a, b) => {
-      const signalKeys = [
-        "trueBreakout",
-        "fakeBreakout",
-        "accumulation",
-        "exitWeakness",
-      ];
-      const isSignalA = signalKeys.includes(a.dataKey);
-      const isSignalB = signalKeys.includes(b.dataKey);
+      const isSignalA = SIGNAL_KEYS.includes(a.dataKey);
+      const isSignalB = SIGNAL_KEYS.includes(b.dataKey);
       if (isSignalA && !isSignalB) return -1;
       if (!isSignalA && isSignalB) return 1;
       return 0;
@@ -126,11 +140,16 @@ const ChartTooltip = ({
               variant="body2"
               fontWeight="bold"
               style={{
-                color: data.marketType === '趨勢' ? '#2196f3' : data.marketType === '寬震' ? '#ce93d8' : '#fff',
+                color:
+                  data.marketType === "趨勢"
+                    ? "#2196f3"
+                    : data.marketType === "寬震"
+                      ? "#ce93d8"
+                      : "#fff",
                 marginBottom: 2,
               }}
             >
-              {data.marketType}市 ({data.mss.toFixed(1)})
+              {data.marketType}市 ({data.mss?.toFixed(1) ?? "0.0"})
             </Typography>
             <Typography variant="caption" style={{ color: "#bbb" }}>
               診斷：{data.diagnostic || "盤整無顯著訊號"}
@@ -215,7 +234,8 @@ const ChartTooltip = ({
             const isFullWidth =
               Array.isArray(entry.value) ||
               entry.name.length > 8 ||
-              entry.dataKey.includes("Status");
+              (typeof entry.dataKey === "string" &&
+                entry.dataKey.includes("Status"));
 
             return (
               <div

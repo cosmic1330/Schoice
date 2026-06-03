@@ -21,7 +21,7 @@ export interface IchimokuCombinedData {
 
 export interface SignalResult {
   t: number | string;
-  type: "BUY" | "SELL" | "FAKE" | "ACCUMULATION" | "WEAKNESS" | "EXIT";
+  type: "ACCUMULATION" | "EXIT" | "DIVERGENCE_BULL" | "DIVERGENCE_BEAR";
   reason: string;
   price: number;
 }
@@ -34,7 +34,217 @@ export interface AnalysisResult {
   }[];
   score: number;
   recommendation: string;
+  dateLabel?: string;
 }
+
+export const analyzeIchimokuAtPoint = (
+  data: IchimokuCombinedData[],
+  index: number,
+): AnalysisResult => {
+  if (index < 0 || index >= data.length) {
+    return { steps: [], score: 0, recommendation: "No Data", dateLabel: "-" };
+  }
+
+  const current = data[index];
+  const dateStr = current.t ? String(current.t) : "-";
+  // Simple formatting YYYYMMDD -> YYYY-MM-DD
+  const formattedDate =
+    dateStr.length === 8
+      ? `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`
+      : dateStr;
+  const price = current.c || 0;
+  if (price === 0) {
+    // If it's a future bar with no price, find the last real price for current context
+    let lastRealIdx = index;
+    while (
+      lastRealIdx >= 0 &&
+      (data[lastRealIdx].c === null || data[lastRealIdx].c === 0)
+    ) {
+      lastRealIdx--;
+    }
+    // If we're analyzing a future bar, we might want to return a special state or analyze based on the last known price vs future cloud
+    // For now, let's just use the last real index if current is empty
+    if (lastRealIdx === -1)
+      return { steps: [], score: 0, recommendation: "No Price Data" };
+    // But we want to analyze the cloud AT the requested index
+  }
+
+  // 1. Current State
+  const cloudTop =
+    current.senkouA !== null && current.senkouB !== null
+      ? Math.max(current.senkouA, current.senkouB)
+      : 0;
+  const isAboveCloud = price > cloudTop;
+  const cloudThickness = Math.abs(
+    (current.senkouA || 0) - (current.senkouB || 0),
+  );
+  const isThickCloud = cloudThickness > price * 0.005;
+
+  const cmf = current.cmf || 0;
+  const cmfEma5 = current.cmfEma5 || 0;
+  const prevCmfEma5 = index > 0 ? data[index - 1].cmfEma5 || 0 : 0;
+  const isCmfSlopeUp = cmfEma5 > prevCmfEma5;
+
+  const isTkGold =
+    current.tenkan !== null &&
+    current.kijun !== null &&
+    current.tenkan > current.kijun;
+
+  // 2. Future State (Next 26 Bars relative to index)
+  const futureData = data.slice(index + 1, index + 27);
+  let futureBullCount = 0;
+  let hasTwist = false;
+  let twistIdx = -1;
+  let maxFutureThickness = 0;
+  let firstFutureThickness = 0;
+  let lastFutureThickness = 0;
+
+  let isSpanBFlat = false;
+  let flatCount = 0;
+
+  if (futureData.length > 0) {
+    futureData.forEach((d, idx) => {
+      if (d.senkouA !== null && d.senkouB !== null) {
+        const isBull = d.senkouA > d.senkouB;
+        if (isBull) futureBullCount++;
+
+        const thickness = Math.abs(d.senkouA - d.senkouB);
+        if (idx === 0) firstFutureThickness = thickness;
+        if (idx === futureData.length - 1) lastFutureThickness = thickness;
+        if (thickness > maxFutureThickness) maxFutureThickness = thickness;
+
+        // Twist detection
+        if (idx > 0) {
+          const prev = futureData[idx - 1];
+          if (prev.senkouA !== null && prev.senkouB !== null) {
+            const prevBull = prev.senkouA > prev.senkouB;
+            if (isBull !== prevBull) {
+              hasTwist = true;
+              twistIdx = idx;
+            }
+            // Flat B detection
+            if (d.senkouB === prev.senkouB) {
+              flatCount++;
+            } else {
+              flatCount = 0;
+            }
+            if (flatCount >= 5) isSpanBFlat = true;
+          }
+        }
+      }
+    });
+  }
+
+  const isFutureBullish = futureBullCount > futureData.length / 2;
+  const isCloudExpanding = lastFutureThickness > firstFutureThickness * 1.1;
+  const isCloudContracting = lastFutureThickness < firstFutureThickness * 0.9;
+
+  // Matrix Logic Refinement
+  let rec = "觀望 (Wait)";
+  let score = 0;
+
+  // Base Scoring
+  if (isAboveCloud) score += 40;
+  if (isTkGold) score += 20;
+  if (cmf > 0.1) score += 20;
+  if (isCmfSlopeUp) score += 10;
+
+  // Future Bias Weight (Max 20)
+  if (isFutureBullish) score += 10;
+  if (isCloudExpanding && isFutureBullish) score += 10;
+  if (hasTwist && isFutureBullish) score -= 5;
+  if (hasTwist && !isFutureBullish) score += 5;
+
+  score = Math.max(0, Math.min(100, score));
+
+  if (score >= 85) rec = "重倉持有 (Strong Buy)";
+  else if (score >= 65) rec = "偏多操作 (Long)";
+  else if (score >= 45) rec = "結構調整 (Neutral)";
+  else if (score >= 25) rec = "減碼觀望 (Weak)";
+  else rec = "絕對空倉 (Strong Sell)";
+
+  const analysisSteps: AnalysisResult["steps"] = [
+    {
+      label: "I. 趨勢結構 (Current)",
+      description: "當前雲層與 TK 狀態",
+      checks: [
+        {
+          label: "價格高於雲層 (多頭排列)",
+          status: isAboveCloud ? "pass" : "fail",
+        },
+        {
+          label: isTkGold ? "TK 金叉 (動能向上)" : "TK 死叉/無方向",
+          status: isTkGold ? "pass" : "fail",
+        },
+        {
+          label: isThickCloud ? "厚雲支撐 (結構穩固)" : "薄雲預警 (易於突破)",
+          status: isThickCloud ? "pass" : "manual",
+        },
+      ],
+    },
+    {
+      label: "II. 資金動能 (Flow)",
+      description: "CMF 資金流強度",
+      checks: [
+        {
+          label: "資金流入 (CMF > 0)",
+          status: cmf > 0 ? "pass" : "fail",
+        },
+        {
+          label: isCmfSlopeUp ? "動能加速 (Slope Up)" : "動能減緩 (Slope Down)",
+          status: isCmfSlopeUp ? "pass" : "fail",
+        },
+        {
+          label: cmf > 0.15 ? "強勢吸籌區 (>0.15)" : "資金參與度中等",
+          status: cmf > 0.15 ? "pass" : "manual",
+        },
+      ],
+    },
+    {
+      label: "III. 未來 26 期展望",
+      description: "投影雲：分析未來 26 期趨勢格局",
+      checks: [
+        {
+          label: isFutureBullish
+            ? "投影：陽雲 (多頭格局)"
+            : "投影：陰雲 (空頭格局)",
+          status: isFutureBullish ? "pass" : "fail",
+        },
+        {
+          label: hasTwist
+            ? `預警：第 ${twistIdx + 1} 期發生變盤 (Kumo Twist)`
+            : "趨勢：格局穩定，無翻轉預兆",
+          status: hasTwist ? "manual" : "pass",
+        },
+        {
+          label: isCloudExpanding
+            ? "動能：開口擴張 (趨勢強化)"
+            : isCloudContracting
+              ? "動能：縮口收斂 (趨勢轉弱)"
+              : "動能：平行延伸 (區間整理)",
+          status: isCloudExpanding
+            ? "pass"
+            : isCloudContracting
+              ? "fail"
+              : "manual",
+        },
+        {
+          label: isSpanBFlat
+            ? "防線：先行 B 走平 (強防禦區)"
+            : "防線：動態支撐/阻力",
+          status: isSpanBFlat ? "pass" : "manual",
+        },
+      ],
+    },
+  ];
+
+  return {
+    steps: analysisSteps,
+    score,
+    recommendation: rec,
+    dateLabel: formattedDate,
+  };
+};
 
 export const calculateIchimokuSignals = (
   data: IchimokuCombinedData[],
@@ -89,19 +299,11 @@ export const calculateIchimokuSignals = (
       price <= cloudTop &&
       price >= cloudBottom;
 
-    // Cloud Thickness (Simple visual approximation: SpanA - SpanB)
-    const cloudThickness = (current.senkouA || 0) - (current.senkouB || 0);
-    const isThickCloud = Math.abs(cloudThickness) > price * 0.005; // Arbitrary threshold for "Thick"
-
     // 2. TK Cross / State
     const isTkGold =
       current.tenkan !== null &&
       current.kijun !== null &&
       current.tenkan > current.kijun;
-    const isTkDead =
-      current.tenkan !== null &&
-      current.kijun !== null &&
-      current.tenkan < current.kijun;
 
     // Kijun Slope
     const prevKijun = prev.kijun;
@@ -128,38 +330,20 @@ export const calculateIchimokuSignals = (
 
     if (lastSignalState === "neutral") {
       // A. Strong Bullish Setup (3-in-1)
-      // 1. Price > Cloud
-      // 2. TK Gold (Tenkan > Kijun) AND Kijun Stable (Flat/Up)
-      // 3. CMF > 0 AND EMA5 Up
-
       const isStrongBullish =
         isAboveCloud && isTkGold && isKijunStable && isCmfBull && isCmfEmaUp;
 
       if (isStrongBullish) {
-        // Thick Cloud Confirmation
-        const reason = isThickCloud
-          ? "強勢買進 (Strong Buy)"
-          : "強勢買進 (注意薄雲風險/Weak Cloud)";
-
-        signals.push({
-          t: current.t,
-          type: "BUY",
-          reason: reason,
-          price: low * 0.98,
-        });
         lastSignalState = "buy";
       }
 
       // B. Early Accumulation (CMF Leading)
-      // Scenario: Price in Cloud or Below, but CMF > -0.05 and Rising
-      // Logic: Price Lows not rising, but CMF rising (Divergence approx)
+
+      // A. Early Accumulation (CMF Leading)
       const isAccumulation =
         (isInCloud || isBelowCloud) && (cmf || -1) > -0.05 && isCmfEmaUp;
 
-      // We only mark accumulation if we haven't marked it recently? Or just once.
-      // Let's make it a unique signal type that doesn't trigger "buy" state but visualizes it.
       if (isAccumulation) {
-        // Check if prev was not matching to avoid spam
         const prevPrev = data[i - 2];
         const isPrevCmfEmaUp =
           prev.cmfEma5 !== null &&
@@ -186,71 +370,42 @@ export const calculateIchimokuSignals = (
           });
         }
       }
-
-      // C. Fake Breakout (Warning)
-      // Break Cloud but CMF < 0
-      const isCloudBreak =
-        isAboveCloud &&
-        !(
-          (prev.c || 0) >
-          (prev.senkouA && prev.senkouB
-            ? Math.max(prev.senkouA, prev.senkouB)
-            : 0)
-        );
-      if (isCloudBreak && !isCmfBull) {
-        signals.push({
-          t: current.t,
-          type: "FAKE",
-          reason: "假突破 (Fake Break)",
-          price: high * 1.02,
-        });
-      }
     } else if (lastSignalState === "buy") {
-      // Exit Logic - Professional
-
       let exitTrigger = false;
       let pResult = "EXIT";
 
-      // 1. Funding Exhaustion (Divergence) - 1/2 Exit
-      // Price New High (vs prev) but CMF EMA5 Down
-      const isPriceHigh = price > (prev.h || 0); // Simple proxy
+      const isPriceHigh = price > (prev.h || 0);
       if (isPriceHigh && isCmfEmaDown && (cmf || 0) < (prev.cmf || 0)) {
-        // This is "Weakness", usually Partial Exit.
-        // We mark it as WEAKNESS
         signals.push({
           t: current.t,
-          type: "WEAKNESS",
+          type: "EXIT",
           reason: "資金衰竭 (Exhaustion)",
           price: high * 1.02,
         });
-        // Do we change state? No, partial exit.
       }
 
-      // 2. Kijun Break (Full Exit)
-      // Price < Kijun AND CMF < 0.05
       const isKijunBreak = currKijun !== null && price < currKijun;
       if (isKijunBreak && (cmf || 0) < 0.05) {
         exitTrigger = true;
         pResult = "跌破基準 (Kijun Break)";
       }
 
-      // 3. Cloud Break (Hard Stop)
       if (isBelowCloud) {
         exitTrigger = true;
         pResult = "趨勢崩壞 (Structure Break)";
       }
 
-      // 4. TK Dead Cross (Trend Reversal Warning)
-      // "When TK Dead Cross and CMF drops below 0"
+      const isTkDead =
+        current.tenkan !== null &&
+        current.kijun !== null &&
+        current.tenkan < current.kijun;
+
       if (isTkDead && (cmf || 0) < 0) {
         exitTrigger = true;
         pResult = "空頭反轉 (TK Dead & CMF<0)";
       }
 
-      // 5. Hard CMF Stop (Risk Management)
       if ((cmf || 0) < -0.05) {
-        // "Stop Loss adjustment: if CMF drops below -0.05"
-        // This might be too aggressive for full exit, but let's signal weakness/exit
         exitTrigger = true;
         pResult = "資金撤離 (CMF Stop)";
       }
@@ -265,151 +420,99 @@ export const calculateIchimokuSignals = (
         lastSignalState = "neutral";
       }
     }
+
+    // --- CMF Divergence Logic (Integrated) ---
+    const lookback = 20;
+    if (i > 30) {
+      // 1. Bullish Divergence (底背離)
+      let minPriceIdx = i;
+      for (let j = i - lookback; j < i; j++) {
+        if (
+          data[j].c !== null &&
+          data[j].c! < (data[minPriceIdx].c || Infinity)
+        )
+          minPriceIdx = j;
+      }
+
+      if (minPriceIdx === i) {
+        let prevMinPriceIdx = -1;
+        const startIdx = Math.max(0, i - lookback * 2);
+        for (let j = startIdx; j < i - lookback; j++) {
+          if (
+            data[j].c !== null &&
+            (prevMinPriceIdx === -1 || data[j].c! < data[prevMinPriceIdx].c!)
+          )
+            prevMinPriceIdx = j;
+        }
+
+        if (prevMinPriceIdx !== -1 && data[i].c! < data[prevMinPriceIdx].c!) {
+          if (
+            data[i].cmf !== null &&
+            data[prevMinPriceIdx].cmf !== null &&
+            data[i].cmf! > data[prevMinPriceIdx].cmf!
+          ) {
+            signals.push({
+              t: current.t,
+              type: "DIVERGENCE_BULL",
+              reason: "底背離：價格創新低但 CMF 資金流背離抬升",
+              price: low * 0.98,
+            });
+          }
+        }
+      }
+
+      // 2. Bearish Divergence (頂背離)
+      let maxPriceIdx = i;
+      for (let j = i - lookback; j < i; j++) {
+        if (
+          data[j].c !== null &&
+          data[j].c! > (data[maxPriceIdx].c || -Infinity)
+        )
+          maxPriceIdx = j;
+      }
+
+      if (maxPriceIdx === i) {
+        let prevMaxPriceIdx = -1;
+        const startIdx = Math.max(0, i - lookback * 2);
+        for (let j = startIdx; j < i - lookback; j++) {
+          if (
+            data[j].c !== null &&
+            (prevMaxPriceIdx === -1 || data[j].c! > data[prevMaxPriceIdx].c!)
+          )
+            prevMaxPriceIdx = j;
+        }
+
+        if (prevMaxPriceIdx !== -1 && data[i].c! > data[prevMaxPriceIdx].c!) {
+          if (
+            data[i].cmf !== null &&
+            data[prevMaxPriceIdx].cmf !== null &&
+            data[i].cmf! < data[prevMaxPriceIdx].cmf!
+          ) {
+            signals.push({
+              t: current.t,
+              type: "DIVERGENCE_BEAR",
+              reason: "頂背離：價格創新高但 CMF 資金流背離下降",
+              price: high * 1.02,
+            });
+          }
+        }
+      }
+    }
   });
 
-  let currentIdx = -1;
+  // --- Final Snapshot Analysis (Using the last real price bar) ---
+  let lastRealIdx = -1;
   for (let k = data.length - 1; k >= 0; k--) {
     if (data[k].c !== null) {
-      currentIdx = k;
+      lastRealIdx = k;
       break;
     }
   }
 
-  if (currentIdx === -1) {
-    return {
-      signals,
-      lastAnalysis: { steps: [], score: 0, recommendation: "No Data" },
-    };
-  }
-
-  const current = data[currentIdx];
-  const price = current.c || 0;
-
-  // Re-calc metrics for current candle
-  const cloudTop =
-    current.senkouA !== null && current.senkouB !== null
-      ? Math.max(current.senkouA, current.senkouB)
-      : 0;
-  const isAboveCloud = price > cloudTop;
-  const cloudThickness = Math.abs(
-    (current.senkouA || 0) - (current.senkouB || 0),
-  );
-  const isThickCloud = cloudThickness > price * 0.005;
-
-  const cmf = current.cmf || 0;
-  const cmfEma5 = current.cmfEma5 || 0;
-  // Slope approx
-  const prevCmfEma5 = currentIdx > 0 ? data[currentIdx - 1].cmfEma5 || 0 : 0;
-  const isCmfSlopeUp = cmfEma5 > prevCmfEma5;
-
-  const isTkGold =
-    current.tenkan !== null &&
-    current.kijun !== null &&
-    current.tenkan > current.kijun;
-  const isTkDead =
-    current.tenkan !== null &&
-    current.kijun !== null &&
-    current.tenkan < current.kijun;
-  const isKijunFlat =
-    current.kijun !== null &&
-    currentIdx > 0 &&
-    Math.abs(current.kijun - (data[currentIdx - 1].kijun || 0)) < 0.001; // Approx
-
-  // Matrix Logic
-  let rec = "觀望 (Wait)";
-  let score = 0;
-
-  // Condition 1: Strong Buy (Main Trend)
-  if (isAboveCloud && isThickCloud && isTkGold && cmf > 0.15 && isCmfSlopeUp) {
-    rec = "重倉持有 (Strong Buy)";
-    score = 90;
-  }
-  // Condition 2: Trap (Fake)
-  else if (isAboveCloud && !isThickCloud && cmf < 0) {
-    rec = "誘多陷阱 (Fakeout Risk)";
-    score = 20;
-  }
-  // Condition 3: Distribution (High)
-  else if (isAboveCloud && isKijunFlat && cmf > 0 && cmf < 0.1) {
-    // CMF dropping? Hard to track exact drop magnitude here without history scan
-    rec = "高位派發 (Distribution)";
-    score = 50;
-  }
-  // Condition 4: Left Side (Accumulation)
-  else if (!isAboveCloud && cmf > -0.05 && cmfEma5 > prevCmfEma5) {
-    // Rising CMF at bottom
-    rec = "左側試探 (Early Entry)";
-    score = 65;
-  }
-  // Condition 5: Bearish
-  else if (!isAboveCloud && isTkDead && cmf < -0.1) {
-    rec = "絕對空倉 (Strong Sell)";
-    score = 10;
-  } else {
-    // Default
-    if (isAboveCloud && cmf > 0) {
-      rec = "持有 (Hold)";
-      score = 70;
-    }
-  }
-
-  // Analysis Steps
-  const analysisSteps = [
-    {
-      label: "I. 策略矩陣",
-      description: `狀態: ${rec}`,
-      checks: [
-        {
-          label: `建議: ${rec}`,
-          status:
-            score >= 60 ? "pass" : score <= 20 ? "fail" : ("manual" as any),
-        },
-        {
-          label: `CMF: ${cmf.toFixed(3)} (EMA5: ${cmfEma5.toFixed(3)})`,
-          status: cmf > 0 ? "pass" : "fail",
-        },
-      ],
-    },
-    {
-      label: "II. 結構位",
-      description: "雲層與TK狀態",
-      checks: [
-        {
-          label: "價格 > 雲層",
-          status: isAboveCloud ? "pass" : "fail",
-        },
-        {
-          label: isThickCloud ? "厚雲支撐 (Strong)" : "薄雲易破 (Weak)",
-          status: isThickCloud ? "pass" : "manual",
-        },
-        {
-          label: isTkGold ? "TK 金叉 (Bull)" : "TK 死叉/無向 (Bear)",
-          status: isTkGold ? "pass" : "fail",
-        },
-      ],
-    },
-    {
-      label: "III. 資金流",
-      description: "CMF 動能",
-      checks: [
-        {
-          label: "CMF > 0",
-          status: cmf > 0 ? "pass" : "fail",
-        },
-        {
-          label: isCmfSlopeUp ? "資金加速 (Slope Up)" : "資金減速 (Slope Down)",
-          status: isCmfSlopeUp ? "pass" : "fail",
-        },
-        {
-          label: "強勢區 (>0.15)",
-          status: cmf > 0.15 ? "pass" : "manual",
-        },
-      ],
-    },
-  ];
+  const lastAnalysis = analyzeIchimokuAtPoint(data, lastRealIdx);
 
   return {
     signals,
-    lastAnalysis: { steps: analysisSteps, score, recommendation: rec },
+    lastAnalysis,
   };
 };
