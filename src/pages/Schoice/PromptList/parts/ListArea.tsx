@@ -2,7 +2,7 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import TrendingDownRoundedIcon from "@mui/icons-material/TrendingDownRounded";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import { Box, Button, Paper, Stack, Tab, Tabs } from "@mui/material";
-import { alpha, styled } from "@mui/material/styles";
+import { styled } from "@mui/material/styles";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import useCloudStore from "../../../../store/Cloud.store";
@@ -11,18 +11,14 @@ import { PromptType } from "../../../../types";
 import ListItem from "./ListItem";
 
 const GlassSidebar = styled(Paper)(({ theme }) => ({
-  width: 320,
+  width: 330,
   height: "100%",
-  backgroundColor: alpha(
-    theme.palette.mode === "light" ? theme.palette.background.paper : "#0f172a",
-    0.6,
-  ),
-  backdropFilter: "blur(20px)",
-  borderRight: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+  backgroundColor: theme.palette.mode === "light" ? "#FFF9E8" : theme.palette.background.paper,
+  borderRight: "3px solid #202027",
   borderRadius: 0,
   display: "flex",
   flexDirection: "column",
-  boxShadow: `10px 0 30px ${alpha(theme.palette.common.black, 0.1)}`,
+  boxShadow: "5px 0 0 rgba(32,32,39,.08)",
   overflow: "hidden",
   position: "relative",
   "&::before": {
@@ -30,24 +26,23 @@ const GlassSidebar = styled(Paper)(({ theme }) => ({
     position: "absolute",
     top: 0,
     right: 0,
-    width: 2,
+    width: 18,
     height: "100%",
-    background: `linear-gradient(to bottom, transparent, ${alpha(
-      theme.palette.primary.main,
-      0.3,
-    )}, transparent)`,
+    background: "repeating-linear-gradient(180deg, transparent 0 24px, rgba(255,159,197,.35) 25px 30px, transparent 31px 48px)",
+    pointerEvents: "none",
   },
+  "@media (max-width: 800px)": { width: 280 },
 }));
 
 const StyledTabs = styled(Tabs)(({ theme }) => ({
-  minHeight: 56,
-  backgroundColor: alpha(theme.palette.divider, 0.03),
-  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  minHeight: 62,
+  backgroundColor: theme.palette.mode === "light" ? "#FFF1F6" : theme.palette.background.paper,
+  borderBottom: "3px solid #202027",
   "& .MuiTabs-indicator": {
-    height: 4,
-    borderRadius: "4px 4px 0 0",
+    height: 7,
+    borderRadius: "999px 999px 0 0",
     backgroundColor: theme.palette.primary.main,
-    boxShadow: `0 0 15px ${theme.palette.primary.main}`,
+    boxShadow: "none",
   },
 }));
 
@@ -57,7 +52,8 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   fontSize: "0.875rem",
   color: theme.palette.text.secondary,
   "&.Mui-selected": {
-    color: theme.palette.primary.main,
+    color: theme.palette.text.primary,
+    transform: "rotate(-1deg)",
   },
   "& .MuiSvgIcon-root": {
     marginBottom: "0 !important",
@@ -66,22 +62,25 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 }));
 
 const ActionButton = styled(Button)(({ theme }) => ({
-  borderRadius: "16px",
+  borderRadius: "999px",
   padding: theme.spacing(1.5, 3),
   fontWeight: 800,
   textTransform: "none",
-  letterSpacing: "0.1em",
+  letterSpacing: "0.04em",
   fontSize: "0.85rem",
-  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-  boxShadow: `0 4px 15px ${alpha(theme.palette.primary.main, 0.4)}`,
-  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+  color: "#202027",
+  background: theme.palette.primary.main,
+  boxShadow: "4px 4px 0 #202027",
+  border: "2px solid #202027",
+  transition: "all .15s ease",
   "&:hover": {
-    transform: "translateY(-2px)",
-    boxShadow: `0 8px 25px ${alpha(theme.palette.primary.main, 0.5)}`,
-    background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
+    transform: "translate(2px, 2px) rotate(-1deg)",
+    boxShadow: "2px 2px 0 #202027",
+    background: theme.palette.secondary.main,
   },
   "&:active": {
-    transform: "translateY(0)",
+    transform: "translate(4px, 4px)",
+    boxShadow: "none",
   },
   "& .MuiButton-startIcon": {
     marginRight: theme.spacing(1.5),

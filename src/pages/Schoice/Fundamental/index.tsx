@@ -50,11 +50,10 @@ const PageWrapper = styled(Box)(({ theme }) => ({
 
 const CompactGlassBar = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(1, 2),
-  backgroundColor: alpha(theme.palette.background.paper, 0.6),
-  backdropFilter: "blur(12px)",
-  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-  borderRadius: "12px",
-  boxShadow: "0 4px 20px -10px rgba(0,0,0,0.1)",
+  backgroundColor: theme.palette.background.paper,
+  border: "2px solid #202027",
+  borderRadius: "18px",
+  boxShadow: "3px 3px 0 #202027",
 }));
 
 const ConditionChip = styled(motion.div)(({ theme }) => ({
@@ -62,25 +61,27 @@ const ConditionChip = styled(motion.div)(({ theme }) => ({
   alignItems: "center",
   gap: theme.spacing(1),
   padding: theme.spacing(0.5, 1.5),
-  borderRadius: "8px",
-  background: alpha(theme.palette.primary.main, 0.05),
-  border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+  borderRadius: "999px",
+  background: theme.palette.warning.main,
+  border: "2px solid #202027",
   "&:hover": {
-    background: alpha(theme.palette.primary.main, 0.1),
-    borderColor: alpha(theme.palette.primary.main, 0.3),
+    background: theme.palette.secondary.main,
+    borderColor: "#202027",
   },
 }));
 
 const GradientButton = styled(Button)(({ theme }) => ({
-  borderRadius: "8px",
+  borderRadius: "999px",
   padding: "6px 20px",
   fontWeight: 700,
   textTransform: "none",
-  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-  boxShadow: `0 4px 14px 0 ${alpha(theme.palette.primary.main, 0.35)}`,
+  background: theme.palette.primary.main,
+  color: "#202027",
+  border: "2px solid #202027",
+  boxShadow: "3px 3px 0 #202027",
   "&:hover": {
-    transform: "translateY(-1px)",
-    boxShadow: `0 6px 20px 0 ${alpha(theme.palette.primary.main, 0.45)}`,
+    transform: "translate(2px, 2px)",
+    boxShadow: "1px 1px 0 #202027",
   },
 }));
 
@@ -170,10 +171,8 @@ export default function Fundamental() {
           position: "sticky",
           top: 0,
           zIndex: 10,
-          bgcolor: (theme) => alpha(theme.palette.background.default, 0.8),
-          backdropFilter: "blur(8px)",
-          borderBottom: (theme) =>
-            `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          bgcolor: "background.default",
+          borderBottom: "3px solid #202027",
           p: 1.5,
           px: 3,
         }}

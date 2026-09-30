@@ -4,7 +4,6 @@ import {
   Grid,
   Paper,
   Typography,
-  alpha,
   styled,
 } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
@@ -19,13 +18,9 @@ import InsertFavorite from "./InsertFavorite";
 
 const GlassCard = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
-  backgroundColor: alpha(theme.palette.background.paper, 0.7),
-  backdropFilter: "blur(12px)",
-  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-  boxShadow:
-    theme.palette.mode === "dark"
-      ? "0 8px 32px 0 rgba(0, 0, 0, 0.37)"
-      : "0 8px 32px 0 rgba(31, 38, 135, 0.07)",
+  backgroundColor: theme.palette.background.paper,
+  border: "3px solid #202027",
+  boxShadow: "7px 7px 0 #202027",
   position: "relative",
   overflow: "hidden",
   marginTop: theme.spacing(3),
@@ -33,11 +28,12 @@ const GlassCard = styled(Paper)(({ theme }) => ({
     content: '""',
     position: "absolute",
     top: 0,
-    left: 0,
-    right: 0,
-    height: "2px",
-    background: `linear-gradient(90deg, transparent, ${theme.palette.primary.main}, transparent)`,
-    opacity: 0.5,
+    height: "12px",
+    width: "120px",
+    left: 28,
+    right: "auto",
+    borderRadius: "0 0 999px 999px",
+    background: theme.palette.secondary.main,
   },
 }));
 
@@ -118,10 +114,15 @@ export default function Favorite() {
                   variant="h4"
                   fontWeight={800}
                   sx={{
-                    background: (theme) =>
-                      `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
+                    color: "text.primary",
+                    display: "inline-block",
+                    bgcolor: "warning.main",
+                    border: "2px solid #202027",
+                    borderRadius: "16px",
+                    px: 2,
+                    py: 0.5,
+                    boxShadow: "3px 3px 0 #202027",
+                    transform: "rotate(-1deg)",
                     mb: 1,
                   }}
                 >

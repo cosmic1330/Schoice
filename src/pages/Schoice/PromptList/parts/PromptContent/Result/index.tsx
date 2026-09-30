@@ -17,7 +17,7 @@ const GlassWrapper = styled(Box)(() => ({
   width: "100%",
   position: "relative",
   minHeight: 300,
-  borderRadius: "16px",
+  borderRadius: "22px",
   overflow: "hidden",
   transition: "all 0.3s ease",
 }));
@@ -43,9 +43,9 @@ const LoadingOverlay = styled(motion.div)(({ theme }) => ({
 const StatsBadge = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(0.5, 2),
   borderRadius: "20px",
-  background: alpha(theme.palette.primary.main, 0.1),
-  border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-  backdropFilter: "blur(4px)",
+  background: theme.palette.warning.main,
+  border: "2px solid #202027",
+  boxShadow: "2px 2px 0 #202027",
   display: "flex",
   alignItems: "center",
   gap: theme.spacing(1),
@@ -248,11 +248,10 @@ export default function Result({ select }: { select: SelectType }) {
             >
               <Box
                 sx={{
-                  borderRadius: "12px",
-                  border: (theme) =>
-                    `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                  borderRadius: "18px",
+                  border: "2px solid #202027",
                   overflow: "hidden",
-                  boxShadow: "0 4px 20px -5px rgba(0,0,0,0.05)",
+                  boxShadow: "4px 4px 0 rgba(32,32,39,.18)",
                   bgcolor: "background.paper",
                 }}
               >

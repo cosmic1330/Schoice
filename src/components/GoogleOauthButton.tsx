@@ -1,30 +1,33 @@
 import GoogleIcon from "@mui/icons-material/Google";
 import { Button } from "@mui/material";
-import { useState } from "react";
-import { supabase } from "../tools/supabase";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import {
+  loginWithGoogle,
+  OAUTH_FLOW_FINISHED_EVENT,
+} from "../lib/auth";
 
-export default function GoogleOauthButton({
-  onLogin,
-}: {
-  onLogin?: () => void;
-}) {
+export default function GoogleOauthButton() {
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: window.location.origin,
-      },
-    });
+  useEffect(() => {
+    const finish = () => setLoading(false);
+    window.addEventListener(OAUTH_FLOW_FINISHED_EVENT, finish);
+    return () => window.removeEventListener(OAUTH_FLOW_FINISHED_EVENT, finish);
+  }, []);
 
-    if (error) {
-      console.error("登入失敗：", error.message);
+  const handleLogin = async () => {
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      await loginWithGoogle();
+      // Allow retry if the browser is closed before completing the flow.
+      window.setTimeout(() => setLoading(false), 90_000);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(`Google 登入失敗：${message}`);
       setLoading(false);
-    } else {
-      // 如果你想在登入完成後做什麼可以放在 onLogin
-      if (onLogin) onLogin();
     }
   };
 
@@ -35,9 +38,9 @@ export default function GoogleOauthButton({
       color="success"
       onClick={handleLogin}
       disabled={loading}
+      startIcon={<GoogleIcon />}
     >
-      <GoogleIcon style={{ marginRight: 8 }} />
-      {loading ? "登入中..." : "使用 Google 登入"}
+      {loading ? "Signing in..." : "Sign in with Google"}
     </Button>
   );
 }

@@ -1,4 +1,4 @@
-import { alpha, Box, Stack, styled } from "@mui/material";
+import { Box, Stack, styled } from "@mui/material";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
 import ThemeToggle from "../../components/ThemeToggle";
 import Version from "../../components/Version";
@@ -12,56 +12,36 @@ const Container = styled(Box)(({ theme }) => ({
   justifyContent: "center",
   position: "relative",
   overflow: "hidden",
-  transition: "background 0.5s ease",
-  background: getBackground(theme),
-  // Digital Grid Overlay
+  transition: "background .3s ease",
+  backgroundColor: theme.palette.background.default,
+  backgroundImage:
+    theme.palette.mode === "light"
+      ? "repeating-linear-gradient(-12deg, transparent 0 38px, rgba(91,185,233,.13) 39px 44px, transparent 45px 68px)"
+      : "radial-gradient(circle at 20% 20%, rgba(91,185,233,.16), transparent 35%)",
   "&::before": {
-    content: '""',
+    content: '"★"',
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundImage: `linear-gradient(${
-      theme.palette.mode === "light"
-        ? "rgba(0,0,0,0.03)"
-        : "rgba(255,255,255,0.03)"
-    } 1px, transparent 1px), linear-gradient(90deg, ${
-      theme.palette.mode === "light"
-        ? "rgba(0,0,0,0.03)"
-        : "rgba(255,255,255,0.03)"
-    } 1px, transparent 1px)`,
-    backgroundSize: "40px 40px",
-    maskImage: "radial-gradient(ellipse at center, black, transparent 80%)",
+    top: "9%",
+    left: "10%",
+    color: theme.palette.warning.main,
+    fontSize: "clamp(60px, 10vw, 130px)",
+    WebkitTextStroke: "4px #202027",
+    transform: "rotate(-13deg)",
   },
-  // Ambient Glow
   "&::after": {
-    content: '""',
+    content: '"LET’S GO!"',
     position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    width: "600px",
-    height: "600px",
-    background: `radial-gradient(circle, ${alpha(
-      "#7DB9DE",
-      0.15
-    )} 0%, transparent 70%)`,
+    right: "7%",
+    bottom: "11%",
+    color: theme.palette.primary.main,
+    fontWeight: 1000,
+    fontSize: "clamp(25px, 4vw, 58px)",
+    WebkitTextStroke: "2px #202027",
+    transform: "rotate(7deg)",
     zIndex: 0,
     pointerEvents: "none",
   },
 }));
-
-// Re-defining gradient based on approved premium plan (Slate)
-const getBackground = (theme: any) => {
-  if (theme.palette.mode === "light") {
-    return `linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%)`;
-  }
-  return `radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-          radial-gradient(at 50% 0%, hsla(225,39%,25%,1) 0, transparent 50%), 
-          radial-gradient(at 100% 0%, hsla(339,49%,25%,1) 0, transparent 50%),
-          #0F172A`;
-};
 
 const Register = () => {
   return (

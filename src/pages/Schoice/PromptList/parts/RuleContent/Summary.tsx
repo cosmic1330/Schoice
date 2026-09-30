@@ -5,7 +5,7 @@ import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import Typography from "@mui/material/Typography";
-import { alpha, styled } from "@mui/material/styles";
+import { styled } from "@mui/material/styles";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useCloudStore from "../../../../../store/Cloud.store";
@@ -13,18 +13,17 @@ import { PromptValue, SelectType } from "../../../../../types";
 
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
   width: "100%",
-  backgroundColor: alpha(theme.palette.background.paper, 0.4),
-  backdropFilter: "blur(20px)",
+  backgroundColor: theme.palette.background.paper,
   borderRadius: "24px !important",
-  border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-  boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.1)}`,
+  border: "3px solid #202027",
+  boxShadow: "5px 5px 0 #202027",
   overflow: "hidden",
   "&:before": {
     display: "none",
   },
   "& .MuiAccordionSummary-root": {
-    backgroundColor: alpha(theme.palette.divider, 0.03),
-    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.05)}`,
+    backgroundColor: theme.palette.warning.main,
+    borderBottom: "2px solid #202027",
     padding: theme.spacing(1, 3),
   },
   "& .MuiAccordionDetails-root": {
@@ -34,29 +33,28 @@ const StyledAccordion = styled(Accordion)(({ theme }) => ({
 
 const ConditionItem = styled(Box)(({ theme }) => ({
   padding: theme.spacing(1.5, 2),
-  borderRadius: "12px",
-  backgroundColor: alpha(theme.palette.divider, 0.03),
-  border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+  borderRadius: "14px",
+  backgroundColor: theme.palette.mode === "light" ? "#FFF9E8" : theme.palette.background.default,
+  border: "1.5px solid #202027",
   marginBottom: theme.spacing(1.5),
   display: "flex",
   alignItems: "center",
   gap: theme.spacing(1.5),
-  fontFamily: "monospace",
+  fontFamily: "inherit",
   fontSize: "0.85rem",
   transition: "all 0.2s ease",
   "&:hover": {
-    backgroundColor: alpha(theme.palette.primary.main, 0.05),
-    borderColor: alpha(theme.palette.primary.main, 0.3),
-    transform: "translateX(4px)",
+    backgroundColor: theme.palette.secondary.main,
+    borderColor: "#202027",
+    transform: "translateX(4px) rotate(-.3deg)",
   },
 }));
 
 const CategoryTitle = styled(Typography)(({ theme }) => ({
-  color: theme.palette.primary.main,
+  color: theme.palette.text.primary,
   fontWeight: 800,
   fontSize: "0.75rem",
-  textTransform: "uppercase",
-  letterSpacing: "0.1em",
+  letterSpacing: "0.03em",
   marginBottom: theme.spacing(2),
   display: "flex",
   alignItems: "center",

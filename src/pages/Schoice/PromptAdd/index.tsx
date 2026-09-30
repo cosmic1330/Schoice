@@ -28,9 +28,9 @@ import { PromptType, PromptValue } from "../../../types";
 const SidebarContainer = styled(Box)(({ theme }) => ({
   width: "400px",
   height: "100%",
-  backgroundColor: alpha(theme.palette.background.paper, 0.4),
-  backdropFilter: "blur(12px)",
-  borderRight: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  backgroundColor: theme.palette.mode === "light" ? "#FFF1F6" : theme.palette.background.paper,
+  borderRight: "3px solid #202027",
+  boxShadow: "5px 0 0 rgba(32,32,39,.09)",
   display: "flex",
   flexDirection: "column",
   padding: theme.spacing(3),
@@ -45,21 +45,26 @@ const ChartArea = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   padding: theme.spacing(2),
-  backgroundColor: theme.palette.mode === "dark" 
-    ? alpha(theme.palette.background.default, 0.05) 
-    : alpha(theme.palette.background.default, 0.2),
+  backgroundColor: theme.palette.background.default,
+  backgroundImage: "radial-gradient(circle at 92% 8%, rgba(255,217,106,.2) 0 8%, transparent 8.5%)",
 }));
 
 const SectionHeader = styled(Typography)(({ theme }) => ({
-  color: theme.palette.primary.main,
+  color: theme.palette.text.primary,
   fontWeight: 800,
   fontSize: "0.75rem",
-  textTransform: "uppercase",
-  letterSpacing: "0.15em",
+  letterSpacing: "0.03em",
   display: "flex",
   alignItems: "center",
   gap: theme.spacing(1),
   marginBottom: theme.spacing(1.5),
+  "& .MuiSvgIcon-root": {
+    color: "#202027",
+    background: theme.palette.warning.main,
+    border: "2px solid #202027",
+    borderRadius: 8,
+    padding: 2,
+  },
 }));
 
 export default function PromptAdd() {
@@ -226,10 +231,10 @@ export default function PromptAdd() {
               isCreating
             }
             sx={{
-              borderRadius: "12px",
+              borderRadius: "999px",
               py: 2,
               fontWeight: 900,
-              boxShadow: (theme) => `0 8px 24px ${alpha(theme.palette.primary.main, 0.3)}`,
+              boxShadow: "4px 4px 0 #202027",
               textTransform: "none",
               fontSize: "1rem"
             }}

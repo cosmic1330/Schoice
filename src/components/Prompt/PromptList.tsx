@@ -6,9 +6,9 @@ import { Prompts } from "../../types";
 
 const GlassPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
-  backgroundColor: alpha(theme.palette.background.paper, 0.4),
-  backdropFilter: "blur(10px)",
-  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  backgroundColor: theme.palette.background.paper,
+  border: "2px solid #202027",
+  boxShadow: "3px 3px 0 rgba(32,32,39,.2)",
   height: "auto",
   maxHeight: "100%",
   display: "flex",
@@ -21,15 +21,15 @@ const ConditionItem = styled(Box)(({ theme }) => ({
   alignItems: "center",
   justifyContent: "space-between",
   padding: theme.spacing(1, 1.5),
-  backgroundColor: alpha(theme.palette.background.paper, 0.2),
-  borderRadius: "10px",
+  backgroundColor: theme.palette.mode === "light" ? "#FFF9E8" : theme.palette.background.default,
+  borderRadius: "14px",
   marginBottom: theme.spacing(0.8),
-  border: `1px solid ${alpha(theme.palette.divider, 0.03)}`,
+  border: "1.5px solid #202027",
   transition: "all 0.2s ease-in-out",
   "&:hover": {
-    backgroundColor: alpha(theme.palette.background.paper, 0.4),
-    borderColor: alpha(theme.palette.primary.main, 0.15),
-    transform: "translateX(2px)",
+    backgroundColor: theme.palette.secondary.main,
+    borderColor: "#202027",
+    transform: "translateX(2px) rotate(-.3deg)",
   },
 }));
 
@@ -93,9 +93,9 @@ export function PromptList({ title, prompts, onRemove }: PromptListProps) {
                     width: 20,
                     height: 20,
                     borderRadius: "50%",
-                    backgroundColor: (theme) =>
-                      alpha(theme.palette.primary.main, 0.1),
-                    color: "primary.main",
+                    backgroundColor: "warning.main",
+                    color: "#202027",
+                    border: "1.5px solid #202027",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",

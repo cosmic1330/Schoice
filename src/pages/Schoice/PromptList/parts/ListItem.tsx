@@ -25,55 +25,38 @@ const ItemCard = styled(MuiStack, {
 })<{ isSelected: boolean }>(({ theme, isSelected }) => ({
   flexDirection: "row",
   alignItems: "center",
-  padding: theme.spacing(1.5, 2),
+  padding: theme.spacing(1.35, 1.5),
   cursor: "pointer",
   position: "relative",
   overflow: "hidden",
-  // Chamfered corners for sci-fi HUD look
-  clipPath:
-    "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)",
+  borderRadius: 18,
   backgroundColor: isSelected
-    ? alpha(theme.palette.primary.main, 0.1)
-    : alpha(theme.palette.background.paper, 0.05),
-  borderLeft: isSelected
-    ? `4px solid ${theme.palette.primary.main}`
-    : `4px solid ${alpha(theme.palette.divider, 0.1)}`,
-  transition: "all 0.1s ease-out", // Sharp, mechanical transition
-
-  // Scanline/Grid texture overlay
-  backgroundImage: isSelected
-    ? `linear-gradient(90deg, ${alpha(
-        theme.palette.primary.main,
-        0.05,
-      )} 1px, transparent 1px),
-       linear-gradient(${alpha(
-         theme.palette.primary.main,
-         0.05,
-       )} 1px, transparent 1px)`
-    : "none",
-  backgroundSize: "20px 20px",
+    ? theme.palette.primary.main
+    : theme.palette.background.paper,
+  border: "2px solid #202027",
+  boxShadow: isSelected ? "4px 4px 0 #202027" : "2px 2px 0 rgba(32,32,39,.18)",
+  transition: "all .15s ease-out",
 
   "&:hover": {
-    backgroundColor: alpha(theme.palette.primary.main, 0.05),
-    borderLeft: `4px solid ${theme.palette.primary.main}`,
-    transform: "translateX(4px)",
+    backgroundColor: theme.palette.secondary.main,
+    transform: "translate(2px, -1px) rotate(-.4deg)",
+    boxShadow: "4px 4px 0 #202027",
     "& .action-btn": {
       opacity: 1,
       transform: "translateX(0)",
     },
   },
 
-  // Corner markers for active state
   "&::after": isSelected
     ? {
-        content: '""',
+        content: '"★"',
         position: "absolute",
-        bottom: 0,
-        right: 0,
-        width: 10,
-        height: 10,
-        borderBottom: `2px solid ${theme.palette.primary.main}`,
-        borderRight: `2px solid ${theme.palette.primary.main}`,
+        top: -3,
+        right: 7,
+        color: theme.palette.warning.main,
+        fontSize: 19,
+        WebkitTextStroke: "1.5px #202027",
+        transform: "rotate(12deg)",
       }
     : {},
 }));
@@ -81,26 +64,27 @@ const ItemCard = styled(MuiStack, {
 const IndexNumber = styled(Typography, {
   shouldForwardProp: (prop) => prop !== "isSelected",
 })<{ isSelected: boolean }>(({ theme, isSelected }) => ({
-  fontFamily: "monospace",
-  fontSize: "1.5rem",
+  fontFamily: "inherit",
+  fontSize: "1.25rem",
   fontWeight: 900,
   color: isSelected
-    ? alpha(theme.palette.primary.main, 0.2)
-    : alpha(theme.palette.text.disabled, 0.1),
+    ? "#202027"
+    : alpha(theme.palette.text.primary, 0.22),
   lineHeight: 1,
   marginRight: theme.spacing(2),
   userSelect: "none",
-  letterSpacing: "-0.05em",
+  letterSpacing: "-0.04em",
+  WebkitTextStroke: isSelected ? "0" : "1px rgba(32,32,39,.18)",
 }));
 
 const Chip = styled(Box)(({ theme }) => ({
   display: "inline-flex",
   alignItems: "center",
   padding: "2px 6px",
-  borderRadius: "4px",
-  border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
-  backgroundColor: alpha(theme.palette.background.default, 0.5),
-  fontFamily: "monospace",
+  borderRadius: "999px",
+  border: "1.5px solid #202027",
+  backgroundColor: alpha(theme.palette.background.default, 0.7),
+  fontFamily: "inherit",
   fontSize: "0.65rem",
   color: theme.palette.text.secondary,
   letterSpacing: "0.05em",
@@ -160,9 +144,8 @@ export default function ListItem({
           fontWeight={800}
           noWrap
           sx={{
-            color: isActive ? "primary.main" : "text.primary",
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
+            color: "text.primary",
+            letterSpacing: "0.01em",
             mb: 0.5,
           }}
         >
@@ -176,7 +159,7 @@ export default function ListItem({
         onClick={handleDeleteClick}
         className="action-btn"
         sx={{
-          opacity: 0,
+          opacity: isActive ? 0.65 : 0,
           transform: "translateX(10px)",
           transition: "all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
           color: "text.secondary",

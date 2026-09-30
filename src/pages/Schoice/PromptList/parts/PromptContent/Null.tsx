@@ -28,17 +28,14 @@ export default function Null() {
             },
           }}
         >
-          <img src="click_update.svg" width={120} style={{ opacity: 0.8 }} />
+          <Box component="img" src="click_update.svg" width={120} sx={{ opacity: 0.9, filter: "drop-shadow(4px 4px 0 rgba(32,32,39,.18))" }} />
         </Box>
         <Stack spacing={1} alignItems="center">
           <Typography
             variant="h5"
             fontWeight={900}
             sx={{
-              letterSpacing: "0.1em",
-              fontFamily: "monospace",
-              opacity: 0.8,
-              textTransform: "uppercase",
+              letterSpacing: "0.02em",
             }}
           >
             {t("Pages.Schoice.PromptList.content.dataUnavailable")}
@@ -46,7 +43,7 @@ export default function Null() {
           <Typography
             variant="subtitle2"
             color="text.secondary"
-            sx={{ fontFamily: "monospace", opacity: 0.6 }}
+            sx={{ opacity: 0.75 }}
           >
             {t("Pages.Schoice.PromptList.content.updateHint")}
           </Typography>

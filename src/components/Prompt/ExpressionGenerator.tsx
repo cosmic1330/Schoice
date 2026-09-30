@@ -22,20 +22,20 @@ import { Prompts, StorePrompt } from "../../types";
 type TimeFrame = "hour" | "day" | "week";
 
 const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
-  backgroundColor: alpha(theme.palette.background.paper, 0.2),
-  borderRadius: "12px",
+  backgroundColor: theme.palette.background.paper,
+  borderRadius: "999px",
   padding: "4px",
-  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  border: "2px solid #202027",
   "& .MuiToggleButton-root": {
     border: "none",
-    borderRadius: "8px",
+    borderRadius: "999px",
     margin: "0 2px",
     padding: "6px 16px",
     fontWeight: 700,
     color: theme.palette.text.secondary,
     "&.Mui-selected": {
       backgroundColor: theme.palette.primary.main,
-      color: theme.palette.primary.contrastText,
+      color: "#202027",
       "&:hover": {
         backgroundColor: theme.palette.primary.dark,
       },
@@ -44,9 +44,9 @@ const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
 }));
 
 const StyledSelect = styled(Select)(({ theme }) => ({
-  borderRadius: "10px",
+  borderRadius: "14px",
   "& .MuiOutlinedInput-notchedOutline": {
-    borderColor: alpha(theme.palette.divider, 0.1),
+    borderColor: "#202027",
   },
   "&:hover .MuiOutlinedInput-notchedOutline": {
     borderColor: alpha(theme.palette.primary.main, 1),

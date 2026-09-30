@@ -111,3 +111,64 @@ type PromptItem = {
 #### 3. 運算子 (`operator`)
 
 - `大於`, `小於`, `等於`, `大於等於`, `小於等於`
+
+## Google OAuth 設定
+
+桌面版使用 PKCE、系統預設瀏覽器與 `myapp://auth/callback` deep link 接收 Google 登入結果。
+
+部署前請在 Supabase Dashboard 的 **Authentication → URL Configuration → Redirect URLs** 加入：
+
+```text
+myapp://auth/callback
+```
+
+網頁開發版若也需要 Google 登入，另加入實際使用的開發網址，例如：
+
+```text
+http://localhost:1420/
+```
+
+Google Cloud Console 的 OAuth callback 仍應設定為 Supabase 提供的 callback URL，通常是：
+
+```text
+https://<project-ref>.supabase.co/auth/v1/callback
+```
+
+Google Cloud Console 的 OAuth Client Type 必須選擇 **Web application**。Google 只導回上面的 Supabase HTTPS callback，不要把 `myapp://auth/callback` 加到 Google Cloud Console。
+
+macOS 的 custom scheme 只會在已封裝並安裝到 `/Applications` 的 App 上註冊，因此 `tauri dev` 無法完整測試 deep-link。Windows debug build 與 Linux 會透過 `register_all()` 註冊；Linux AppImage 移動路徑後需重新啟動 App 以更新 `x-scheme-handler` 關聯。
+
+如果登入後被導向 `http://localhost:3000/?code=...`，代表 Supabase 沒有接受傳入的 custom scheme，並退回 Dashboard 目前設定的 Site URL。請確認 `myapp://auth/callback` 已加入上述 Redirect URLs，然後重新開始 OAuth 流程；舊的授權碼不可重複使用。
+
+### OAuth 測試流程
+
+1. App 未開啟：從已封裝、安裝的 App 開始 Google 登入，關閉 App 後在瀏覽器完成授權，確認 callback 重新開啟 App 並登入。
+2. App 已開啟：完成 Google 登入後確認回到同一個 instance，且 Header 顯示 email 與 avatar。
+3. 在 Google 頁面取消：確認回到登入頁並顯示取消訊息，按鈕可以再次使用。
+4. 開啟 `myapp://wrong/path?code=fake`：確認不會交換 Session 或登入。
+5. 登入後重啟 App：確認 Session 從安全儲存恢復，過期時自動 refresh。
+6. 按登出：確認 Session 清除並回到登入頁。
+
+### OAuth Troubleshooting
+
+- **Supabase redirect URL 不符**：在 Authentication → URL Configuration → Redirect URLs 精確加入 `myapp://auth/callback`；Site URL 不需要改成 custom scheme。
+- **Google `redirect_uri_mismatch`**：Google Cloud Console 必須使用 `https://<PROJECT_REF>.supabase.co/auth/v1/callback`，不是 `myapp://...`。
+- **deep link 沒有開啟 App**：確認 scheme 是 `myapp` 且 App 已安裝。Windows 可用 `start myapp://auth/callback`，Linux 可用 `xdg-open myapp://auth/callback` 測試 handler。
+- **callback 有收到但沒有 Session**：重新開始登入；authorization code 只能使用一次且約五分鐘失效。
+- **PKCE code verifier missing**：OAuth 必須由同一個 App installation 開始並完成；清除 App 儲存或同時啟動多個登入流程都會使 verifier 不一致。
+- **第二個 App instance 被打開**：確認 `tauri-plugin-single-instance` 保持第一個註冊，並啟用 `deep-link` feature。
+- **dev mode 無效**：macOS 無法在 runtime 註冊 scheme，必須 build、安裝至 `/Applications` 後測試；Windows debug 與 Linux 由 `register_all()` 處理。
+- **Windows protocol registration**：安裝版會註冊 protocol；開發時先啟動一次 App，若仍失效，檢查登錄檔中的 handler 是否指向目前 executable。
+- **macOS URL scheme registration**：檢查封裝 App 的 `Info.plist` 是否包含 `CFBundleURLTypes`，並避免直接測試未安裝的 build artifact。
+- **Linux `x-scheme-handler`**：AppImage 移動位置後需重新啟動以更新絕對路徑；桌面環境也必須支援 `xdg-open`。
+
+## 帳號刪除部署
+
+設定頁的「刪除帳號」會呼叫受使用者 JWT 保護的 `delete-account` Edge Function。部署前需套用資料庫 migration 並部署函式：
+
+```bash
+supabase db push
+supabase functions deploy delete-account
+```
+
+`SUPABASE_SERVICE_ROLE_KEY` 僅由 Supabase Edge Function 執行環境讀取，禁止加入前端 `.env` 或打包到 App。

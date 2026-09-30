@@ -5,7 +5,6 @@ import {
   Stack,
   TextField,
   Typography,
-  alpha,
   styled,
 } from "@mui/material";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -18,64 +17,61 @@ import { supabase } from "../../tools/supabase";
 import translateError from "../../utils/translateError";
 
 const StyledCard = styled(Box)(({ theme }) => ({
-  width: 360,
+  width: 390,
   padding: theme.spacing(4),
   position: "relative",
-  background:
-    theme.palette.mode === "light"
-      ? "rgba(255, 255, 255, 0.7)"
-      : "rgba(15, 23, 42, 0.6)",
-  backdropFilter: "blur(20px)",
-  borderRadius: 24,
-  border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-  boxShadow: `0 0 40px ${alpha(theme.palette.primary.main, 0.1)}`,
+  background: theme.palette.background.paper,
+  borderRadius: 30,
+  border: "3px solid #202027",
+  boxShadow: "9px 9px 0 #202027",
   overflow: "hidden",
   "&::before": {
     content: '""',
     position: "absolute",
     top: 0,
     left: 0,
-    width: 40,
-    height: 40,
-    borderTop: `2px solid ${theme.palette.primary.main}`,
-    borderLeft: `2px solid ${theme.palette.primary.main}`,
-    borderTopLeftRadius: 24,
+    width: 88,
+    height: 16,
+    border: 0,
+    borderRadius: 999,
+    background: theme.palette.secondary.main,
+    transform: "translate(-15px, 8px) rotate(-8deg)",
   },
   "&::after": {
-    content: '""',
     position: "absolute",
     bottom: 0,
     right: 0,
-    width: 40,
-    height: 40,
-    borderBottom: `2px solid ${theme.palette.primary.main}`,
-    borderRight: `2px solid ${theme.palette.primary.main}`,
-    borderBottomRightRadius: 24,
+    content: '"★"',
+    width: "auto",
+    height: "auto",
+    color: theme.palette.warning.main,
+    fontSize: 42,
+    WebkitTextStroke: "2px #202027",
+    transform: "translate(8px, 10px) rotate(13deg)",
   },
 }));
 
 const TechLabel = styled(Typography)(({ theme }) => ({
   fontSize: "0.65rem",
-  fontFamily: "monospace",
+  fontFamily: "inherit",
   color: theme.palette.text.primary,
   opacity: 0.6,
-  textTransform: "uppercase",
-  letterSpacing: "0.1em",
+  letterSpacing: "0.03em",
   marginBottom: theme.spacing(0.5),
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
   "& .MuiOutlinedInput-root": {
-    backgroundColor: alpha(theme.palette.background.paper, 0.5),
+    backgroundColor: theme.palette.mode === "light" ? "#FFF9E8" : theme.palette.background.default,
     "& fieldset": {
-      borderColor: alpha(theme.palette.primary.main, 0.2),
+      borderColor: "#202027",
     },
     "&:hover fieldset": {
-      borderColor: alpha(theme.palette.primary.main, 0.4),
+      borderColor: theme.palette.secondary.main,
     },
     "&.Mui-focused fieldset": {
       borderColor: theme.palette.primary.main,
-      boxShadow: `0 0 10px ${alpha(theme.palette.primary.main, 0.2)}`,
+      boxShadow: `3px 3px 0 ${theme.palette.secondary.main}`,
     },
   },
 }));
@@ -140,7 +136,7 @@ const Content = () => {
             <img
               src="schoice_icon.png"
               alt="logo"
-              style={{ width: 80, height: 80 }}
+              style={{ width: 86, height: 86, filter: "drop-shadow(4px 4px 0 rgba(32,32,39,.2))" }}
             />
           </Box>
 
@@ -187,7 +183,7 @@ const Content = () => {
               <Typography
                 variant="caption"
                 color="textSecondary"
-                sx={{ fontFamily: "monospace" }}
+                sx={{ fontWeight: 700 }}
               >
                 {t("Pages.Login.rememberMe")}
               </Typography>
@@ -202,10 +198,9 @@ const Content = () => {
                 sx={{
                   py: 1,
                   fontSize: "1rem",
-                  background: (theme) =>
-                    `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.light} 90%)`,
-                  boxShadow: (theme) =>
-                    `0 4px 15px ${alpha(theme.palette.primary.main, 0.4)}`,
+                  background: "primary.main",
+                  color: "#202027",
+                  boxShadow: "4px 4px 0 #202027",
                 }}
               >
                 {t("Pages.Login.signIn")}
@@ -238,14 +233,14 @@ const Content = () => {
             >
               <Typography
                 variant="caption"
-                sx={{ px: 2, opacity: 0.5, fontFamily: "monospace" }}
+                sx={{ px: 2, opacity: 0.7, fontWeight: 900 }}
               >
                 OR
               </Typography>
             </Box>
 
             <Stack direction="row" alignItems="center" justifyContent="center">
-              <GoogleOauthButton onLogin={() => navigate("/schoice")} />
+              <GoogleOauthButton />
             </Stack>
 
             {errorMsg && (
@@ -255,7 +250,7 @@ const Content = () => {
                 align="center"
                 display="block"
                 mt={2}
-                sx={{ fontFamily: "monospace" }}
+                sx={{ fontWeight: 800 }}
               >
                 [AUTH_ERROR]: {errorMsg}
               </Typography>

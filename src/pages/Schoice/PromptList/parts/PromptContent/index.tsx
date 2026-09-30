@@ -15,12 +15,22 @@ export default function PromptContent() {
         overflowY: "auto",
         overflowX: "hidden",
         position: "relative",
+        p: { xs: 1, md: 2 },
       }}
     >
       {data_count === 0 && false ? (
         <Null />
       ) : select ? (
-        <Container sx={{ py: 3 }}>
+        <Container
+          sx={{
+            py: 2,
+            bgcolor: "background.paper",
+            border: "2px solid #202027",
+            borderRadius: "26px",
+            boxShadow: "6px 6px 0 rgba(32,32,39,.16)",
+            minHeight: "calc(100% - 16px)",
+          }}
+        >
           <Grid container spacing={2}>
             <RuleContent {...{ select }} />
             <Result {...{ select }} />

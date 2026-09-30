@@ -14,12 +14,12 @@ CREATE TABLE financial_metric (
 );
 
 CREATE TABLE fundamental_condition (
-  user_id uuid PRIMARY KEY references auth.users(id),
+  user_id uuid PRIMARY KEY references auth.users(id) ON DELETE CASCADE,
   conditions text
 );
 
 CREATE TABLE watch_stock (
-  user_id uuid REFERENCES auth.users(id),
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
   stock_id TEXT REFERENCES stock(stock_id) ON DELETE CASCADE,
   PRIMARY KEY (user_id, stock_id),  -- 複合主鍵
 
@@ -110,7 +110,7 @@ create table stock (
 
 create table user_prompts (
   prompt_id serial primary key,
-  user_id uuid references auth.users(id),
+  user_id uuid references auth.users(id) on delete cascade,
   prompt_type text,
   prompt_name text,
   conditions text,
@@ -120,6 +120,6 @@ create table user_prompts (
 );
 
 create table profiles (
-  user_id uuid primary key references auth.users(id),
+  user_id uuid primary key references auth.users(id) on delete cascade,
   plan_tier text
 );

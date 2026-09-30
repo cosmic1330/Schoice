@@ -3,7 +3,6 @@ import { useContext, useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router";
 import { DatabaseContext } from "../../context/DatabaseContext";
 import { useUser } from "../../context/UserContext";
-import { supabase } from "../../tools/supabase";
 import Header from "./layout/Header";
 import SideBar from "./layout/Sidebar";
 import WaitingPage from "./WaitingPage";
@@ -20,14 +19,31 @@ const Main = styled(Box)`
     "sidebar header "
     "sidebar  page  ";
 
-  transition: background 0.5s ease;
-  background: ${({ theme }) =>
+  isolation: isolate;
+  transition: background 0.3s ease;
+  background-color: ${({ theme }) => theme.palette.background.default};
+  background-image: ${({ theme }) =>
     theme.palette.mode === "light"
-      ? `linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%)`
-      : `radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-         radial-gradient(at 50% 0%, hsla(225,39%,25%,1) 0, transparent 50%), 
-         radial-gradient(at 100% 0%, hsla(339,49%,25%,1) 0, transparent 50%),
-         #0F172A`};
+      ? `radial-gradient(circle at 12% 18%, rgba(255,159,197,.32) 0 5px, transparent 6px),
+         radial-gradient(circle at 82% 12%, rgba(91,185,233,.28) 0 7px, transparent 8px),
+         linear-gradient(115deg, transparent 0 63%, rgba(255,217,106,.18) 63% 75%, transparent 75%),
+         repeating-linear-gradient(-9deg, transparent 0 34px, rgba(255,159,197,.07) 35px 38px, transparent 39px 58px)`
+      : `radial-gradient(circle at 12% 18%, rgba(255,159,197,.18) 0 5px, transparent 6px),
+         radial-gradient(circle at 82% 12%, rgba(112,201,241,.18) 0 7px, transparent 8px)`};
+
+  &::after {
+    content: "★";
+    position: absolute;
+    right: 3vw;
+    bottom: 2vh;
+    z-index: -1;
+    color: #ffd96a;
+    font-size: clamp(50px, 8vw, 100px);
+    line-height: 1;
+    transform: rotate(12deg);
+    -webkit-text-stroke: 3px #202027;
+    opacity: 0.34;
+  }
 
   // mobile
   @media screen and (max-width: 600px) {
@@ -41,7 +57,7 @@ const Main = styled(Box)`
 `;
 
 function Schoice() {
-  const { session, loading } = useUser();
+  const { session, loading, status } = useUser();
   const { db } = useContext(DatabaseContext);
   const [isAppReady, setIsAppReady] = useState(false);
   const navigate = useNavigate();
@@ -56,19 +72,10 @@ function Schoice() {
   };
 
   useEffect(() => {
-    // 檢測是否登入
-    supabase.auth
-      .getUser()
-      .then(({ data: { user } }) => {
-        if (!user) {
-          navigate("/login");
-        }
-      })
-      .catch(() => {
-        // 如果檢測失敗，則重定向到登入
-        navigate("/login");
-      });
-  }, []);
+    if (status === "unauthenticated" || status === "error") {
+      navigate("/login", { replace: true });
+    }
+  }, [navigate, status]);
 
   // 如果使用者正在載入，顯示載入畫面
   if (loading) {

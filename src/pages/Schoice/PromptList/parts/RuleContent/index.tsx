@@ -4,7 +4,7 @@ import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import NotificationAddIcon from "@mui/icons-material/NotificationAdd";
 import NotificationsOffIcon from "@mui/icons-material/NotificationsOff";
 import { Box, IconButton, Stack, Tooltip, Typography } from "@mui/material";
-import { alpha, styled } from "@mui/material/styles";
+import { styled } from "@mui/material/styles";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { error } from "@tauri-apps/plugin-log";
 import {
@@ -22,24 +22,21 @@ import { PromptType, PromptValue, SelectType } from "../../../../../types";
 import Summary from "./Summary";
 
 const ActionGroup = styled(Box)(({ theme }) => ({
-  backgroundColor: alpha(theme.palette.background.paper, 0.4),
-  backdropFilter: "blur(20px)",
-  borderRadius: "20px",
+  backgroundColor: theme.palette.background.paper,
+  borderRadius: "999px",
   padding: theme.spacing(1, 1.5),
-  border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+  border: "2px solid #202027",
   display: "flex",
   gap: theme.spacing(0.5),
-  boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.1)}`,
+  boxShadow: "4px 4px 0 #202027",
 }));
 
 const TitleLabel = styled(Typography)(({ theme }) => ({
   fontWeight: 900,
   fontSize: "2.5rem",
   letterSpacing: "-0.03em",
-  background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-  WebkitBackgroundClip: "text",
-  WebkitTextFillColor: "transparent",
-  textShadow: `0 0 30px ${alpha(theme.palette.primary.main, 0.1)}`,
+  color: theme.palette.text.primary,
+  WebkitTextStroke: theme.palette.mode === "light" ? ".4px #202027" : "0",
 }));
 
 export default function RuleContent({ select }: { select: SelectType | null }) {
@@ -162,9 +159,8 @@ export default function RuleContent({ select }: { select: SelectType | null }) {
             color="text.secondary"
             fontWeight={800}
             sx={{
-              letterSpacing: "0.2em",
-              fontFamily: "monospace",
-              opacity: 0.6,
+              letterSpacing: "0.05em",
+              opacity: 0.75,
             }}
           >
             {t("Pages.Schoice.PromptList.content.strategyConfiguration")}

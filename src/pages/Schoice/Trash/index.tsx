@@ -20,11 +20,10 @@ import CollapseRow from "./CollapseRow";
 
 const GlassCard = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
-  backgroundColor: alpha(theme.palette.background.paper, 0.4),
-  backdropFilter: "blur(12px)",
-  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-  borderRadius: "16px",
-  boxShadow: "none",
+  backgroundColor: theme.palette.background.paper,
+  border: "3px solid #202027",
+  borderRadius: "24px",
+  boxShadow: "6px 6px 0 #202027",
   position: "relative",
   overflow: "hidden",
 }));
@@ -33,10 +32,10 @@ const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   backgroundColor: "transparent",
   boxShadow: "none",
   "& .MuiTableCell-head": {
-    backgroundColor: alpha(theme.palette.primary.main, 0.05),
+    backgroundColor: theme.palette.warning.main,
     color: theme.palette.text.primary,
     fontWeight: 800,
-    borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+    borderBottom: "2px solid #202027",
   },
   "& .MuiTableCell-root": {
     borderColor: alpha(theme.palette.divider, 0.05),

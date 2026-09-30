@@ -1,4 +1,4 @@
-import { Session, User } from "@supabase/supabase-js";
+import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import {
   createContext,
   ReactNode,
@@ -7,12 +7,20 @@ import {
   useState,
 } from "react";
 import useCloudStore from "../store/Cloud.store";
-import { supabase } from "../tools/supabase";
+import { supabase } from "../lib/supabase";
+
+export type AuthStatus =
+  | "loading"
+  | "authenticated"
+  | "unauthenticated"
+  | "error";
 
 interface UserContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  status: AuthStatus;
+  error: string | null;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -20,29 +28,75 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState<AuthStatus>("loading");
+  const [authError, setAuthError] = useState<string | null>(null);
   const { reload } = useCloudStore();
 
   useEffect(() => {
-    const getSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+    let active = true;
+    let checkingSession = false;
+
+    const applySession = (nextSession: Session | null) => {
+      if (!active) return;
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+      setAuthError(null);
+      setStatus(nextSession ? "authenticated" : "unauthenticated");
     };
 
-    getSession();
+    const handleAuthChange = (
+      _event: AuthChangeEvent,
+      nextSession: Session | null,
+    ) => {
+      applySession(nextSession);
+    };
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-      }
+      handleAuthChange,
     );
 
+    const loadInitialSession = async () => {
+      if (checkingSession) return;
+      checkingSession = true;
+      try {
+        const { data: stored, error: sessionError } =
+          await supabase.auth.getSession();
+        if (!active) return;
+        if (sessionError) throw sessionError;
+
+        const expiresSoon =
+          stored.session?.expires_at !== undefined &&
+          stored.session.expires_at <= Math.floor(Date.now() / 1000) + 60;
+
+        if (expiresSoon) {
+          const { data: refreshed, error: refreshError } =
+            await supabase.auth.refreshSession();
+          if (refreshError) throw refreshError;
+          applySession(refreshed.session);
+        } else {
+          applySession(stored.session);
+        }
+      } catch {
+        if (!active) return;
+        setSession(null);
+        setUser(null);
+        setAuthError("無法讀取登入狀態，請檢查網路後重新登入。");
+        setStatus("error");
+      } finally {
+        checkingSession = false;
+      }
+    };
+
+    void loadInitialSession();
+
+    const checkWhenVisible = () => {
+      if (document.visibilityState === "visible") void loadInitialSession();
+    };
+    document.addEventListener("visibilitychange", checkWhenVisible);
+
     return () => {
+      active = false;
+      document.removeEventListener("visibilitychange", checkWhenVisible);
       authListener.subscription.unsubscribe();
     };
   }, []);
@@ -50,7 +104,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const value = {
     session,
     user,
-    loading,
+    loading: status === "loading",
+    status,
+    error: authError,
   };
 
   useEffect(() => {

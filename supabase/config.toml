@@ -1,0 +1,4 @@
+project_id = "schoice"
+
+[functions.delete-account]
+verify_jwt = true

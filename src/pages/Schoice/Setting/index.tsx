@@ -1,5 +1,6 @@
 import { Box, Container, Grid, Typography } from "@mui/material";
 import CheckUpdate from "./CheckUpdate";
+import DeleteAccount from "./DeleteAccount";
 import DatabaseInitialization from "./DatabaseInitialization";
 import DatabaseSettings from "./DatabaseSettings";
 import ExampleSelector from "./ExampleSelector";
@@ -31,6 +32,7 @@ export default function Setting() {
           <OtherSettings />
           <ExampleSelector />
           <CheckUpdate />
+          <DeleteAccount />
         </Grid>
         <SystemStatus />
       </Container>
