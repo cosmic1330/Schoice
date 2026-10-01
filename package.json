@@ -2,6 +2,7 @@
   "name": "schoice",
   "private": true,
   "version": "0.0.28",
+  "packageManager": "pnpm@11.28.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

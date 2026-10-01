@@ -82,13 +82,13 @@ jobs:
           restore-keys: ${{ runner.os }}-cargo-
 
       - name: 📦 安裝 pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v6
         with:
-          version: latest
+          version: 11.28.0
           run_install: false
 
       - name: 📌 安裝依賴
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: 🔐 準備 SSL 憑證 (mTLS)
         shell: bash
