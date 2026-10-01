@@ -14,7 +14,6 @@ import Trash from "./pages/Schoice/Trash";
 
 import { Box, CssBaseline, ThemeProvider, useMediaQuery } from "@mui/material";
 import { useMemo } from "react";
-import OAuthCallbackHandler from "./components/OAuthCallbackHandler";
 import { DatabaseContext } from "./context/DatabaseContext";
 import useDatabase from "./hooks/useDatabase";
 import useDatabaseDates from "./hooks/useDatabaseDates";
@@ -28,7 +27,6 @@ import { getTheme } from "./theme";
 const AppRoutes = () => {
   return (
     <BrowserRouter>
-      <OAuthCallbackHandler />
       <Routes>
         <Route path="/" element={<Navigate to="/schoice" />} />
         <Route path="/login" element={<Login />} />

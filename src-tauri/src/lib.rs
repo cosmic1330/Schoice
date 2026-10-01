@@ -123,21 +123,7 @@ fn get_db_size(app_handle: tauri::AppHandle) -> Result<(u64, String), String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let mut builder = tauri::Builder::default();
-
-    #[cfg(desktop)]
-    {
-        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.show();
-                let _ = window.unminimize();
-                let _ = window.set_focus();
-            }
-        }));
-    }
-
-    let result = builder
-        .plugin(tauri_plugin_deep_link::init())
+    let result = tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_store::Builder::new().build())
@@ -153,22 +139,12 @@ pub fn run() {
                 .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
                 .build(),
         )
-        .plugin(tauri_plugin_opener::init())
         .plugin(
             tauri_plugin_sql::Builder::new()
                 .add_migrations("sqlite:schoice.db", sqlite::migrations::value())
                 .build(),
         )
         .setup(|app| {
-            // Installed desktop bundles register the configured scheme. During
-            // development, Windows can register it at runtime; Linux benefits
-            // from runtime registration in both dev and AppImage scenarios.
-            #[cfg(any(target_os = "linux", all(debug_assertions, target_os = "windows")))]
-            {
-                use tauri_plugin_deep_link::DeepLinkExt;
-                app.deep_link().register_all()?;
-            }
-
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 update(handle).await.unwrap();

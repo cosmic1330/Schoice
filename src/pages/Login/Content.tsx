@@ -12,7 +12,6 @@ import { error } from "@tauri-apps/plugin-log";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import GoogleOauthButton from "../../components/GoogleOauthButton";
 import { supabase } from "../../tools/supabase";
 import translateError from "../../utils/translateError";
 
@@ -215,32 +214,6 @@ const Content = () => {
               >
                 {t("Pages.Login.register")}
               </Button>
-            </Stack>
-
-            <Box
-              mt={3}
-              mb={1}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                "&::before, &::after": {
-                  content: '""',
-                  flex: 1,
-                  height: "1px",
-                  background: (theme) => theme.palette.divider,
-                },
-              }}
-            >
-              <Typography
-                variant="caption"
-                sx={{ px: 2, opacity: 0.7, fontWeight: 900 }}
-              >
-                OR
-              </Typography>
-            </Box>
-
-            <Stack direction="row" alignItems="center" justifyContent="center">
-              <GoogleOauthButton />
             </Stack>
 
             {errorMsg && (

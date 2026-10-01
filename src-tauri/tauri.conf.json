@@ -39,11 +39,6 @@
     ]
   },
   "plugins": {
-    "deep-link": {
-      "desktop": {
-        "schemes": ["schoice"]
-      }
-    },
     "sql": {
       "preload": ["sqlite:schoice.db"]
     },
