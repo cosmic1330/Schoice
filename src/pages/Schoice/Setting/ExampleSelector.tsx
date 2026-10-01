@@ -5,7 +5,6 @@ import {
   CardContent,
   Chip,
   CircularProgress,
-  Grid,
   Stack,
   Typography,
 } from "@mui/material";
@@ -16,7 +15,7 @@ import { useEffect, useState } from "react";
 import useExampleData from "../../../hooks/useExampleData";
 import useSchoiceStore from "../../../store/Schoice.store";
 import { FutureIds, StockTableType, UrlType } from "../../../types";
-import DataObjectIcon from '@mui/icons-material/DataObject';
+import DataObjectIcon from "@mui/icons-material/DataObject";
 
 export default function ExampleSelector() {
   const [menu, setMenu] = useState<StockTableType[]>([]);
@@ -92,8 +91,7 @@ export default function ExampleSelector() {
   };
 
   return (
-    <Grid size={{ xs: 6 }}>
-      <Card>
+      <Card className="setting-card">
         <CardContent>
           <Stack direction="row" alignItems="center" spacing={1} mb={1}>
             <DataObjectIcon color="error" />
@@ -108,7 +106,7 @@ export default function ExampleSelector() {
               <Typography variant="body2">更新中...</Typography>
             </Stack>
           ) : (
-            <Stack direction="row" spacing={1} mb={3}>
+            <Stack direction="row" spacing={1} mb={3} useFlexGap flexWrap="wrap">
               <Chip
                 label={
                   hour && hour.length > 0
@@ -154,7 +152,7 @@ export default function ExampleSelector() {
             )}
           />
         </CardContent>
-        <CardActions sx={{ justifyContent: "flex-end", gap: 1, pr: 2 }}>
+        <CardActions sx={{ justifyContent: "flex-end", gap: 1, px: 3, pb: 3, flexWrap: "wrap" }}>
           <Button
             variant="outlined"
             color="secondary"
@@ -162,7 +160,7 @@ export default function ExampleSelector() {
             disabled={loading || !exampleChartId}
           >
             {loading && <CircularProgress size={14} sx={{ mr: 1 }} />}
-            更新原ID資料
+            更新目前資料
           </Button>
           <Button
             variant="contained"
@@ -171,10 +169,9 @@ export default function ExampleSelector() {
             disabled={!selectedOption || loading}
           >
             {loading && <CircularProgress size={18} sx={{ mr: 1 }} />}
-            確定
+            套用選擇
           </Button>
         </CardActions>
       </Card>
-    </Grid>
   );
 }

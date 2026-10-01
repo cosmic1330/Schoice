@@ -14,9 +14,6 @@ dist-ssr
 
 # Environment variables
 .env
-client.crt
-client.key
-root.crt
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -27,4 +24,3 @@ root.crt
 *.njsproj
 *.sln
 *.sw?
-src-tauri/resources/root.crt

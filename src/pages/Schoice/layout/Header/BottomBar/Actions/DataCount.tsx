@@ -1,4 +1,3 @@
-import CloudIcon from "@mui/icons-material/Cloud";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import { Box, Stack, Tooltip, Typography, alpha } from "@mui/material";
 import { error } from "@tauri-apps/plugin-log";
@@ -13,8 +12,7 @@ export default function DataCount() {
   const { t } = useTranslation();
   const { data_count, changeDataCount } = useSchoiceStore();
   const { syncStatus } = useSyncEngine();
-  const { db, dbType } = useContext(DatabaseContext);
-  const isCloud = dbType === "postgres";
+  const { db } = useContext(DatabaseContext);
 
   useEffect(() => {
     if (!db) return;
@@ -45,10 +43,8 @@ export default function DataCount() {
     };
   }, [db, syncStatus, changeDataCount]);
 
-  const sourceLabel = isCloud ? "(Cloud)" : "(Local)";
-
   return (
-    <Tooltip title={`${t("Pages.Schoice.Header.dataCount")} ${sourceLabel}`} arrow>
+    <Tooltip title={`${t("Pages.Schoice.Header.dataCount")} (Local)`} arrow>
       <Stack
         direction="row"
         spacing={1}
@@ -62,14 +58,10 @@ export default function DataCount() {
              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
           },
           border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.05)}`,
-          bgcolor: (theme) => isCloud ? alpha(theme.palette.primary.main, 0.05) : "transparent",
+          bgcolor: "transparent",
         }}
       >
-        {isCloud ? (
-          <CloudIcon sx={{ color: "primary.main", fontSize: 16 }} />
-        ) : (
-          <BarChartIcon sx={{ color: "text.secondary", fontSize: 16, opacity: 0.8 }} />
-        )}
+        <BarChartIcon sx={{ color: "text.secondary", fontSize: 16, opacity: 0.8 }} />
         <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5, whiteSpace: "nowrap", flexShrink: 0 }}>
           <Typography
             variant="body2"

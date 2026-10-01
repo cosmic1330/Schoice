@@ -35,7 +35,7 @@ export default function StockMenuSettings() {
   };
 
   return (
-    <Card sx={{ height: "100%" }}>
+    <Card className="setting-card">
       <CardContent>
         <Stack direction="row" alignItems="center" spacing={1} mb={2}>
           <CloudDownload color="primary" />
@@ -45,14 +45,22 @@ export default function StockMenuSettings() {
         </Stack>
 
         <Typography variant="body2" color="text.secondary" mb={3}>
-          更新本地股票選單資料，包含名稱、產業別及發行股數。這些資料將備份到本地資料庫中。
+          更新本地股票選單資料，包含名稱、產業別及發行股數。下載內容會儲存在本機資料庫中。
         </Typography>
 
         <Stack spacing={2}>
-          <Box sx={{ p: 2, bgcolor: "action.hover", borderRadius: 1 }}>
+          <Box
+            sx={{
+              p: 2,
+              bgcolor: "action.hover",
+              borderRadius: 3,
+              border: "1.5px dashed",
+              borderColor: "divider",
+            }}
+          >
             <Stack
-              direction="row"
-              alignItems="center"
+              direction={{ xs: "column", sm: "row" }}
+              alignItems={{ xs: "stretch", sm: "center" }}
               justifyContent="space-between"
               spacing={2}
             >

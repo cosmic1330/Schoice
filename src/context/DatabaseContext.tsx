@@ -7,9 +7,6 @@ type DbContextType = {
   weekDates: string[];
   fetchDates?: () => Promise<void>;
   isLoading?: boolean;
-  dbType: "sqlite" | "postgres";
-  switchDatabase: (type: "sqlite" | "postgres") => Promise<void>;
-  isSwitching: boolean;
 };
 
 export const DatabaseContext = createContext<DbContextType>({
@@ -17,7 +14,4 @@ export const DatabaseContext = createContext<DbContextType>({
   dates: [],
   weekDates: [],
   isLoading: false,
-  dbType: "sqlite",
-  switchDatabase: async () => {},
-  isSwitching: false,
 });

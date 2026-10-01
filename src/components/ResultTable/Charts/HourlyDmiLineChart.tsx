@@ -12,11 +12,11 @@ const HourlyDmiLineChart = ({
   stock_id: string;
   t: string;
 }) => {
-  const { db, dbType } = useContext(DatabaseContext);
+  const { db } = useContext(DatabaseContext);
   const [data, setData] = useState<any[]>([]);
   useEffect(() => {
     if (!stock_id) return;
-    const num = dbType === "postgres" ? `${t} 14:00:00` : `${t}1400`;
+    const num = `${t}1400`;
 
     const sqlQuery = `SELECT hourly_skills.ts, ${DmiIndicatorColor.map(
       (item) => item.key
@@ -30,7 +30,7 @@ const HourlyDmiLineChart = ({
       const formatData = res.reverse();
       setData(formatData);
     });
-  }, [stock_id, t, db, dbType]);
+  }, [stock_id, t, db]);
   return (
     <Tooltip title={<ChartTooltip value={DmiIndicatorColor} />} arrow>
       <Box>

@@ -8,7 +8,7 @@ import { PromptItem } from "../types";
 import useDatabaseQuery from "./useDatabaseQuery";
 
 export default function useFindStocksByPrompt() {
-  const { dates, weekDates, dbType } = useContext(DatabaseContext);
+  const { dates, weekDates } = useContext(DatabaseContext);
   const dateIndex = useSchoiceStore((state) => state.dateIndex);
   const filterStocks = useSchoiceStore((state) => state.filterStocks);
   const weekIndex = useSchoiceStore((state) => state.weekIndex);
@@ -32,12 +32,7 @@ export default function useFindStocksByPrompt() {
   const getHourDates = useCallback(
     async (date: string) => {
       try {
-        // 針對不同資料庫類型處理日期時間格式
-        // SQLite 通常使用 YYYY-MM-DD1400 或 YYYYMMDD1400
-        // Postgres (雲端) 則嚴格要求 YYYY-MM-DD 14:00:00
-        const num = dbType === "postgres" 
-          ? `${date} 14:00:00` 
-          : `${date}1400`;
+        const num = `${date}1400`;
 
         const queryHourDate = `
         SELECT DISTINCT ts
@@ -53,7 +48,7 @@ export default function useFindStocksByPrompt() {
         return [];
       }
     },
-    [query, dbType],
+    [query],
   );
 
   const getPromptSqlScripts = useCallback(

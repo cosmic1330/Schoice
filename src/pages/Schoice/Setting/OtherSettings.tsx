@@ -1,8 +1,11 @@
-import { Settings } from "@mui/icons-material";
+import DarkModeRoundedIcon from "@mui/icons-material/DarkModeRounded";
+import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
+import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import {
+  Box,
   Card,
   CardContent,
-  Grid,
+  Divider,
   Stack,
   Switch,
   Typography,
@@ -19,40 +22,48 @@ export default function OtherSettings() {
   };
 
   return (
-    <Grid size={{ xs: 12, md: 6 }}>
-      <Card sx={{ height: "100%" }}>
-        <CardContent>
-          <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-            <Settings color="success" />
-            <Typography variant="h6" fontWeight="bold">
-              其他設定
-            </Typography>
-          </Stack>
-          <Typography variant="body2" color="text.secondary" mb={2}>
-            系統選項
-          </Typography>
-          <Stack spacing={2} mt={2}>
-            <Stack
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
-            >
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Switch
-                  checked={theme === "light"}
-                  onChange={onThemeChange}
-                  color="success"
-                />
-                <Typography variant="body2">切換主題</Typography>
-              </Stack>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <LanguageSwitcher />
-                <Typography variant="body2">語言</Typography>
-              </Stack>
+    <Card className="setting-card">
+      <CardContent>
+        <Stack direction="row" alignItems="center" spacing={1.25} mb={0.75}>
+          <SettingsRoundedIcon color="secondary" />
+          <Typography variant="h6">介面與語言</Typography>
+        </Stack>
+        <Typography variant="body2" color="text.secondary" mb={2.5}>
+          外觀設定會儲存在這台裝置上。
+        </Typography>
+
+        <Stack spacing={2}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" gap={2}>
+            <Stack direction="row" alignItems="center" spacing={1.25}>
+              <Box sx={{ color: "text.secondary", display: "flex" }}>
+                <DarkModeRoundedIcon fontSize="small" />
+              </Box>
+              <Box>
+                <Typography variant="body2" fontWeight={900}>深色模式</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {theme === "dark" ? "目前使用深色外觀" : "目前使用淺色外觀"}
+                </Typography>
+              </Box>
             </Stack>
+            <Switch checked={theme === "dark"} onChange={onThemeChange} color="secondary" />
           </Stack>
-        </CardContent>
-      </Card>
-    </Grid>
+
+          <Divider />
+
+          <Stack direction="row" alignItems="center" justifyContent="space-between" gap={2}>
+            <Stack direction="row" alignItems="center" spacing={1.25}>
+              <Box sx={{ color: "text.secondary", display: "flex" }}>
+                <LanguageRoundedIcon fontSize="small" />
+              </Box>
+              <Box>
+                <Typography variant="body2" fontWeight={900}>顯示語言</Typography>
+                <Typography variant="caption" color="text.secondary">中文／English</Typography>
+              </Box>
+            </Stack>
+            <LanguageSwitcher />
+          </Stack>
+        </Stack>
+      </CardContent>
+    </Card>
   );
 }

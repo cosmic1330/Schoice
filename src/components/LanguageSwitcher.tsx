@@ -1,7 +1,7 @@
-import { Box, alpha, styled } from "@mui/material";
+import { Box, ButtonBase, alpha, styled } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
-const LangButton = styled(Box)(({ theme }) => ({
+const LangButton = styled(ButtonBase)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   gap: theme.spacing(0.5),
@@ -46,7 +46,10 @@ export default function LanguageSwitcher() {
   const isEn = i18n.language === "en";
 
   return (
-    <LangButton onClick={handleLanguageChange}>
+    <LangButton
+      onClick={handleLanguageChange}
+      aria-label={isEn ? "切換為繁體中文" : "Switch language to English"}
+    >
       <LangTag isSelected={isEn}>EN</LangTag>
       <LangTag isSelected={!isEn}>繁</LangTag>
     </LangButton>

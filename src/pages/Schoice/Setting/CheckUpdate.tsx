@@ -4,9 +4,9 @@ import {
   Info,
   Refresh,
   RestartAlt,
+  SystemUpdateAlt,
   Update,
 } from "@mui/icons-material";
-import CloudIcon from "@mui/icons-material/Cloud";
 import {
   Alert,
   Box,
@@ -20,7 +20,6 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
-  Grid,
   LinearProgress,
   Stack,
   Switch,
@@ -50,8 +49,8 @@ const CheckUpdate: React.FC = () => {
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
 
   useEffect(() => {
-    initializeSettings().then(() => {
-      checkForUpdates(); // 強制檢查更新
+    initializeSettings().then((shouldCheckAutomatically) => {
+      if (shouldCheckAutomatically) checkForUpdates();
     });
   }, []);
 
@@ -77,6 +76,8 @@ const CheckUpdate: React.FC = () => {
         lastChecked: new Date(lastChecked),
       }));
     }
+
+    return Boolean(value);
   };
 
   const toggleAutoUpdate = async () => {
@@ -214,11 +215,11 @@ const CheckUpdate: React.FC = () => {
   };
 
   return (
-    <Grid size={6}>
-      <Card sx={{ height: "100%" }}>
+    <>
+      <Card className="setting-card">
         <CardContent>
           <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-            <CloudIcon sx={{ color: "white" }} />
+            <SystemUpdateAlt color="primary" />
             <Typography variant="h6" fontWeight="bold">
               應用更新
             </Typography>
@@ -316,7 +317,7 @@ const CheckUpdate: React.FC = () => {
             )}
 
             {/* 操作按鈕 */}
-            <Box display="flex" gap={1} mt={2}>
+            <Box display="flex" gap={1} mt={2} flexWrap="wrap">
               <Button
                 variant="outlined"
                 onClick={() => checkForUpdates(true)}
@@ -346,7 +347,15 @@ const CheckUpdate: React.FC = () => {
               spacing={1}
             >
               <Typography>
-                {autoUpdate ? "自動更新已啟用" : "自動更新已停用"}
+                <strong>進入設定頁時自動檢查</strong>
+                <Typography
+                  component="span"
+                  variant="caption"
+                  color="text.secondary"
+                  display="block"
+                >
+                  發現版本後仍會由你確認下載與安裝
+                </Typography>
               </Typography>
               <Switch
                 checked={autoUpdate}
@@ -448,7 +457,7 @@ const CheckUpdate: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Grid>
+    </>
   );
 };
 

@@ -8,7 +8,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Grid,
   Stack,
   TextField,
   Typography,
@@ -25,6 +24,7 @@ const CONFIRMATION_TEXT = "刪除帳號";
 export default function DeleteAccount() {
   const navigate = useNavigate();
   const { user } = useUser();
+  const accountName = user?.email || user?.phone || null;
   const [open, setOpen] = useState(false);
   const [confirmation, setConfirmation] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -39,6 +39,10 @@ export default function DeleteAccount() {
 
   const deleteAccount = async () => {
     if (confirmation !== CONFIRMATION_TEXT || deleting) return;
+    if (!user?.id) {
+      setErrorMessage("無法確認目前登入帳號，請重新登入後再試。");
+      return;
+    }
 
     setDeleting(true);
     setErrorMessage("");
@@ -83,10 +87,10 @@ export default function DeleteAccount() {
   };
 
   return (
-    <Grid size={{ xs: 12 }}>
-      <Card sx={{ borderColor: "error.main", bgcolor: "rgba(241,95,85,.08)" }}>
+    <>
+      <Card className="setting-card" sx={{ borderColor: "error.main", bgcolor: "rgba(241,95,85,.08)" }}>
         <CardContent>
-          <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" gap={2}>
+          <Stack direction="column" justifyContent="space-between" gap={2} height="100%">
             <Stack direction="row" spacing={1.5} alignItems="flex-start">
               <DeleteForeverRoundedIcon color="error" sx={{ mt: 0.25 }} />
               <Stack spacing={0.5}>
@@ -94,9 +98,18 @@ export default function DeleteAccount() {
                 <Typography variant="body2" color="text.secondary">
                   永久刪除帳號、策略、自選股、警示與雲端設定。此操作無法復原。
                 </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800, overflowWrap: "anywhere" }}>
+                  目前登入帳號：{accountName || "無法取得帳號資訊"}
+                </Typography>
               </Stack>
             </Stack>
-            <Button color="error" variant="contained" onClick={() => setOpen(true)}>
+            <Button
+              color="error"
+              variant="contained"
+              onClick={() => setOpen(true)}
+              disabled={!user?.id}
+              sx={{ alignSelf: "flex-start" }}
+            >
               刪除我的帳號
             </Button>
           </Stack>
@@ -108,8 +121,34 @@ export default function DeleteAccount() {
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             <Alert severity="error">
-              這會永久刪除 {user?.email || "目前帳號"} 的所有雲端資料，且無法復原。
+              這會永久刪除下列帳號的所有雲端資料，且無法復原。
             </Alert>
+            <Stack
+              spacing={0.5}
+              sx={{
+                p: 2,
+                border: "1px solid",
+                borderColor: "error.main",
+                borderRadius: 1,
+                bgcolor: "rgba(241,95,85,.06)",
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                即將刪除的帳號
+              </Typography>
+              <Typography sx={{ fontWeight: 900, overflowWrap: "anywhere" }}>
+                {accountName || "無法取得帳號資訊"}
+              </Typography>
+              {user?.id && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontFamily: "monospace", overflowWrap: "anywhere" }}
+                >
+                  User ID：{user.id}
+                </Typography>
+              )}
+            </Stack>
             <Typography variant="body2">
               請輸入「{CONFIRMATION_TEXT}」以確認：
             </Typography>
@@ -133,12 +172,12 @@ export default function DeleteAccount() {
             color="error"
             variant="contained"
             onClick={deleteAccount}
-            disabled={confirmation !== CONFIRMATION_TEXT || deleting}
+            disabled={confirmation !== CONFIRMATION_TEXT || deleting || !user?.id}
           >
             {deleting ? "刪除中…" : "永久刪除"}
           </Button>
         </DialogActions>
       </Dialog>
-    </Grid>
+    </>
   );
 }

@@ -4,7 +4,6 @@ import {
   Card,
   CardActions,
   CardContent,
-  Grid,
   Stack,
   Typography,
 } from "@mui/material";
@@ -42,8 +41,7 @@ export default function DatabaseInitialization() {
   };
 
   return (
-    <Grid size={{ xs: 12, md: 6 }}>
-      <Card sx={{ height: "100%" }}>
+      <Card className="setting-card" sx={{ borderColor: "warning.main" }}>
         <CardContent>
           <Stack direction="row" alignItems="center" spacing={1} mb={1}>
             <RestartAlt color="warning" />
@@ -56,7 +54,7 @@ export default function DatabaseInitialization() {
             資料庫所有內容並重置狀態。此操作無法復原，請謹慎執行。
           </Typography>
         </CardContent>
-        <CardActions>
+        <CardActions sx={{ p: 2.5, pt: 0 }}>
           <Button
             variant="contained"
             color="warning"
@@ -68,6 +66,5 @@ export default function DatabaseInitialization() {
           </Button>
         </CardActions>
       </Card>
-    </Grid>
   );
 }

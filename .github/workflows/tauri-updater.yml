@@ -90,32 +90,6 @@ jobs:
       - name: 📌 安裝依賴
         run: pnpm install --frozen-lockfile
 
-      - name: 🔐 準備 SSL 憑證 (mTLS)
-        shell: bash
-        run: |
-          mkdir -p src-tauri/resources
-          # Server CA
-          if [ -n "${{ secrets.POSTGRES_CA_CRT_BASE64 }}" ]; then
-            echo "${{ secrets.POSTGRES_CA_CRT_BASE64 }}" | base64 -d > src-tauri/resources/root.crt 2>/dev/null || touch src-tauri/resources/root.crt
-          else
-            echo "Warning: POSTGRES_CA_CRT_BASE64 secret is missing. Creating empty root.crt."
-            touch src-tauri/resources/root.crt
-          fi
-          # Client Certificate
-          if [ -n "${{ secrets.POSTGRES_CLIENT_CRT_BASE64 }}" ]; then
-            echo "${{ secrets.POSTGRES_CLIENT_CRT_BASE64 }}" | base64 -d > src-tauri/resources/client.crt 2>/dev/null || touch src-tauri/resources/client.crt
-          else
-            echo "Warning: POSTGRES_CLIENT_CRT_BASE64 secret is missing. Creating empty client.crt."
-            touch src-tauri/resources/client.crt
-          fi
-          # Client Key
-          if [ -n "${{ secrets.POSTGRES_CLIENT_KEY_BASE64 }}" ]; then
-            echo "${{ secrets.POSTGRES_CLIENT_KEY_BASE64 }}" | base64 -d > src-tauri/resources/client.key 2>/dev/null || touch src-tauri/resources/client.key
-          else
-            echo "Warning: POSTGRES_CLIENT_KEY_BASE64 secret is missing. Creating empty client.key."
-            touch src-tauri/resources/client.key
-          fi
-
       - name: 🔨 構建 Tauri 應用程式
         uses: tauri-apps/tauri-action@v0
         env:
@@ -124,7 +98,6 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_POSTGRES_URL: ${{ secrets.VITE_POSTGRES_URL }}
         with:
           tagName: schoice-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
           releaseName: "Schoice v__VERSION__"

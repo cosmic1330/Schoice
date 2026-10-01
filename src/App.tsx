@@ -60,7 +60,7 @@ function App() {
     return getTheme(mode);
   }, [theme, prefersDarkMode]);
 
-  const { db, dbType, switchDatabase, isSwitching } = useDatabase();
+  const { db } = useDatabase();
   const { dates, weekDates, fetchDates, isLoading } = useDatabaseDates(db);
 
   return (
@@ -72,9 +72,6 @@ function App() {
           weekDates,
           fetchDates,
           isLoading,
-          dbType,
-          switchDatabase,
-          isSwitching,
         }}
       >
         <ThemeProvider theme={themeConfig}>
