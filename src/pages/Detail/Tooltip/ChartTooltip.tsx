@@ -1,4 +1,7 @@
+import { semanticTokens } from "../../../theme";
 import { Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
+import { normalizeLanguage } from "../../../tools/i18n";
 
 // Helper to format YYYYMMDD number to Date string
 const formatDateTick = (tick: number | string) => {
@@ -51,6 +54,8 @@ const ChartTooltip = ({
   showIchimoku = true,
   showMESS = true,
 }: ChartTooltipProps) => {
+  const { t, i18n } = useTranslation();
+  const numberFormat = new Intl.NumberFormat(normalizeLanguage(i18n.resolvedLanguage), { maximumFractionDigits: 2 });
   if (active && payload && payload.length && label !== undefined) {
     const data = payload[0].payload;
     const dateStr = dateFormatter(label);
@@ -127,14 +132,14 @@ const ChartTooltip = ({
               variant="caption"
               display="block"
               style={{
-                color: "#90caf9",
+                color: semanticTokens.analysis.focus,
                 fontWeight: "bold",
                 marginBottom: 4,
                 textTransform: "uppercase",
                 letterSpacing: 1,
               }}
             >
-              市場環境 (MESS)
+              {t("Pages.Detail.tooltip.marketEnvironment")}
             </Typography>
             <Typography
               variant="body2"
@@ -149,10 +154,10 @@ const ChartTooltip = ({
                 marginBottom: 2,
               }}
             >
-              {data.marketType}市 ({data.mss?.toFixed(1) ?? "0.0"})
+              {data.marketType} ({data.mss === undefined ? "0.0" : numberFormat.format(data.mss)})
             </Typography>
             <Typography variant="caption" style={{ color: "#bbb" }}>
-              診斷：{data.diagnostic || "盤整無顯著訊號"}
+              {t("Pages.Detail.tooltip.diagnosis")}：{data.diagnostic || t("Pages.Detail.tooltip.noSignal")}
             </Typography>
           </div>
         )}
@@ -175,14 +180,14 @@ const ChartTooltip = ({
               variant="caption"
               display="block"
               style={{
-                color: "#90caf9",
+                color: semanticTokens.analysis.focus,
                 fontWeight: "bold",
                 marginBottom: 4,
                 textTransform: "uppercase",
                 letterSpacing: 1,
               }}
             >
-              一目均衡表：{data.isFuture ? "未來預測" : "當前狀態"}
+              {t("Pages.Detail.tooltip.ichimoku")}：{data.isFuture ? t("Pages.Detail.tooltip.forecast") : t("Pages.Detail.tooltip.current")}
             </Typography>
             <Typography
               variant="body2"
@@ -264,11 +269,11 @@ const ChartTooltip = ({
                   {Array.isArray(entry.value)
                     ? entry.value
                         .map((v: any) =>
-                          typeof v === "number" ? v.toFixed(2) : v,
+                          typeof v === "number" ? numberFormat.format(v) : v,
                         )
                         .join("-")
                     : typeof entry.value === "number"
-                      ? entry.value.toFixed(2)
+                      ? numberFormat.format(entry.value)
                       : entry.value}
                 </span>
               </div>

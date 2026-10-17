@@ -1,6 +1,5 @@
 import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
-import SettingsIcon from "@mui/icons-material/Settings";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import {
@@ -11,16 +10,13 @@ import {
   Container,
   Divider,
   FormControlLabel,
-  IconButton,
   Menu,
-  Tooltip as MuiTooltip,
   Slider,
   Stack,
   Switch,
   Typography,
 } from "@mui/material";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router";
 import {
   Area,
   CartesianGrid,
@@ -44,7 +40,7 @@ import {
   calculateIndicators,
   EnhancedDealData,
 } from "../../../utils/indicatorUtils";
-import Fundamental from "../Tooltip/Fundamental";
+import useToolbarSettings from "../GlassBar/useToolbarSettings";
 
 interface DonchianChartData extends EnhancedDealData {
   buySignal: number | null;
@@ -139,24 +135,11 @@ export default function Donchian({
   // LRC Dynamic Parameters
   const [channelPeriod, setChannelPeriod] = useState(60);
   const [channelMultiplier, setChannelMultiplier] = useState(2.0);
-  const [channelAnchorEl, setChannelAnchorEl] = useState<null | HTMLElement>(
-    null,
-  );
-
   const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(
     null,
   );
 
-  const handleOpenChannelSettings = (event: React.MouseEvent<HTMLElement>) => {
-    setChannelAnchorEl(event.currentTarget);
-  };
-  const handleCloseChannelSettings = () => {
-    setChannelAnchorEl(null);
-  };
-
-  const handleOpenSettings = (event: React.MouseEvent<HTMLElement>) => {
-    setSettingsAnchorEl(event.currentTarget);
-  };
+  useToolbarSettings(setSettingsAnchorEl);
   const handleCloseSettings = () => {
     setSettingsAnchorEl(null);
   };
@@ -165,8 +148,6 @@ export default function Donchian({
     setChannelPeriod(60);
     setChannelMultiplier(2.0);
   };
-
-  const { id } = useParams();
 
   // Zoom & Pan Control
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -614,7 +595,7 @@ export default function Donchian({
   if (chartData.length === 0) {
     return (
       <Box
-        height="100vh"
+        height="100%"
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -629,7 +610,7 @@ export default function Donchian({
       component="main"
       maxWidth={false}
       sx={{
-        height: "100vh",
+        height: "100%",
         display: "flex",
         flexDirection: "column",
         pt: 1,
@@ -637,22 +618,7 @@ export default function Donchian({
         pb: 1,
       }}
     >
-      <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
-        <MuiTooltip title={<Fundamental id={id} />} arrow>
-          <Typography variant="h6" component="div" color="white" sx={{ mr: 2 }}>
-            Donchian ({settings.donchian})
-          </Typography>
-        </MuiTooltip>
-
-        <IconButton
-          size="small"
-          onClick={handleOpenSettings}
-          color="primary"
-          sx={{ mr: 1 }}
-        >
-          <SettingsIcon fontSize="small" />
-        </IconButton>
-
+      <Stack spacing={2} direction="row" alignItems="center" sx={{ display: "none" }}>
         <Box
           sx={{ flexGrow: 1, display: "flex", gap: 2, alignItems: "center" }}
         >
@@ -703,18 +669,6 @@ export default function Donchian({
                   },
                 }}
               />
-              <IconButton
-                size="small"
-                onClick={handleOpenChannelSettings}
-                color="secondary"
-                sx={{
-                  p: 0.4,
-                  transition: "transform 0.2s",
-                  "&:hover": { transform: "rotate(45deg)" },
-                }}
-              >
-                <SettingsIcon sx={{ fontSize: "1rem" }} />
-              </IconButton>
             </Box>
 
             {showChannel && (
@@ -834,80 +788,139 @@ export default function Donchian({
           </Stack>
         </Box>
         <Menu
-          anchorEl={channelAnchorEl}
-          open={Boolean(channelAnchorEl)}
-          onClose={handleCloseChannelSettings}
-          PaperProps={{
-            sx: { p: 2, width: 250, bgcolor: "background.paper" },
-          }}
-        >
-          <Typography variant="subtitle2" gutterBottom>
-            通道參數調校
-          </Typography>
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="caption" color="text.secondary">
-              計算長度: {channelPeriod} 根
-            </Typography>
-            <Slider
-              value={channelPeriod}
-              min={10}
-              max={200}
-              step={1}
-              onChange={(_, v) => setChannelPeriod(v as number)}
-              size="small"
-            />
-          </Box>
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="caption" color="text.secondary">
-              標準差倍數: {channelMultiplier.toFixed(1)}
-            </Typography>
-            <Slider
-              value={channelMultiplier}
-              min={0.5}
-              max={5.0}
-              step={0.1}
-              onChange={(_, v) => setChannelMultiplier(v as number)}
-              size="small"
-              color="secondary"
-            />
-          </Box>
-          <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
-            <Button
-              size="small"
-              onClick={handleResetChannel}
-              sx={{ color: "secondary.main", fontWeight: "bold" }}
-            >
-              回復預設
-            </Button>
-          </Box>
-        </Menu>
-
-        <Menu
           anchorEl={settingsAnchorEl}
           open={Boolean(settingsAnchorEl)}
           onClose={handleCloseSettings}
-          PaperProps={{ sx: { p: 2, width: 250, bgcolor: "background.paper" } }}
+          MenuListProps={{ sx: { py: 0 } }}
+          PaperProps={{
+            sx: {
+              p: 1.25,
+              width: 320,
+              maxWidth: "calc(100vw - 24px)",
+              maxHeight: "none",
+              overflow: "hidden",
+              bgcolor: "background.paper",
+            },
+          }}
         >
-          <Typography variant="subtitle2" gutterBottom>
-            唐奇安通道參數
-          </Typography>
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="caption" color="text.secondary">
-              長度: {settings.donchian} 根
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.75 }}>
+            <Typography variant="subtitle2" sx={{ flex: 1, minWidth: 0 }}>
+              唐奇安通道參數
             </Typography>
-            <Slider
-              value={settings.donchian}
-              min={5}
-              max={100}
-              step={1}
-              onChange={(_, v) => updateSetting("donchian", v as number)}
-              size="small"
+            {channelInfo && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  px: 0.75,
+                  py: 0.25,
+                  borderRadius: 1,
+                  bgcolor: "action.hover",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {channelInfo.type === "ascending"
+                  ? "上升通道"
+                  : channelInfo.type === "descending"
+                    ? "下降通道"
+                    : "橫盤通道"}
+              </Typography>
+            )}
+          </Box>
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              columnGap: 1,
+              rowGap: 0.25,
+            }}
+          >
+            <FormControlLabel
+              control={<Switch size="small" checked={showChannel} onChange={(event) => setShowChannel(event.target.checked)} />}
+              label="顯示趨勢通道"
+              sx={{ m: 0, minWidth: 0, "& .MuiFormControlLabel-label": { fontSize: 12 } }}
+            />
+            <FormControlLabel
+              control={<Switch size="small" checked={isLocked} disabled={!showChannel} onChange={(event) => handleToggleLock(event.target.checked)} />}
+              label="固定目前通道"
+              sx={{ m: 0, minWidth: 0, "& .MuiFormControlLabel-label": { fontSize: 12 } }}
+            />
+            <FormControlLabel
+              control={<Switch size="small" checked={showGaps} onChange={(event) => setShowGaps(event.target.checked)} />}
+              label="顯示缺口"
+              sx={{ m: 0, minWidth: 0, "& .MuiFormControlLabel-label": { fontSize: 12 } }}
+            />
+            <FormControlLabel
+              control={<Switch size="small" checked={showOnlyUnfilled} disabled={!showGaps} onChange={(event) => setShowOnlyUnfilled(event.target.checked)} />}
+              label="僅顯示未補缺口"
+              sx={{ m: 0, minWidth: 0, "& .MuiFormControlLabel-label": { fontSize: 12 } }}
             />
           </Box>
-          <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
-            <Button size="small" onClick={resetSettings}>
-              回復預設
-            </Button>
+
+          <Divider sx={{ my: 0.75 }} />
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gap: 0.75,
+            }}
+          >
+            <Box sx={{ px: 0.75, pt: 0.5, bgcolor: "action.hover", borderRadius: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                通道長度 · {settings.donchian} 根
+              </Typography>
+              <Slider
+                value={settings.donchian}
+                min={5}
+                max={100}
+                step={1}
+                onChange={(_, v) => updateSetting("donchian", v as number)}
+                size="small"
+                sx={{ display: "block", py: 0.75 }}
+              />
+            </Box>
+            <Box sx={{ px: 0.75, pt: 0.5, bgcolor: "action.hover", borderRadius: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                趨勢長度 · {channelPeriod} 根
+              </Typography>
+              <Slider
+                value={channelPeriod}
+                min={10}
+                max={200}
+                step={1}
+                onChange={(_, v) => setChannelPeriod(v as number)}
+                size="small"
+                sx={{ display: "block", py: 0.75 }}
+              />
+            </Box>
+            <Box sx={{ px: 0.75, pt: 0.5, bgcolor: "action.hover", borderRadius: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                標準差 · {channelMultiplier.toFixed(1)} 倍
+              </Typography>
+              <Slider
+                value={channelMultiplier}
+                min={0.5}
+                max={5}
+                step={0.1}
+                onChange={(_, v) => setChannelMultiplier(v as number)}
+                size="small"
+                color="secondary"
+                sx={{ display: "block", py: 0.75 }}
+              />
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
+              <Button
+                size="small"
+                onClick={() => {
+                  resetSettings();
+                  handleResetChannel();
+                }}
+              >
+                回復預設
+              </Button>
+            </Box>
           </Box>
         </Menu>
       </Stack>

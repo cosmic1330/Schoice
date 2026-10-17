@@ -9,6 +9,8 @@ source:
   - src/store/
   - src/hooks/useDatabase.ts
   - src/hooks/useSyncLaunch.ts
+  - src/pages/Detail/index.tsx
+  - src-tauri/src/commands/chip.rs
   - src-tauri/src/lib.rs
 verified: "2026-10-02"
 ---
@@ -23,7 +25,7 @@ Schoice has three cooperating layers:
 2. **Tauri host** — `src-tauri/` initializes native plugins, owns application packaging and updater integration, and applies SQLite migrations.
 3. **Persistence/services** — local SQLite stores market and computed analysis data; Supabase stores sessions and cloud-owned user data.
 
-The Rust side is intentionally thin. Do not move frontend domain logic into Rust without a concrete native, security, or performance reason.
+The Rust side is intentionally thin. Do not move frontend domain logic into Rust without a concrete native, security, or performance reason. The Detail workspace is one deliberate exception: its FinMind chip-data request is exposed as the native `get_chip_data` command so desktop networking and response caching remain behind a small typed frontend API.
 
 ## Routing and application readiness
 
@@ -49,4 +51,3 @@ Database migrations are registered by the Tauri builder in `src-tauri/src/lib.rs
 ## Cross-window synchronization
 
 Long-running market synchronization runs in a separate Tauri webview labeled `sync-worker`, opened on `/sync-worker`. The main window and worker coordinate with Tauri events; `SyncDashboard.store` mirrors status for each webview. See [Data and synchronization](../concepts/data-and-synchronization.md) and [ADR-0002](../decisions/0002-dedicated-sync-worker-window.md).
-

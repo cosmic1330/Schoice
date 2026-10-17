@@ -1,11 +1,4 @@
-import {
-  Box,
-  CircularProgress,
-  Container,
-  Stack,
-  Typography,
-  Tooltip as MuiTooltip,
-} from "@mui/material";
+import { Box, CircularProgress, Container } from "@mui/material";
 import { useContext, useEffect, useMemo, useRef } from "react";
 import {
   Area,
@@ -210,12 +203,46 @@ export default function Obv({
     );
   }, [fullDeals, signals, visibleCount, rightOffset, settings]);
 
+  const obvDomain = useMemo<[number | "auto", number | "auto"]>(() => {
+    const values = chartData.flatMap((item) =>
+      [item.obv, item.obvMa20].filter(
+        (value): value is number =>
+          value !== null && value !== undefined && Number.isFinite(value),
+      ),
+    );
+    if (values.length === 0) return ["auto", "auto"];
+
+    const minimum = Math.min(...values);
+    const maximum = Math.max(...values);
+    const padding = Math.max(
+      (maximum - minimum) * 0.08,
+      Math.max(Math.abs(minimum), Math.abs(maximum)) * 0.01,
+      1,
+    );
+    return [minimum - padding, maximum + padding];
+  }, [chartData]);
+
+  const formatObvTick = (value: number) => {
+    const absolute = Math.abs(value);
+    const sign = value < 0 ? "-" : "";
+    if (absolute >= 1_000_000_000) {
+      return `${sign}${(absolute / 1_000_000_000).toFixed(1)}B`;
+    }
+    if (absolute >= 1_000_000) {
+      return `${sign}${(absolute / 1_000_000).toFixed(1)}M`;
+    }
+    if (absolute >= 1_000) {
+      return `${sign}${(absolute / 1_000).toFixed(1)}K`;
+    }
+    return `${Math.round(value)}`;
+  };
+
   // --- Analysis Steps Logic ---
 
   if (chartData.length === 0) {
     return (
       <Box
-        height="100vh"
+        height="100%"
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -230,7 +257,7 @@ export default function Obv({
       component="main"
       maxWidth={false}
       sx={{
-        height: "100vh",
+        height: "100%",
         display: "flex",
         flexDirection: "column",
         pt: 1,
@@ -238,41 +265,6 @@ export default function Obv({
         pb: 1,
       }}
     >
-      {/* Header Section */}
-      <Stack
-        direction="row"
-        spacing={2}
-        alignItems="center"
-        sx={{ mb: 1, flexShrink: 0 }}
-      >
-        <MuiTooltip
-          title={
-            <Box sx={{ p: 1 }}>
-              <Typography
-                variant="subtitle2"
-                sx={{ mb: 1, fontWeight: "bold" }}
-              >
-                OBV 指標說明
-              </Typography>
-              <Typography variant="caption" display="block">
-                量行價先，OBV上升代表資金進場。
-              </Typography>
-            </Box>
-          }
-          arrow
-        >
-          <Typography
-            variant="h6"
-            component="h1"
-            fontWeight="bold"
-            color="white"
-          >
-            OBV
-          </Typography>
-        </MuiTooltip>
-      </Stack>
-
-
       {/* Charts Area */}
       <Box
         ref={chartContainerRef}
@@ -489,16 +481,12 @@ export default function Obv({
             <CartesianGrid strokeDasharray="3 3" opacity={0.1} stroke="#fff" />
             <XAxis dataKey="t" hide />
             <YAxis
-              domain={["auto", "auto"]}
-              tickFormatter={(v) => (v / 1000000).toFixed(1) + "M"}
+              width={54}
+              domain={obvDomain}
+              allowDataOverflow={false}
+              tickFormatter={formatObvTick}
               tick={{ fill: "rgba(255,255,255,0.7)", fontSize: 10 }}
               stroke="rgba(255,255,255,0.3)"
-              label={{
-                value: "OBV",
-                angle: -90,
-                position: "insideLeft",
-                fill: "#2196f3",
-              }}
             />
             <RechartsTooltip content={<ChartTooltip showSignals={false} />} />
             <Area

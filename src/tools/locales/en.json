@@ -276,6 +276,249 @@
           "moveToTrashConfirmButton": "Move to Trash"
         }
       }
+    },
+    "Detail": {
+      "chartAdvice": {
+        "bollean": "Bollinger Bands suit range-bound and breakout markets; use EMA 200 to assess the primary trend.",
+        "Donchian": "Donchian channels are useful for range-bound and breakout markets.",
+        "ma": "MA signals are clearest on daily charts. On weekly charts, MA20 can act as support; confirm higher-timeframe support before trading hourly gaps.",
+        "ema": "EMA offers a stable medium- to long-term trend guide on daily charts. For hourly entries, confirm price is near daily EMA60 or SMA200 support.",
+        "atr": "ATR Supertrend follows daily trends effectively. For shorter-term use, filter direction with a higher-timeframe EMA to reduce whipsaws in ranges.",
+        "obv": "OBV on hourly charts can show fund-flow intent. Compare it with the daily OBV trend before entering a position.",
+        "volume_profile": "Volume Profile identifies capital concentration in the visible range. POC is a cost reference; VAH and VAL help identify consolidation or breakouts.",
+        "cci": "CCI can identify breakouts and oversold reversals on daily and hourly charts. In short-term use, follow the primary trend.",
+        "mr": "MR is designed for intraday momentum and daily exhaustion. Treat a short-term crossover below daily RSI 50 as a rebound trade, not a trend confirmation.",
+        "kd": "KD is time-sensitive. Weekly and daily charts offer stronger swing references; short intervals should be filtered with a trend indicator such as MA20.",
+        "mfi": "MFI is steadier on daily charts and reacts quickly on hourly charts. An oversold entry should still align with the daily uptrend.",
+        "chip": "Positioning data updates after market close and uses institutional, margin, and short data to assess direction.",
+        "ichimoku_cloud": "Ichimoku works best on daily and weekly charts. On short intervals, use it with care because indicator noise can dominate."
+      },
+      "charts": {
+        "bollean": {
+          "label": "Bollinger",
+          "title": "Bollinger Bands and EMA"
+        },
+        "Donchian": {
+          "label": "Donchian",
+          "title": "Donchian Channel"
+        },
+        "ma": {
+          "label": "MA",
+          "title": "Moving averages and gaps"
+        },
+        "ema": {
+          "label": "EMA",
+          "title": "EMA trend strategy"
+        },
+        "atr": {
+          "label": "ATR",
+          "title": "ATR Trend"
+        },
+        "obv": {
+          "label": "OBV",
+          "title": "OBV momentum"
+        },
+        "volume_profile": {
+          "label": "Volume",
+          "title": "Volume profile"
+        },
+        "cci": {
+          "label": "CCI",
+          "title": "CCI trend indicator"
+        },
+        "mr": {
+          "label": "MR",
+          "title": "MR dual-indicator resonance"
+        },
+        "kd": {
+          "label": "KD",
+          "title": "KD stochastic indicator"
+        },
+        "mfi": {
+          "label": "MFI",
+          "title": "MFI money flow"
+        },
+        "chip": {
+          "label": "Positioning",
+          "title": "Positioning"
+        },
+        "ichimoku_cloud": {
+          "label": "Ichimoku",
+          "title": "Ichimoku Cloud"
+        }
+      },
+      "summary": {
+        "latest": ", latest O {{open}}, H {{high}}, L {{low}}, C {{close}}",
+        "noLatest": ", no recent OHLC",
+        "samples": "{{count}} samples",
+        "hour": "hour",
+        "day": "day",
+        "week": "week"
+      },
+      "tooltip": {
+        "marketEnvironment": "Market environment (MESS)",
+        "diagnosis": "Diagnosis",
+        "noSignal": "No significant consolidation signal",
+        "ichimoku": "Ichimoku",
+        "forecast": "Forecast",
+        "current": "Current status",
+        "valuation": "Valuation",
+        "pe": "Price-to-earnings (PE)",
+        "pb": "Price-to-book (PB)",
+        "yield": "Dividend yield",
+        "bookValue": "Book value per share",
+        "recentEps": "Recent EPS",
+        "revenue": "Recent revenue MoM (%) / YoY (%)",
+        "unavailable": "Unavailable",
+        "currency": "NTD",
+        "times": "x",
+        "recentQuarter": "Last {{count}} qtr.",
+        "recentYear": "Last {{count}} yr.",
+        "recentMonth": "Last {{count}} mo.",
+        "noFinancialData": "No financial data is available.",
+        "tdcc": {
+          "title": "Large-holder headcount change",
+          "dataPeriod": "Data period: {{current}} (previous: {{previous}})",
+          "dataDate": "Data date: {{date}}",
+          "holders400": "400 lots or more",
+          "holders1000": "1,000 lots or more",
+          "currentHolders": "Current {{value}} people",
+          "increase": "+{{value}} people increase",
+          "decrease": "-{{value}} people decrease",
+          "unchanged": "Unchanged",
+          "comparisonUnavailable": "Comparison unavailable"
+        }
+      },
+      "documentation": {
+        "loading": "Loading chart guide…",
+        "cancel": "Cancel"
+      },
+      "GlassBar": {
+        "navigation": "Analysis chart toolbar",
+        "previous": "Previous chart",
+        "next": "Next chart",
+        "selectChart": "Select analysis chart",
+        "period": "Chart period",
+        "hourShort": "H",
+        "dayShort": "D",
+        "weekShort": "W",
+        "help": "View current chart guide",
+        "details": "Chart details; click for full guide",
+        "settings": "Adjust chart parameters"
+      },
+      "Chip": {
+        "title": "Positioning",
+        "summary": "Positioning summary",
+        "score": "Positioning score",
+        "confidence": {
+          "label": "Data confidence",
+          "high": "High",
+          "medium": "Medium"
+        },
+        "loading": "Loading end-of-day positioning…",
+        "retry": "Retry",
+        "error": "Positioning data is temporarily unavailable. Please try again later.",
+        "twOnly": "Positioning data currently supports Taiwan stocks only.",
+        "trendEmpty": "There is not enough 20-day data to draw the trend yet.",
+        "tabs": {
+          "label": "Positioning views",
+          "overview": "Overview",
+          "trend": "20-day trend",
+          "analysis": "Events & score"
+        },
+        "light": {
+          "title": "Positioning signals",
+          "institutional": "Institutions",
+          "foreignHolding": "Foreign holding",
+          "lendingPressure": "Lending pressure",
+          "lots": "lots",
+          "status": {
+            "buying": "Buying",
+            "selling": "Selling",
+            "neutral": "Flat",
+            "increasing": "Rising",
+            "decreasing": "Falling",
+            "stable": "Stable",
+            "high": "High",
+            "normal": "Normal",
+            "easing": "Easing",
+            "unavailable": "Pending"
+          },
+          "summary": {
+            "favorable": "Multiple positioning measures are improving; the structure looks relatively stable.",
+            "cautious": "Positioning pressure is rising across measures; near-term caution is warranted.",
+            "mixed": "Positioning measures disagree, with no clear combined signal yet."
+          }
+        },
+        "holders": {
+          "title": "TDCC holder structure",
+          "scoreNote": "Not scored",
+          "under100": "≤100 lots",
+          "over400": "400 lots or more",
+          "over1000": "1,000 lots or more",
+          "current": "{{value}} people",
+          "increase": "+{{value}} people increase",
+          "decrease": "-{{value}} people decrease",
+          "unchanged": "Unchanged",
+          "unavailable": "Unavailable",
+          "comparisonUnavailable": "Comparison unavailable",
+          "dataDate": "Data: {{date}}",
+          "period": "Data: {{current}} (previous: {{previous}})",
+          "empty": "No TDCC holder data is available.",
+          "error": "TDCC holder data is temporarily unavailable."
+        },
+        "verdict": {
+          "stable_buying": "Stable accumulation",
+          "distribution": "Distribution",
+          "mixed": "Mixed positioning",
+          "retail_crowded": "Retail crowding"
+        },
+        "explanation": {
+          "stable_buying": "Institutions lean net-buy while margin has not chased sharply; positioning is relatively orderly.",
+          "distribution": "Institutions lean net-sell over the medium term; avoid treating a price bounce alone as confirmation.",
+          "mixed": "Institutional and margin signals disagree, so positioning is currently unclear.",
+          "retail_crowded": "Institutions are selling while margin balances rise quickly, increasing retail crowding risk."
+        },
+        "institutional": "Institutional investors (5-day total)",
+        "foreign": "Foreign",
+        "trust": "Investment trust",
+        "dealer": "Dealer",
+        "total": "Institutional total",
+        "margin": "Margin and short",
+        "marginBalance": "Margin balance / lots",
+        "marginChange": "5-day margin change",
+        "shortRatio": "Short/margin ratio",
+        "trend": "20-day trend",
+        "priceChange20d": "Price 20d",
+        "institutional5d": "Institutions 5d",
+        "institutional20d": "Institutions 20d",
+        "priceTrend": "Price trend (close)",
+        "dailyInstitutional": "Daily institutional net flow (lots)",
+        "institutionalLegend": "Red bars net buy | Green bars net sell | White line cumulative institutions",
+        "institutionalBuyingLegend": "Red bars net buy",
+        "institutionalSellingLegend": "Green bars net sell",
+        "cumulativeInstitutional": "Cumulative institutions",
+        "cumulativeInstitutionalLegend": "White line cumulative institutions",
+        "close": "Close",
+        "institutionalFlow": "Institutional net lots",
+        "signals": "Positioning events",
+        "noSignals": "No material positioning divergence in the last five days.",
+        "signal": {
+          "price_down_institution_buy": "Price fell while institutions bought: possible accumulation at lower levels.",
+          "price_up_institution_sell": "Price rose while institutions sold: watch for distribution into strength.",
+          "margin_chasing": "Price and margin balances rose quickly: retail chasing risk increased.",
+          "trust_streak": "Investment trusts bought for three straight days: medium-term positioning strengthened."
+        },
+        "scoreBreakdown": "Why this score?",
+        "baseScore": "Base score",
+        "factor": {
+          "foreign_5d": "5-day foreign direction",
+          "trust_5d": "5-day trust direction",
+          "dealer_5d": "5-day dealer direction",
+          "institutional_20d": "20-day institutional direction",
+          "margin_5d": "5-day margin change"
+        }
+      }
     }
   },
   "Components": {
@@ -294,5 +537,37 @@
     "loginRequired": "Please login first!",
     "addSuccess": "Added {{name}} successfully!",
     "removeSuccess": "Removed {{name}} successfully!"
+  },
+  "app": {
+    "loading": "Loading…"
+  },
+  "a11y": {
+    "switchLanguage": "Switch language to {{language}}",
+    "openStock": "Open analysis for {{name}} ({{id}})",
+    "openMarket": "Open market analysis for {{name}}",
+    "openExternal": "Open {{title}} in browser",
+    "tradingView": "Open {{name}} in TradingView",
+    "removeStock": "Remove {{name}} from this list",
+    "deleteStock": "Delete {{name}}",
+    "addStock": "Add {{name}} to watchlist",
+    "stockChart": "Price chart for {{name}}",
+    "chartSummary": "{{title}}, {{period}} interval, {{count}} samples{{latest}}",
+    "close": "Close",
+    "back": "Back",
+    "scrollLeft": "Scroll categories left",
+    "scrollRight": "Scroll categories right"
+  },
+  "marketData": {
+    "loading": "Loading market data…",
+    "empty": "No market data is available.",
+    "error": "Market data could not be updated.",
+    "retry": "Retry",
+    "refreshing": "Refreshing…",
+    "stale": "Showing the last available data.",
+    "staleError": "Update failed. Showing the last available data.",
+    "closed": "Market closed",
+    "updated": "Updated {{time}}",
+    "insufficient": "Insufficient data",
+    "unavailable": "Unavailable"
   }
 }

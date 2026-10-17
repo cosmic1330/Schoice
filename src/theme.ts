@@ -5,6 +5,55 @@ const blue = "#5BB9E9";
 const pink = "#FF9FC5";
 const yellow = "#FFD96A";
 
+// Shared design tokens used by the data-dense analysis workspace. The rest of
+// the app keeps its playful light/dark themes below; Detail opts into the
+// dedicated dark analysis theme where chart contrast matters.
+export const primitiveTokens = {
+  color: {
+    canvasDark: "#0F1214",
+    focusDark: "#90CAF9",
+    white: "#FFFFFF",
+    gain: "#FF5252",
+    loss: "#69F0AE",
+    neutral: "#94A3B8",
+  },
+  radius: { sm: 8, md: 12, round: 999 },
+  font: {
+    numeric:
+      '"Roboto Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace',
+  },
+  motion: {
+    duration: { fast: 150 },
+    easing: { standard: "cubic-bezier(0.4, 0, 0.2, 1)" },
+  },
+  layer: { raised: 10 },
+} as const;
+
+export const semanticTokens = {
+  analysis: {
+    canvas: primitiveTokens.color.canvasDark,
+    surface: "rgba(30, 30, 40, 0.88)",
+    surfaceGlass: "rgba(30, 30, 40, 0.60)",
+    surfaceSubtle: "rgba(255, 255, 255, 0.06)",
+    panel: "#171C22",
+    panelMuted: "#11161C",
+    text: primitiveTokens.color.white,
+    textMuted: "rgba(255, 255, 255, 0.76)",
+    border: "rgba(255, 255, 255, 0.12)",
+    borderSubtle: "rgba(255, 255, 255, 0.08)",
+    divider: "rgba(255, 255, 255, 0.11)",
+    dividerSubtle: "rgba(255, 255, 255, 0.07)",
+    focus: primitiveTokens.color.focusDark,
+    inset: "rgba(8, 12, 18, 0.52)",
+  },
+  market: {
+    gain: primitiveTokens.color.gain,
+    loss: primitiveTokens.color.loss,
+    neutral: primitiveTokens.color.neutral,
+    warning: "#FFB74D",
+  },
+} as const;
+
 const shared: ThemeOptions = {
   shape: { borderRadius: 18 },
   typography: {
@@ -218,3 +267,44 @@ const darkThemeOptions: ThemeOptions = {
 
 export const getTheme = (mode: "light" | "dark") =>
   createTheme(mode === "light" ? lightThemeOptions : darkThemeOptions);
+
+export const analysisTheme = createTheme({
+  palette: {
+    mode: "dark",
+    primary: { main: semanticTokens.analysis.focus },
+    background: {
+      default: semanticTokens.analysis.canvas,
+      paper: semanticTokens.analysis.surfaceGlass,
+    },
+    text: {
+      primary: semanticTokens.analysis.text,
+      secondary: semanticTokens.analysis.textMuted,
+    },
+  },
+  shape: { borderRadius: primitiveTokens.radius.md },
+  typography: {
+    fontFamily:
+      'ui-rounded, "Arial Rounded MT Bold", "Nunito", "PingFang TC", "Microsoft JhengHei", sans-serif',
+  },
+  components: {
+    MuiButtonBase: {
+      styleOverrides: {
+        root: {
+          "&:focus-visible": {
+            outline: `3px solid ${semanticTokens.analysis.focus}`,
+            outlineOffset: 2,
+          },
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          backgroundColor: semanticTokens.analysis.surfaceGlass,
+          backdropFilter: "blur(12px)",
+          border: `1px solid ${semanticTokens.analysis.borderSubtle}`,
+        },
+      },
+    },
+  },
+});

@@ -4,6 +4,9 @@ import LanguageDetector from "i18next-browser-languagedetector";
 import enTranslation from "./locales/en.json";
 import zhTranslation from "./locales/zh-tw.json";
 
+export const normalizeLanguage = (language?: string) =>
+  language?.toLowerCase().startsWith("zh") ? "zh-TW" : "en";
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)

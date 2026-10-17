@@ -113,7 +113,7 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
 
   if (chartData.length === 0) {
     return (
-      <Box height="100vh" display="flex" alignItems="center" justifyContent="center">
+      <Box height="100%" display="flex" alignItems="center" justifyContent="center">
         <CircularProgress />
       </Box>
     );
@@ -124,7 +124,7 @@ export default function Ichimoku({ perd }: { perd: UrlTaPerdOptions }) {
       component="main"
       maxWidth={false}
       sx={{
-        height: "100vh",
+        height: "100%",
         display: "flex",
         flexDirection: "column",
         pt: 1,

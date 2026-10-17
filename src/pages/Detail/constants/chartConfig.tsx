@@ -1,4 +1,5 @@
 import React, { lazy } from "react";
+import type { TFunction } from "i18next";
 
 // lazy load components
 const MaKbar = lazy(() => import("../Ma/MaKbar"));
@@ -11,12 +12,14 @@ const ATR = lazy(() => import("../ATR/ATR"));
 const Cci = lazy(() => import("../Cci/Cci"));
 const Bollean = lazy(() => import("../Bollean/Bollean"));
 const AvgMaKbar = lazy(() => import("../Ema/EmaKbar"));
+const VolumeProfileChart = lazy(() => import("../VolumeProfile/VolumeProfileChart"));
+const Chip = lazy(() => import("../Chip/Chip"));
 
 // Import doc assets
 import atrDoc from "../ATR/ATR.md?raw";
 import bolleanDoc from "../Bollean/Bollean.md?raw";
 import cciDoc from "../Cci/Cci.md?raw";
-import Donchian from "../Donchian/Donchian";
+const Donchian = lazy(() => import("../Donchian/Donchian"));
 import donchianDoc from "../Donchian/Donchian.md?raw";
 import emaDoc from "../Ema/Ema.md?raw";
 import ichimokuDoc from "../IchimokuCloud/ichimoku.md?raw";
@@ -25,6 +28,8 @@ import maDoc from "../Ma/Ma.md?raw";
 import mfiDoc from "../Mfi/Mfi.md?raw";
 import mrDoc from "../Mr/MR.md?raw";
 import obvDoc from "../Obv/Obv.md?raw";
+import volumeProfileDoc from "../VolumeProfile/VolumeProfile.md?raw";
+import chipDoc from "../Chip/Chip.md?raw";
 
 export interface ChartDefinition {
   id: string;
@@ -34,6 +39,17 @@ export interface ChartDefinition {
   timezoneAdvice: string;
   component: (props: any) => React.ReactNode;
 }
+
+export const getChartLabel = (chart: ChartDefinition | undefined, t: TFunction) =>
+  chart ? t(`Pages.Detail.charts.${chart.id}.label`) : "";
+
+export const getChartTitle = (chart: ChartDefinition | undefined, t: TFunction) =>
+  chart ? t(`Pages.Detail.charts.${chart.id}.title`) : "";
+
+export const getChartAdvice = (chart: ChartDefinition | undefined, t: TFunction) => {
+  if (!chart) return "";
+  return t(`Pages.Detail.chartAdvice.${chart.id}`);
+};
 
 export const CHART_CONFIG: ChartDefinition[] = [
   {
@@ -90,6 +106,15 @@ export const CHART_CONFIG: ChartDefinition[] = [
     component: (props) => <Obv {...props} />,
   },
   {
+    id: "volume_profile",
+    label: "量價",
+    title: "成交量輪廓",
+    docContent: volumeProfileDoc,
+    timezoneAdvice:
+      "成交量輪廓 (Volume Profile) 適合用於判斷可見區間內的資金密集區。POC 提供了極強的防禦與主力持倉成本參考，VAH/VAL 區間能有效辨識目前的盤整或突破狀態。",
+    component: (props) => <VolumeProfileChart {...props} />,
+  },
+  {
     id: "cci",
     label: "CCI",
     title: "CCI 順勢指標",
@@ -126,12 +151,21 @@ export const CHART_CONFIG: ChartDefinition[] = [
     component: (props) => <Mfi {...props} />,
   },
   {
+    id: "chip",
+    label: "籌碼",
+    title: "籌碼面",
+    docContent: chipDoc,
+    timezoneAdvice:
+      "籌碼資料為盤後更新，以免費的三大法人與融資融券資料判斷方向。",
+    component: () => <Chip />,
+  },
+  {
     id: "ichimoku_cloud",
     label: "一目",
     title: "一目均衡表說明",
     docContent: ichimokuDoc,
     timezoneAdvice:
-      "一目均衡表在日線 (D1) 與週線 (W1) 最有效。如果在 15 分鐘或 1 小時圖使用，CMF 的噪音會淹沒所有訊號。",
+      "一目均衡表在日線 (D1) 與週線 (W1) 最有效。如果在 15 分鐘 or 1 小時圖使用，CMF 的噪音會淹沒所有訊號。",
     component: (props) => <IchimokuCloud perd={props.perd} />,
   },
 ];

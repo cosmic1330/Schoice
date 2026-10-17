@@ -1,6 +1,6 @@
 import ma from "../../../cls_tools/ma";
 import obvTool from "../../../cls_tools/obv";
-import { TaType } from "../../../types";
+import { TaListType } from "../../../types";
 
 export type SignalType =
   | "FAKE_BREAKOUT" // A. 假突破
@@ -57,7 +57,7 @@ const checkObvHigherLow = (obvValues: number[], idx: number) => {
   return currentLow.val > previousLow.val;
 };
 
-export const calculateObvSignals = (deals: TaType[]): ObvSignal[] => {
+export const calculateObvSignals = (deals: TaListType): ObvSignal[] => {
   if (!deals || deals.length < 60) return [];
 
   // 1. Calculate Core Data

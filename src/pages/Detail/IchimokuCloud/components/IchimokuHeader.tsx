@@ -1,12 +1,4 @@
-import {
-  Box,
-  Stack,
-  Step,
-  StepButton,
-  Stepper,
-  Tooltip,
-  Typography,
-} from "@mui/material";
+import { Box, Stack, Step, StepButton, Stepper } from "@mui/material";
 import React from "react";
 
 interface IchimokuHeaderProps {
@@ -27,34 +19,6 @@ const IchimokuHeader: React.FC<IchimokuHeaderProps> = ({
       alignItems="center"
       sx={{ mb: 1, flexShrink: 0 }}
     >
-      <Tooltip
-        title={
-          <Box sx={{ p: 1 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: "bold" }}>
-              一目均衡表 + CMF 策略
-            </Typography>
-            <Typography variant="caption" display="block">
-              核心邏輯：
-            </Typography>
-            <Typography variant="caption" display="block">
-              1. 結構：價格 &gt; 雲層 (多頭結構)
-            </Typography>
-            <Typography variant="caption" display="block">
-              2. 動能：CMF 資金流入 & TK 金叉
-            </Typography>
-            <Typography variant="caption" display="block">
-              3. 風險：基準線不應下彎 & 無頂背離
-            </Typography>
-          </Box>
-        }
-        arrow
-      >
-        <Typography variant="h6" component="h1" fontWeight="bold" color="white">
-          Ichimoku Cloud
-        </Typography>
-      </Tooltip>
-
-
       <Box sx={{ flexGrow: 1 }}>
         <Stepper nonLinear activeStep={activeStep}>
           {steps.map((step, index) => (

@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { error, info } from "@tauri-apps/plugin-log";
 import Database from "@tauri-apps/plugin-sql";
 import {
@@ -86,6 +87,62 @@ export default class SyncDatabaseHelper {
       const sql = `${sqlBase} ${chunk.join(", ")}`;
       await this.db.execute(sql);
     }
+  }
+
+  /**
+   * Atomically replaces the weekly buffer. The SQL plugin does not expose a
+   * transaction callback, so a backend command owns one SQLite connection for
+   * the complete delete + deals + skills operation.
+   */
+  async saveWeeklyBatch(
+    stockId: string,
+    thresholdT: string,
+    deals: DealTableType[],
+    skills: SkillsTableType[],
+  ) {
+    const quote = (value: string) => `'${value.split("'").join("''")}'`;
+    const statements: string[] = [];
+
+    if (thresholdT) {
+      statements.push(
+        `DELETE FROM weekly_deal WHERE stock_id = ${quote(stockId)} AND t >= ${quote(thresholdT)}`,
+        `DELETE FROM weekly_skills WHERE stock_id = ${quote(stockId)} AND t >= ${quote(thresholdT)}`,
+      );
+    }
+
+    const dealEntries = deals.map(
+      (deal) =>
+        `(${quote(deal.stock_id)}, ${quote(String(deal.t))}, ${this.sqlSafe(deal.c)}, ${this.sqlSafe(deal.o)}, ${this.sqlSafe(deal.h)}, ${this.sqlSafe(deal.l)}, ${this.sqlSafe(deal.v)})`,
+    );
+    for (let i = 0; i < dealEntries.length; i += 200) {
+      statements.push(
+        `INSERT INTO weekly_deal (stock_id, t, c, o, h, l, v) VALUES ${dealEntries.slice(i, i + 200).join(", ")} ON CONFLICT(stock_id, t) DO UPDATE SET c = excluded.c, o = excluded.o, h = excluded.h, l = excluded.l, v = excluded.v`,
+      );
+    }
+
+    const columns = ["stock_id", "t", "ma5", "ma5_ded", "ma10", "ma10_ded", "ma20", "ma20_ded", "ma30", "ma30_ded", "ma50", "ma50_ded", "ma60", "ma60_ded", "ma120", "ma120_ded", "ma240", "ma240_ded", "ema5", "ema10", "ema20", "ema60", "ema120", "ema200", "macd", "dif", "osc", "k", "d", "j", "rsi5", "rsi10", "bollUb", "bollMa", "bollLb", "obv", "obv_ma5", "obv_ma10", "obv_ma20", "obv_ma60", "obv_ema5", "obv_ema10", "obv_ema20", "obv_ema60", "mfi", "tenkan", "kijun", "senkouA", "senkouB", "chikou", "di_plus", "di_minus", "adx", "cmf", "cmf_ema5", "turnover_rate"];
+    const skillEntries = skills.map((skill) => {
+      const values = columns.map((column) => {
+        if (column === "stock_id") return quote(skill.stock_id);
+        if (column === "t") return quote(String(skill.t));
+        return this.sqlSafe((skill as any)[column]);
+      });
+      return `(${values.join(", ")})`;
+    });
+    const updateColumns = columns
+      .slice(2)
+      .map((column) => `${column} = excluded.${column}`)
+      .join(", ");
+    for (let i = 0; i < skillEntries.length; i += 50) {
+      statements.push(
+        `INSERT INTO weekly_skills (${columns.join(", ")}) VALUES ${skillEntries.slice(i, i + 50).join(", ")} ON CONFLICT(stock_id, t) DO UPDATE SET ${updateColumns}`,
+      );
+    }
+
+    await invoke("execute_sql_transaction", { statements });
+    info(
+      `[SyncDB] Saved weekly transaction for ${stockId}: ${deals.length} deals, ${skills.length} skills`,
+    );
   }
 
   /**

@@ -3,7 +3,10 @@ import {
   Chip,
   CircularProgress,
   Container,
+  FormControlLabel,
+  Menu,
   Stack,
+  Switch,
   Typography,
 } from "@mui/material";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -30,6 +33,7 @@ import BaseCandlestickRectangle from "../../../components/RechartCustoms/BaseCan
 import { DealsContext } from "../../../context/DealsContext";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
 import ChartTooltip from "../Tooltip/ChartTooltip";
+import useToolbarSettings from "../GlassBar/useToolbarSettings";
 
 interface AvgMaChartData extends Partial<{
   t: number | string;
@@ -87,6 +91,10 @@ export default function AvgMaKbar({
   });
 
   const [isAvgCandle, setIsAvgCandle] = useState(true);
+  const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLElement | null>(
+    null,
+  );
+  useToolbarSettings(setSettingsAnchorEl);
 
   useEffect(() => {
     const container = chartContainerRef.current;
@@ -281,10 +289,28 @@ export default function AvgMaKbar({
     return points;
   }, [chartData]);
 
+  const dmiScale = useMemo(() => {
+    const maximum = chartData.reduce((currentMaximum, item) => {
+      return Math.max(
+        currentMaximum,
+        item.adx ?? 0,
+        item.diPlus ?? 0,
+        item.diMinus ?? 0,
+      );
+    }, 0);
+    const upper = Math.max(40, Math.ceil(maximum / 10) * 10);
+    const ticks = Array.from(
+      { length: Math.floor(upper / 20) + 1 },
+      (_, index) => index * 20,
+    );
+    if (ticks[ticks.length - 1] !== upper) ticks.push(upper);
+    return { domain: [0, upper] as [number, number], ticks };
+  }, [chartData]);
+
   if (chartData.length === 0) {
     return (
       <Box
-        height="100vh"
+        height="100%"
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -299,7 +325,7 @@ export default function AvgMaKbar({
       component="main"
       maxWidth={false}
       sx={{
-        height: "100vh",
+        height: "100%",
         display: "flex",
         flexDirection: "column",
         pt: 1,
@@ -307,10 +333,49 @@ export default function AvgMaKbar({
         pb: 1,
       }}
     >
-      <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="h6" component="div" color="white" sx={{ mr: 2 }}>
-          EMA
+      <Menu
+        anchorEl={settingsAnchorEl}
+        open={Boolean(settingsAnchorEl)}
+        onClose={() => setSettingsAnchorEl(null)}
+        PaperProps={{ sx: { p: 2, width: 250, bgcolor: "background.paper" } }}
+      >
+        <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+          EMA 顯示設定
         </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {chartData[chartData.length - 1].marketType}市 · MSS{" "}
+          {chartData[chartData.length - 1].mss.toFixed(1)}
+        </Typography>
+        <FormControlLabel
+          control={<Switch checked={isAvgCandle} onChange={(event) => setIsAvgCandle(event.target.checked)} />}
+          label="平均 K 線"
+          sx={{ display: "block", mt: 1 }}
+        />
+        {([
+          ["emaShort", `EMA${settings.emaShort}`],
+          ["emaLong", `EMA${settings.emaLong}`],
+          ["ema200", "EMA200"],
+        ] as const).map(([key, label]) => (
+          <FormControlLabel
+            key={key}
+            control={
+              <Switch
+                checked={visibleMAs[key]}
+                onChange={() =>
+                  setVisibleMAs((previous) => ({
+                    ...previous,
+                    [key]: !previous[key],
+                  }))
+                }
+              />
+            }
+            label={label}
+            sx={{ display: "block" }}
+          />
+        ))}
+      </Menu>
+
+      <Stack spacing={2} direction="row" alignItems="center" sx={{ display: "none" }}>
         <Box
           sx={{ flexGrow: 1, display: "flex", gap: 1.5, alignItems: "center" }}
         >
@@ -650,16 +715,13 @@ export default function AvgMaKbar({
             <XAxis dataKey="t" hide />
             <YAxis
               yAxisId="dmiAxis"
-              domain={[0, 60]}
+              width={44}
+              domain={dmiScale.domain}
+              ticks={dmiScale.ticks}
+              allowDataOverflow={false}
               tick={{ fill: "rgba(255,255,255,0.7)", fontSize: 10 }}
               stroke="rgba(255,255,255,0.3)"
-              label={{
-                value: "DMI",
-                angle: -90,
-                position: "insideLeft",
-                fill: "#999",
-                fontSize: 10,
-              }}
+              tickFormatter={(value: number) => `${Math.round(value)}`}
             />
             <YAxis yAxisId="statusAxis" domain={[0, 1]} hide />
             <Tooltip

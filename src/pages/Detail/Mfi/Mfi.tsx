@@ -1,11 +1,4 @@
-import {
-  Box,
-  CircularProgress,
-  Container,
-  Tooltip as MuiTooltip,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, CircularProgress, Container } from "@mui/material";
 import { useContext, useEffect, useMemo, useRef } from "react";
 import {
   Bar,
@@ -182,7 +175,7 @@ export default function Mfi({
   if (chartData.length === 0) {
     return (
       <Box
-        height="100vh"
+        height="100%"
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -197,7 +190,7 @@ export default function Mfi({
       component="main"
       maxWidth={false}
       sx={{
-        height: "100vh",
+        height: "100%",
         display: "flex",
         flexDirection: "column",
         pt: 1,
@@ -205,14 +198,6 @@ export default function Mfi({
         pb: 1,
       }}
     >
-      <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
-        <MuiTooltip title="MFI 較敏感，MACD 較穩重。兩者結合可減少 MFI 頻繁震盪產生的雜訊。\n 價格是否觸碰布林軌道邊界?MACD 是否出現轉向交叉? 有的話可信度越高">
-          <Typography variant="h6" component="div" color="white" sx={{ mr: 2 }}>
-            MFI
-          </Typography>
-        </MuiTooltip>
-      </Stack>
-
       <Box
         ref={chartContainerRef}
         sx={{
@@ -280,50 +265,6 @@ export default function Mfi({
             />
             <Customized component={BaseCandlestickRectangle} />
 
-            <Bar
-              dataKey="v"
-              yAxisId="volAxis"
-              name="Volume"
-              shape={(props: any) => {
-                const { x, y, width, height, payload } = props;
-                const isUp = payload.c > payload.o;
-                return (
-                  <rect
-                    x={x}
-                    y={y}
-                    width={width}
-                    height={height}
-                    fill={isUp ? "#f44336" : "#4caf50"}
-                    opacity={0.2}
-                  />
-                );
-              }}
-            />
-
-            <Line
-              dataKey="bollMa"
-              stroke="rgba(33, 150, 243, 0.5)"
-              strokeWidth={1.2}
-              dot={false}
-              activeDot={false}
-              name={`${settings.boll} MA (Mid)`}
-            />
-            <Line
-              dataKey="bollUb"
-              stroke="rgba(140, 140, 140, 0.45)"
-              strokeWidth={1.2}
-              dot={false}
-              activeDot={false}
-              name="Upper Band"
-            />
-            <Line
-              dataKey="bollLb"
-              stroke="rgba(140, 140, 140, 0.45)"
-              strokeWidth={1.2}
-              dot={false}
-              activeDot={false}
-              name="Lower Band"
-            />
 
             {chartData.map((d) => {
               const isBuy = typeof d.buySignal === "number";

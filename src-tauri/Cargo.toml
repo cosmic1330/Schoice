@@ -30,6 +30,11 @@ tauri-plugin-dialog = "2"
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-store = "2"
 log = "0.4"
+dashmap = "6.1.0"
+reqwest = { version = "0.12", default-features = false, features = ["json", "native-tls"] }
+tokio = { version = "1", features = ["time", "sync", "macros"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite"] }
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
 tauri-plugin-process = "2"
 tauri-plugin-fs = "2"
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]

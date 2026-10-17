@@ -1,6 +1,6 @@
+import { semanticTokens } from "../../../theme";
 import { dateFormat } from "@ch20026103/anysis";
 import { Mode } from "@ch20026103/anysis/dist/esm/stockSkills/utils/dateFormat";
-import SettingsIcon from "@mui/icons-material/Settings";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import {
@@ -9,15 +9,14 @@ import {
   Chip,
   CircularProgress,
   Container,
-  IconButton,
+  FormControlLabel,
   Menu,
-  Tooltip as MuiTooltip,
   Slider,
   Stack,
+  Switch,
   Typography,
 } from "@mui/material";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router";
 import {
   Bar,
   CartesianGrid,
@@ -38,7 +37,7 @@ import { useGapDetection } from "../../../hooks/useGapDetection";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
 import { UrlTaPerdOptions } from "../../../types";
 import { calculateIndicators } from "../../../utils/indicatorUtils";
-import Fundamental from "../Tooltip/Fundamental";
+import useToolbarSettings from "../GlassBar/useToolbarSettings";
 
 interface BolleanChartData extends Partial<{
   t: number | string;
@@ -131,14 +130,10 @@ export default function Bollean({
   >(undefined);
   const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null);
 
-  const handleOpenSettings = (event: React.MouseEvent<HTMLElement>) => {
-    setSettingsAnchorEl(event.currentTarget);
-  };
+  useToolbarSettings(setSettingsAnchorEl);
   const handleCloseSettings = () => {
     setSettingsAnchorEl(null);
   };
-
-  const { id } = useParams();
 
   // Zoom & Pan Control
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -294,12 +289,16 @@ export default function Bollean({
       // Include Bollinger Bands
       if (d.bollUb != null && d.bollUb > max) max = d.bollUb;
       if (d.bollLb != null && d.bollLb < min) min = d.bollLb;
+      if (d.ema200 != null && d.ema200 > max) max = d.ema200;
+      if (d.ema200 != null && d.ema200 < min) min = d.ema200;
+      if (d.buySignal != null && d.buySignal < min) min = d.buySignal;
+      if (d.exitSignal != null && d.exitSignal > max) max = d.exitSignal;
     });
 
     if (min === Infinity || max === -Infinity) return ["auto", "auto"];
 
     const range = max - min;
-    const padding = range * 0.05; // 5% padding
+    const padding = Math.max(range * 0.05, Math.abs(max) * 0.005);
     return [min - padding, max + padding];
   }, [chartData]);
 
@@ -440,7 +439,7 @@ export default function Bollean({
   if (chartData.length === 0) {
     return (
       <Box
-        height="100vh"
+        height="100%"
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -455,7 +454,7 @@ export default function Bollean({
       component="main"
       maxWidth={false}
       sx={{
-        height: "100vh",
+        height: "100%",
         display: "flex",
         flexDirection: "column",
         pt: 1,
@@ -463,17 +462,7 @@ export default function Bollean({
         pb: 1,
       }}
     >
-      <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
-        <MuiTooltip title={<Fundamental id={id} />} arrow>
-          <Typography variant="h6" component="div" color="white" sx={{ mr: 2 }}>
-            Bolling ({settings.boll})
-          </Typography>
-        </MuiTooltip>
-
-        <IconButton size="small" onClick={handleOpenSettings} color="primary" sx={{ mr: 1 }}>
-          <SettingsIcon fontSize="small" />
-        </IconButton>
-
+      <Stack spacing={2} direction="row" alignItems="center" sx={{ display: "none" }}>
         <Box
           sx={{ flexGrow: 1, display: "flex", gap: 2, alignItems: "center" }}
         >
@@ -548,6 +537,14 @@ export default function Bollean({
               size="small"
             />
           </Box>
+          <FormControlLabel
+            control={<Switch checked={showGaps} onChange={(event) => setShowGaps(event.target.checked)} />}
+            label="顯示缺口"
+          />
+          <FormControlLabel
+            control={<Switch checked={showOnlyUnfilled} disabled={!showGaps} onChange={(event) => setShowOnlyUnfilled(event.target.checked)} />}
+            label="僅顯示未補缺口"
+          />
           <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
             <Button size="small" onClick={resetSettings}>回復預設</Button>
           </Box>
@@ -565,7 +562,20 @@ export default function Bollean({
           >
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
             <XAxis dataKey="t" hide />
-            <YAxis domain={yDomain} allowDataOverflow={true} />
+            <YAxis
+              width={48}
+              domain={yDomain}
+              allowDataOverflow={false}
+              stroke="#888"
+              fontSize={10}
+              tickFormatter={(value: number) =>
+                value.toLocaleString("zh-TW", {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits:
+                    Math.abs(value) >= 100 ? 1 : Math.abs(value) >= 10 ? 2 : 3,
+                })
+              }
+            />
             <YAxis
               yAxisId="right"
               orientation="right"
@@ -654,7 +664,7 @@ export default function Bollean({
             <Bar
               dataKey="v"
               yAxisId="right"
-              fill="#90caf9"
+              fill={semanticTokens.analysis.focus}
               opacity={0.3}
               name="Volume"
               barSize={10}

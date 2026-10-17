@@ -275,6 +275,249 @@
           "moveToTrashConfirmButton": "移至回收站"
         }
       }
+    },
+    "Detail": {
+      "chartAdvice": {
+        "bollean": "布林通道策略適合震盪與突破市場，配合 EMA 200 判斷大趨勢。",
+        "Donchian": "唐奇通道策略適合震盪與突破市場。",
+        "ma": "MA 在日線最能體現趨勢；週線 MA20 可作防禦參考，交易小時級缺口前應確認高週期支撐。",
+        "ema": "EMA 在日線提供中長線趨勢指南；小時級進場前請確認日線 EMA60 或 SMA200 支撐。",
+        "atr": "ATR Supertrend 適合日線趨勢追蹤；短線使用請以高週期 EMA 過濾方向，降低盤整假訊號。",
+        "obv": "OBV 小時線可觀察資金進出，進場前應同步確認日線 OBV 趨勢。",
+        "volume_profile": "成交量輪廓可辨識可見區間資金密集區；POC 提供成本參考，VAH／VAL 協助辨識盤整或突破。",
+        "cci": "CCI 可在日線與小時線捕捉突破與超賣反轉；短線使用時請順勢而為。",
+        "mr": "MR 適合日內動能與日線動能衰竭判讀；短線金叉但日線 RSI 低於 50 時，宜視為反彈而非趨勢確認。",
+        "kd": "KD 對週期敏感；週線與日線的波段參考較強，短週期應搭配 MA20 等趨勢指標過濾。",
+        "mfi": "MFI 日線較穩健、小時線反應較快；超賣進場仍需確認日線趨勢向上。",
+        "chip": "籌碼資料盤後更新，以法人、融資與融券資料判斷方向。",
+        "ichimoku_cloud": "一目均衡表在日線與週線較有效；短週期使用時需留意指標雜訊。"
+      },
+      "charts": {
+        "bollean": {
+          "label": "布林",
+          "title": "布林通道與 EMA"
+        },
+        "Donchian": {
+          "label": "唐奇",
+          "title": "唐奇通道"
+        },
+        "ma": {
+          "label": "MA",
+          "title": "均線與缺口策略"
+        },
+        "ema": {
+          "label": "EMA",
+          "title": "EMA 趨勢策略"
+        },
+        "atr": {
+          "label": "ATR",
+          "title": "ATR Trend 策略說明"
+        },
+        "obv": {
+          "label": "OBV",
+          "title": "OBV 動能策略"
+        },
+        "volume_profile": {
+          "label": "量價",
+          "title": "成交量輪廓"
+        },
+        "cci": {
+          "label": "CCI",
+          "title": "CCI 順勢指標"
+        },
+        "mr": {
+          "label": "MR",
+          "title": "MR 雙指標共振"
+        },
+        "kd": {
+          "label": "KD",
+          "title": "KD 隨機指標策略"
+        },
+        "mfi": {
+          "label": "MFI",
+          "title": "MFI 資金流便覽"
+        },
+        "chip": {
+          "label": "籌碼",
+          "title": "籌碼面"
+        },
+        "ichimoku_cloud": {
+          "label": "一目",
+          "title": "一目均衡表說明"
+        }
+      },
+      "summary": {
+        "latest": "，最新 O {{open}}、H {{high}}、L {{low}}、C {{close}}",
+        "noLatest": "，尚無最近 OHLC",
+        "samples": "{{count}} 筆資料",
+        "hour": "時",
+        "day": "日",
+        "week": "週"
+      },
+      "tooltip": {
+        "marketEnvironment": "市場環境（MESS）",
+        "diagnosis": "診斷",
+        "noSignal": "盤整無顯著訊號",
+        "ichimoku": "一目均衡表",
+        "forecast": "未來預測",
+        "current": "當前狀態",
+        "valuation": "估值指標",
+        "pe": "本益比（PE）",
+        "pb": "股價淨值比（PB）",
+        "yield": "殖利率",
+        "bookValue": "每股淨值",
+        "recentEps": "近期 EPS",
+        "revenue": "近期營收 MoM(%)／YoY(%)",
+        "unavailable": "無法取得",
+        "currency": "元",
+        "times": "倍",
+        "recentQuarter": "近 {{count}} 季",
+        "recentYear": "近 {{count}} 年",
+        "recentMonth": "近 {{count}} 月",
+        "noFinancialData": "暫無財務數據。",
+        "tdcc": {
+          "title": "大戶人數變動",
+          "dataPeriod": "資料期間：{{current}}（前期：{{previous}}）",
+          "dataDate": "資料日期：{{date}}",
+          "holders400": "400 張以上",
+          "holders1000": "1,000 張以上",
+          "currentHolders": "目前 {{value}} 人",
+          "increase": "+{{value}} 人增加",
+          "decrease": "-{{value}} 人減少",
+          "unchanged": "持平",
+          "comparisonUnavailable": "無法比較"
+        }
+      },
+      "documentation": {
+        "loading": "正在載入圖表說明…",
+        "cancel": "取消"
+      },
+      "GlassBar": {
+        "navigation": "分析圖表工具列",
+        "previous": "上一個圖表",
+        "next": "下一個圖表",
+        "selectChart": "選擇分析圖表",
+        "period": "圖表週期",
+        "hourShort": "時",
+        "dayShort": "日",
+        "weekShort": "週",
+        "help": "查看目前圖表說明",
+        "details": "圖表資訊；點擊查看完整說明",
+        "settings": "調整圖表參數"
+      },
+      "Chip": {
+        "title": "籌碼面",
+        "summary": "籌碼判讀摘要",
+        "score": "籌碼分數",
+        "confidence": {
+          "label": "資料可信度",
+          "high": "高",
+          "medium": "中"
+        },
+        "loading": "正在整理盤後籌碼…",
+        "retry": "重試",
+        "error": "暫時無法取得籌碼資料，請稍後再試。",
+        "twOnly": "籌碼資料目前只支援台灣股票。",
+        "trendEmpty": "尚無足夠的 20 日資料可繪製趨勢。",
+        "tabs": {
+          "label": "籌碼資訊分類",
+          "overview": "概覽",
+          "trend": "20 日趨勢",
+          "analysis": "事件與分數"
+        },
+        "light": {
+          "title": "籌碼燈號",
+          "institutional": "法人動向",
+          "foreignHolding": "外資持股",
+          "lendingPressure": "借券壓力",
+          "lots": "張",
+          "status": {
+            "buying": "偏買",
+            "selling": "偏賣",
+            "neutral": "持平",
+            "increasing": "增加",
+            "decreasing": "減少",
+            "stable": "持平",
+            "high": "升高",
+            "normal": "正常",
+            "easing": "降溫",
+            "unavailable": "待更新"
+          },
+          "summary": {
+            "favorable": "多項籌碼同步改善，整體結構偏穩定。",
+            "cautious": "籌碼壓力同時升高，短線宜提高警覺。",
+            "mixed": "各項籌碼方向不同，暫時沒有一致訊號。"
+          }
+        },
+        "holders": {
+          "title": "集保戶數結構",
+          "scoreNote": "不納入分數",
+          "under100": "≤100 張",
+          "over400": "400 張以上",
+          "over1000": "1,000 張以上",
+          "current": "{{value}} 人",
+          "increase": "+{{value}} 人增加",
+          "decrease": "-{{value}} 人減少",
+          "unchanged": "持平",
+          "unavailable": "無法取得",
+          "comparisonUnavailable": "無法比較",
+          "dataDate": "資料日期：{{date}}",
+          "period": "資料期間：{{current}}（前期：{{previous}}）",
+          "empty": "暫無集保戶數資料。",
+          "error": "暫時無法取得集保戶數資料。"
+        },
+        "verdict": {
+          "stable_buying": "穩定承接",
+          "distribution": "籌碼鬆動",
+          "mixed": "方向混雜",
+          "retail_crowded": "散戶擁擠"
+        },
+        "explanation": {
+          "stable_buying": "法人方向偏買，融資未明顯追高；籌碼結構相對整齊。",
+          "distribution": "法人中期偏賣，籌碼正在流出；不宜只因股價反彈追進。",
+          "mixed": "法人與信用籌碼沒有形成一致方向，暫時視為凌亂。",
+          "retail_crowded": "法人賣超但融資快速增加，散戶接法人籌碼的風險較高。"
+        },
+        "institutional": "三大法人（5 日累計）",
+        "foreign": "外資",
+        "trust": "投信",
+        "dealer": "自營商",
+        "total": "法人合計",
+        "margin": "融資融券",
+        "marginBalance": "融資餘額／張",
+        "marginChange": "融資 5 日變化",
+        "shortRatio": "券資比",
+        "trend": "20 日趨勢",
+        "priceChange20d": "股價 20 日",
+        "institutional5d": "法人 5 日",
+        "institutional20d": "法人 20 日",
+        "priceTrend": "股價走勢（收盤價）",
+        "dailyInstitutional": "法人每日買賣超（張）",
+        "institutionalLegend": "紅柱買超｜綠柱賣超｜白線法人累計",
+        "institutionalBuyingLegend": "紅柱買超",
+        "institutionalSellingLegend": "綠柱賣超",
+        "cumulativeInstitutional": "法人累計",
+        "cumulativeInstitutionalLegend": "白線法人累計",
+        "close": "收盤價",
+        "institutionalFlow": "法人買賣超（張）",
+        "signals": "籌碼事件",
+        "noSignals": "近 5 日沒有明顯籌碼背離。",
+        "signal": {
+          "price_down_institution_buy": "股價下跌但法人買超：可能出現低檔承接。",
+          "price_up_institution_sell": "股價上漲但法人賣超：留意拉高調節。",
+          "margin_chasing": "股價上漲且融資快速增加：散戶追價風險升高。",
+          "trust_streak": "投信連續 3 日買超：中期布局訊號增強。"
+        },
+        "scoreBreakdown": "為什麼是這個分數？",
+        "baseScore": "基準分",
+        "factor": {
+          "foreign_5d": "外資近 5 日方向",
+          "trust_5d": "投信近 5 日方向",
+          "dealer_5d": "自營商近 5 日方向",
+          "institutional_20d": "法人 20 日方向",
+          "margin_5d": "融資 5 日變化"
+        }
+      }
     }
   },
   "Components": {
@@ -293,5 +536,37 @@
     "loginRequired": "請先登入！",
     "addSuccess": "添加 {{name}} 成功！",
     "removeSuccess": "移除 {{name}} 成功！"
+  },
+  "app": {
+    "loading": "載入中…"
+  },
+  "a11y": {
+    "switchLanguage": "切換語言為{{language}}",
+    "openStock": "開啟 {{name}}（{{id}}）分析",
+    "openMarket": "開啟 {{name}} 市場分析",
+    "openExternal": "在瀏覽器開啟 {{title}}",
+    "tradingView": "在 TradingView 開啟 {{name}}",
+    "removeStock": "從此清單移除 {{name}}",
+    "deleteStock": "刪除 {{name}}",
+    "addStock": "將 {{name}} 加入自選",
+    "stockChart": "{{name}} 價格走勢圖",
+    "chartSummary": "{{title}}，{{period}}週期，{{count}}筆資料{{latest}}",
+    "close": "關閉",
+    "back": "返回",
+    "scrollLeft": "向左捲動分類",
+    "scrollRight": "向右捲動分類"
+  },
+  "marketData": {
+    "loading": "載入市場資料中…",
+    "empty": "目前沒有可用的市場資料。",
+    "error": "無法更新市場資料。",
+    "retry": "重試",
+    "refreshing": "更新中…",
+    "stale": "顯示最後可用資料。",
+    "staleError": "更新失敗，顯示最後可用資料。",
+    "closed": "市場已收盤",
+    "updated": "更新於 {{time}}",
+    "insufficient": "資料不足",
+    "unavailable": "無法取得"
   }
 }

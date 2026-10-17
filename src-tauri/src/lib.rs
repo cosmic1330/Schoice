@@ -1,3 +1,4 @@
+mod commands;
 mod sqlite;
 use std::fs;
 use tauri::Manager;
@@ -151,7 +152,12 @@ pub fn run() {
             });
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![greet, get_db_size])
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            get_db_size,
+            commands::chip::get_chip_data,
+            commands::database::execute_sql_transaction
+        ])
         .run(tauri::generate_context!());
 
     if let Err(e) = result {

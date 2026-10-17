@@ -1,10 +1,4 @@
-import {
-  Box,
-  CircularProgress,
-  Container,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, CircularProgress, Container } from "@mui/material";
 import { useContext, useEffect, useMemo, useRef } from "react";
 import {
   Bar,
@@ -148,7 +142,7 @@ export default function Kd({
   if (chartData.length === 0) {
     return (
       <Box
-        height="100vh"
+        height="100%"
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -163,7 +157,7 @@ export default function Kd({
       component="main"
       maxWidth={false}
       sx={{
-        height: "100vh",
+        height: "100%",
         display: "flex",
         flexDirection: "column",
         pt: 1,
@@ -171,13 +165,6 @@ export default function Kd({
         pb: 1,
       }}
     >
-      <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="h6" component="div" color="white" sx={{ mr: 2 }}>
-          KD
-        </Typography>
-      </Stack>
-
-
       <Box
         ref={chartContainerRef}
         sx={{ flexGrow: 1, minHeight: 0, width: "100%" }}

@@ -1,3 +1,4 @@
+import { semanticTokens } from "../../../../theme";
 import { Box } from "@mui/material";
 import { forwardRef, useMemo } from "react";
 import {
@@ -393,7 +394,7 @@ const IchimokuChart = forwardRef<HTMLDivElement, IchimokuChartProps>(
                 <Label
                   value={`歷史 | ${timeframeLabel}預測`}
                   position="top"
-                  fill="#90caf9"
+                  fill={semanticTokens.analysis.focus}
                   fontSize={10}
                   offset={10}
                 />

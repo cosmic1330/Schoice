@@ -1,10 +1,4 @@
-import {
-  Box,
-  CircularProgress,
-  Container,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, CircularProgress, Container } from "@mui/material";
 import { useContext, useEffect, useMemo, useRef } from "react";
 import {
   Area,
@@ -199,7 +193,7 @@ export default function MJ({
   if (chartData.length === 0) {
     return (
       <Box
-        height="100vh"
+        height="100%"
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -214,7 +208,7 @@ export default function MJ({
       component="main"
       maxWidth={false}
       sx={{
-        height: "100vh",
+        height: "100%",
         display: "flex",
         flexDirection: "column",
         pt: 1,
@@ -222,12 +216,6 @@ export default function MJ({
         pb: 1,
       }}
     >
-      <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="h6" component="div" color="white" sx={{ mr: 2 }}>
-          MJ
-        </Typography>
-      </Stack>
-
 
       <Box
         ref={chartContainerRef}

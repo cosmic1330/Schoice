@@ -1,99 +1,87 @@
-import { ShowChart } from "@mui/icons-material";
-import { IconButton, Menu, MenuItem, Typography } from "@mui/material";
+import { semanticTokens } from "../../../theme";
+import { ExpandLess, ShowChart } from "@mui/icons-material";
+import { Button, Menu, MenuItem, Typography } from "@mui/material";
 import React, { useState } from "react";
-import { CHART_CONFIG } from "../constants/chartConfig";
+import { useTranslation } from "react-i18next";
+import { CHART_CONFIG, getChartLabel } from "../constants/chartConfig";
 
 interface ChartMenuProps {
   current: number;
   goToSlide: (index: number) => void;
 }
 
-const charts = CHART_CONFIG.map((cfg, idx) => ({
-  label: cfg.label,
-  idx,
-}));
-
 const ChartMenu: React.FC<ChartMenuProps> = ({ current, goToSlide }) => {
+  const { t } = useTranslation();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
-  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
+  const handleSelect = (index: number) => {
+    goToSlide(index);
     setAnchorEl(null);
-  };
-
-  const handleSelect = (idx: number) => {
-    goToSlide(idx);
   };
 
   return (
     <>
-      <IconButton
-        onClick={handleClick}
-        size="small"
+      <Button
+        onClick={(event) => setAnchorEl(event.currentTarget)}
+        aria-label={t("Pages.Detail.GlassBar.selectChart")}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        startIcon={<ShowChart sx={{ fontSize: 17 }} />}
+        endIcon={<ExpandLess sx={{ fontSize: 15 }} />}
         sx={{
-          color: open ? "#fff" : "rgba(255,255,255,0.5)",
-          bgcolor: open ? "rgba(255, 255, 255, 0.1)" : "transparent",
-          "&:hover": { color: "#fff", bgcolor: "rgba(255, 255, 255, 0.05)" },
+          minWidth: 76,
+          maxWidth: 88,
+          height: 40,
+          px: 0.8,
+          color: "#fff",
+          border: "1px solid rgba(255,255,255,0.12)",
+          bgcolor: open ? "rgba(144,202,249,0.14)" : "rgba(255,255,255,0.05)",
+          textTransform: "none",
+          "& .MuiButton-startIcon": { mr: 0.45 },
+          "& .MuiButton-endIcon": { ml: 0.2 },
         }}
       >
-        <ShowChart fontSize="small" />
-      </IconButton>
+        <Typography variant="caption" fontWeight={750} noWrap>
+          {getChartLabel(CHART_CONFIG[current], t)}
+        </Typography>
+      </Button>
 
       <Menu
         anchorEl={anchorEl}
         open={open}
-        onClose={handleClose}
-        anchorOrigin={{
-          vertical: "center",
-          horizontal: "right",
-        }}
-        transformOrigin={{
-          vertical: "center",
-          horizontal: "left",
-        }}
+        onClose={() => setAnchorEl(null)}
+        anchorOrigin={{ vertical: "top", horizontal: "left" }}
+        transformOrigin={{ vertical: "bottom", horizontal: "left" }}
         slotProps={{
           paper: {
             sx: {
-              ml: 1.5,
-              bgcolor: "rgba(30, 30, 40, 0.9)",
-              backdropFilter: "blur(12px)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              borderRadius: "12px",
-              boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.5)",
-              p: 0.5,
-              minWidth: 100,
+              mb: 1,
+              maxHeight: 360,
+              minWidth: 130,
+              bgcolor: "rgba(24,28,35,0.98)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: 2,
             },
           },
         }}
       >
-        {charts.map((opt) => (
+        {CHART_CONFIG.map((chart, index) => (
           <MenuItem
-            key={opt.idx}
-            onClick={() => handleSelect(opt.idx)}
-            selected={current === opt.idx}
+            key={chart.id}
+            selected={current === index}
+            onClick={() => handleSelect(index)}
             sx={{
-              borderRadius: "6px",
+              minHeight: 40,
               mx: 0.5,
-              my: 0.2,
-              py: 0.8,
+              borderRadius: 1,
               "&.Mui-selected": {
-                bgcolor: "rgba(144, 202, 249, 0.15)",
-                color: "primary.main",
-                "&:hover": { bgcolor: "rgba(144, 202, 249, 0.25)" },
+                color: semanticTokens.analysis.focus,
+                bgcolor: "rgba(144,202,249,0.14)",
               },
-              "&:hover": { bgcolor: "rgba(255, 255, 255, 0.05)" },
             }}
           >
-            <Typography
-              variant="caption"
-              sx={{ fontWeight: current === opt.idx ? 600 : 400 }}
-            >
-              {opt.label}
-            </Typography>
+            <Typography variant="body2">{getChartLabel(chart, t)}</Typography>
           </MenuItem>
         ))}
       </Menu>

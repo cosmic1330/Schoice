@@ -1,18 +1,13 @@
-import SettingsIcon from "@mui/icons-material/Settings";
 import {
   Box,
   Button,
   CircularProgress,
   Container,
-  IconButton,
   Menu,
-  Tooltip as MuiTooltip,
   Slider,
-  Stack,
   Typography,
 } from "@mui/material";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router";
 import {
   Bar,
   CartesianGrid,
@@ -30,7 +25,7 @@ import { DealsContext } from "../../../context/DealsContext";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
 import { calculateIndicators } from "../../../utils/indicatorUtils";
 import ChartTooltip from "../Tooltip/ChartTooltip";
-import Fundamental from "../Tooltip/Fundamental";
+import useToolbarSettings from "../GlassBar/useToolbarSettings";
 
 const BuyArrow = (props: any) => {
   const { cx, cy } = props;
@@ -93,14 +88,10 @@ export default function ATR({
   const deals = useContext(DealsContext);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-  const handleOpenSettings = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
+  useToolbarSettings(setAnchorEl);
   const handleCloseSettings = () => {
     setAnchorEl(null);
   };
-
-  const { id } = useParams();
 
   // Zoom & Pan Control
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -172,7 +163,7 @@ export default function ATR({
 
     // Locally calculate Supertrend crossover signals for ATR display
     return basePoints.map((d, i) => {
-      if (i === 0) return d;
+      if (i === 0) return { ...d, buySignal: null, exitSignal: null };
       const prev = basePoints[i - 1];
       let buySignal = null;
       let exitSignal = null;
@@ -214,19 +205,19 @@ export default function ATR({
       if (d.supertrend != null && d.supertrend < min) min = d.supertrend;
       if (d.ma20 != null && d.ma20 > max) max = d.ma20;
       if (d.ma20 != null && d.ma20 < min) min = d.ma20;
-      if (d.ema200 != null && d.ema200 > max) max = d.ema200;
-      if (d.ema200 != null && d.ema200 < min) min = d.ema200;
+      if (d.buySignal != null && d.buySignal < min) min = d.buySignal;
+      if (d.exitSignal != null && d.exitSignal > max) max = d.exitSignal;
     });
 
     if (min === Infinity || max === -Infinity) return ["auto", "auto"];
-    const padding = (max - min) * 0.05;
+    const padding = Math.max((max - min) * 0.05, Math.abs(max) * 0.005);
     return [min - padding, max + padding];
   }, [chartData]);
 
   if (chartData.length === 0) {
     return (
       <Box
-        height="100vh"
+        height="100%"
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -241,7 +232,7 @@ export default function ATR({
       component="main"
       maxWidth={false}
       sx={{
-        height: "100vh",
+        height: "100%",
         display: "flex",
         flexDirection: "column",
         pt: 1,
@@ -249,25 +240,7 @@ export default function ATR({
         pb: 1,
       }}
     >
-      <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
-        <MuiTooltip title={<Fundamental id={id} />} arrow>
-          <Typography variant="h6" component="div" color="white" sx={{ mr: 2 }}>
-            ATR
-          </Typography>
-        </MuiTooltip>
-        <IconButton
-          size="small"
-          onClick={handleOpenSettings}
-          color="primary"
-          sx={{
-            p: 0.5,
-            transition: "transform 0.2s",
-            "&:hover": { transform: "rotate(45deg)" },
-          }}
-        >
-          <SettingsIcon fontSize="small" />
-        </IconButton>
-        <Menu
+      <Menu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={handleCloseSettings}
@@ -314,8 +287,7 @@ export default function ATR({
               全部回復預設
             </Button>
           </Box>
-        </Menu>
-      </Stack>
+      </Menu>
 
       <Box
         ref={chartContainerRef}
@@ -328,7 +300,20 @@ export default function ATR({
           >
             <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
             <XAxis dataKey="t" hide />
-            <YAxis domain={yDomain} allowDataOverflow={true} />
+            <YAxis
+              width={48}
+              domain={yDomain}
+              allowDataOverflow={false}
+              stroke="#888"
+              fontSize={10}
+              tickFormatter={(value: number) =>
+                value.toLocaleString("zh-TW", {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits:
+                    Math.abs(value) >= 100 ? 1 : Math.abs(value) >= 10 ? 2 : 3,
+                })
+              }
+            />
             <YAxis
               yAxisId="volume"
               orientation="right"

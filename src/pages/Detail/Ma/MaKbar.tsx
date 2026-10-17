@@ -7,6 +7,7 @@ import {
   Container,
   Divider,
   FormControlLabel,
+  Menu,
   Stack,
   Switch,
   Typography,
@@ -32,6 +33,7 @@ import { useGapDetection } from "../../../hooks/useGapDetection";
 import useIndicatorSettings from "../../../hooks/useIndicatorSettings";
 import { UrlTaPerdOptions } from "../../../types";
 import { calculateIndicators } from "../../../utils/indicatorUtils";
+import useToolbarSettings from "../GlassBar/useToolbarSettings";
 
 export default function MaKbar({
   perd,
@@ -62,6 +64,10 @@ export default function MaKbar({
     number | string | undefined
   >(undefined);
   const [showDeductions, setShowDeductions] = useState(false);
+  const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLElement | null>(
+    null,
+  );
+  useToolbarSettings(setSettingsAnchorEl);
   const [visibleMAs, setVisibleMAs] = useState({
     ma5: true,
     ma10: true,
@@ -364,7 +370,7 @@ export default function MaKbar({
   if (slicedChartData.length === 0) {
     return (
       <Box
-        height="100vh"
+        height="100%"
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -379,7 +385,7 @@ export default function MaKbar({
       component="main"
       maxWidth={false}
       sx={{
-        height: "100vh",
+        height: "100%",
         display: "flex",
         flexDirection: "column",
         pt: 1,
@@ -387,11 +393,57 @@ export default function MaKbar({
         pb: 1,
       }}
     >
-      <Stack spacing={2} direction="row" alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="h6" component="div" color="white" sx={{ mr: 2 }}>
-          MA
+      <Menu
+        anchorEl={settingsAnchorEl}
+        open={Boolean(settingsAnchorEl)}
+        onClose={() => setSettingsAnchorEl(null)}
+        PaperProps={{ sx: { p: 2, width: 260, bgcolor: "background.paper" } }}
+      >
+        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+          均線顯示
         </Typography>
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+          {([
+            ["ma5", settings.ma5],
+            ["ma10", settings.ma10],
+            ["ma20", settings.ma20],
+            ["ma60", settings.ma60],
+            ["ma120", settings.ma120],
+            ["ma240", settings.ma240],
+          ] as const).map(([key, period]) => (
+            <FormControlLabel
+              key={key}
+              control={
+                <Switch
+                  size="small"
+                  checked={visibleMAs[key]}
+                  onChange={() =>
+                    setVisibleMAs((previous) => ({
+                      ...previous,
+                      [key]: !previous[key],
+                    }))
+                  }
+                />
+              }
+              label={`MA${period}`}
+            />
+          ))}
+        </Box>
+        <FormControlLabel
+          control={<Switch checked={showGaps} onChange={(event) => setShowGaps(event.target.checked)} />}
+          label="顯示缺口"
+        />
+        <FormControlLabel
+          control={<Switch checked={showOnlyUnfilled} disabled={!showGaps} onChange={(event) => setShowOnlyUnfilled(event.target.checked)} />}
+          label="僅顯示未補缺口"
+        />
+        <FormControlLabel
+          control={<Switch checked={showDeductions} onChange={(event) => setShowDeductions(event.target.checked)} />}
+          label="顯示扣抵位置"
+        />
+      </Menu>
 
+      <Stack spacing={2} direction="row" alignItems="center" sx={{ display: "none" }}>
         <Box
           sx={{ flexGrow: 1, display: "flex", gap: 1.5, alignItems: "center" }}
         >

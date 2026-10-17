@@ -1,6 +1,6 @@
-import { Box, createTheme, styled, ThemeProvider } from "@mui/material";
+import { Box, Button, CircularProgress, Dialog, DialogContent, DialogTitle, styled, ThemeProvider } from "@mui/material";
 import { listen } from "@tauri-apps/api/event";
-import { AnimatePresence, motion, Variants } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion, Variants } from "framer-motion";
 import React, {
   Suspense,
   useCallback,
@@ -10,9 +10,8 @@ import React, {
   useState,
 } from "react";
 import { useNavigate, useParams } from "react-router";
+import { useTranslation } from "react-i18next";
 import useSWR from "swr";
-import { tauriFetcher } from "../../tools/http";
-import DocModal from "../../components/DocModal";
 import { DealsContext } from "../../context/DealsContext";
 import { FutureIds, UrlTaPerdOptions, UrlType } from "../../types";
 import {
@@ -20,16 +19,52 @@ import {
   analyzeNasdaqIndicatorsData,
   IndicatorsDateTimeType,
 } from "../../utils/analyzeIndicatorsData";
+import { analysisTheme, semanticTokens } from "../../theme";
+import MarketDataStatus from "../../components/MarketDataStatus";
+import { deriveMarketResourceState } from "../../utils/marketResourceState";
+import { useFreshnessNow, useMarketSession } from "../../hooks/useMarketSession";
+import { tauriFetcher } from "../../tools/http";
 import generateDealDataDownloadUrl from "../../utils/generateDealDataDownloadUrl";
 import GlassBar from "./GlassBar";
-import { CHART_CONFIG } from "./constants/chartConfig";
+const DocModal = React.lazy(() => import("../../components/DocModal"));
 
+function DocModalLoading({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
+
+  return (
+    <Dialog
+      open
+      onClose={onClose}
+      aria-labelledby="documentation-loading-title"
+      PaperProps={{
+        sx: {
+          bgcolor: "background.paper",
+          backgroundImage: "none",
+          backdropFilter: "blur(20px)",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
+          width: "min(100% - 32px, 420px)",
+        },
+      }}
+    >
+      <DialogTitle id="documentation-loading-title">{t("Pages.Detail.documentation.loading")}</DialogTitle>
+      <DialogContent sx={{ display: "flex", alignItems: "center", gap: 1.5, pb: 3 }}>
+        <CircularProgress size={22} aria-hidden="true" />
+        <Box sx={{ minWidth: 0, flex: 1 }} role="status" aria-live="polite">
+          {t("Pages.Detail.documentation.loading")}
+        </Box>
+        <Button onClick={onClose} variant="text">{t("Pages.Detail.documentation.cancel")}</Button>
+      </DialogContent>
+    </Dialog>
+  );
+}
 const PageContainer = styled(Box)`
   width: 100vw;
   height: 100vh;
   overflow: hidden;
   position: relative;
-  background-color: #0f1214;
+  display: flex;
+  flex-direction: column;
+  background-color: ${semanticTokens.analysis.canvas};
   background-image:
     radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
     radial-gradient(at 50% 0%, hsla(225, 39%, 25%, 1) 0, transparent 50%),
@@ -43,49 +78,33 @@ const PageContainer = styled(Box)`
   background-repeat: no-repeat, no-repeat, no-repeat, repeat;
 `;
 
-// Create a dark theme instance
-const darkTheme = createTheme({
-  palette: {
-    mode: "dark",
-    primary: {
-      main: "#90caf9",
-    },
-    background: {
-      default: "transparent",
-      paper: "rgba(30, 30, 40, 0.6)",
-    },
-    text: {
-      primary: "#ffffff",
-      secondary: "rgba(255, 255, 255, 0.7)",
-    },
-  },
-  components: {
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          backgroundColor: "rgba(30, 30, 40, 0.6)",
-          backdropFilter: "blur(12px)",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
-        },
-      },
-    },
-  },
-});
+const ChartViewport = styled(Box)`
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+`;
+
+import { CHART_CONFIG } from "./constants/chartConfig";
+import { getChartTitle } from "./constants/chartConfig";
+import { carouselOwnsEvent, cycleDetailPeriod, shouldHandleDetailShortcut } from "./interaction";
+import { shouldShowDetailFreshness } from "./detailFreshness";
 
 const FullscreenVerticalCarousel: React.FC = () => {
   const [current, setCurrent] = useState(0);
+  const reduceMotion = useReducedMotion();
   const [scrolling, setScrolling] = useState(false);
   const [perd, setPerd] = useState<UrlTaPerdOptions>(
     (localStorage.getItem("detail:perd:type") as UrlTaPerdOptions) ||
       UrlTaPerdOptions.Hour,
   );
   const { id } = useParams();
-  const [isCollapsed, setIsCollapsed] = useState(true);
-  const pageRef = useRef(null);
-
+  const marketSession = useMarketSession(id ?? "");
+  const [historySuccess, setHistorySuccess] = useState<{ key: string; updatedAt: number } | null>(null);
   // Shared zoom and pan state
   const [visibleCount, setVisibleCount] = useState(120);
   const [rightOffset, setRightOffset] = useState(0);
+  const viewportRef = useRef<HTMLDivElement>(null);
 
   // Documentation modal state
   const [isDocOpen, setIsDocOpen] = useState(false);
@@ -126,11 +145,12 @@ const FullscreenVerticalCarousel: React.FC = () => {
     } else if (index >= slides.length) {
       setCurrent(0);
     }
-  }, [slides.length]);
+  }, []);
 
   const handleWheel = useCallback(
-    (e: WheelEvent) => {
-      if (scrolling || isDocOpen) return;
+    (e: React.WheelEvent<HTMLDivElement>) => {
+      if (scrolling || isDocOpen || !carouselOwnsEvent(e)) return;
+      e.preventDefault();
       setScrolling(true);
 
       if (e.deltaY > 0) {
@@ -144,43 +164,24 @@ const FullscreenVerticalCarousel: React.FC = () => {
     [current, scrolling, goToSlide, isDocOpen],
   );
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (scrolling || isDocOpen) return;
-
-      if (e.key === "ArrowUp") {
-        goToSlide(current - 1);
-      } else if (e.key === "ArrowDown") {
-        goToSlide(current + 1);
-      } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-        const options = [
-          UrlTaPerdOptions.Hour,
-          UrlTaPerdOptions.Day,
-          UrlTaPerdOptions.Week,
-        ];
-        const idx = options.indexOf(perd);
-        if (e.key === "ArrowLeft") {
-          if (idx > 0) {
-            handleSetPerd(options[idx - 1]);
-          }
-        } else if (e.key === "ArrowRight") {
-          if (idx < options.length - 1) {
-            handleSetPerd(options[idx + 1]);
-          }
-        }
-      }
-    },
-    [current, scrolling, goToSlide, perd, handleSetPerd, isDocOpen],
-  );
-
   useEffect(() => {
-    window.addEventListener("wheel", handleWheel, { passive: true });
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("wheel", handleWheel);
-      window.removeEventListener("keydown", handleKeyDown);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (scrolling || isDocOpen || !shouldHandleDetailShortcut(event)) return;
+
+      event.preventDefault();
+
+      if (event.key === "ArrowUp") {
+        goToSlide(current - 1);
+      } else if (event.key === "ArrowDown") {
+        goToSlide(current + 1);
+      } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+        handleSetPerd(cycleDetailPeriod(perd, event.key));
+      }
     };
-  }, [handleWheel, handleKeyDown]);
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [current, scrolling, goToSlide, perd, handleSetPerd, isDocOpen]);
 
   const slideVariants: Variants = {
     initial: (direction: number) => ({
@@ -218,11 +219,9 @@ const FullscreenVerticalCarousel: React.FC = () => {
     };
   }, [navigate]);
 
-  const { data } = useSWR(
-    id === FutureIds.NASDAQ_FUTURE
-      ? `https://query1.finance.yahoo.com/v8/finance/chart/${
-          FutureIds.NASDAQ_FUTURE
-        }?interval=${
+  const historyKey = id
+    ? id === FutureIds.NASDAQ_FUTURE
+      ? `https://query1.finance.yahoo.com/v8/finance/chart/${FutureIds.NASDAQ_FUTURE}?interval=${
           perd === UrlTaPerdOptions.Hour
             ? "1h"
             : perd === UrlTaPerdOptions.Week
@@ -237,80 +236,98 @@ const FullscreenVerticalCarousel: React.FC = () => {
         }`
       : generateDealDataDownloadUrl({
           type: UrlType.Indicators,
-          id: encodeURIComponent(id as string),
+          id: encodeURIComponent(id),
           perd,
-        }),
+        })
+    : null;
+  const { data: historyData, error, isLoading, isValidating, mutate } = useSWR(
+    historyKey,
     tauriFetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 30000,
+      onSuccess: () => {
+        if (historyKey) setHistorySuccess({ key: historyKey, updatedAt: Date.now() });
+      },
+    },
   );
 
   const deals = useMemo(() => {
-    if (!data || !id || typeof data !== "string") return [];
+    if (!historyData || !id || typeof historyData !== "string") return [];
+    const timeType = perd === UrlTaPerdOptions.Hour
+      ? IndicatorsDateTimeType.DateTime
+      : IndicatorsDateTimeType.Date;
     return id === FutureIds.NASDAQ_FUTURE
-      ? analyzeNasdaqIndicatorsData(
-          data,
-          perd === UrlTaPerdOptions.Hour
-            ? IndicatorsDateTimeType.DateTime
-            : IndicatorsDateTimeType.Date,
-        )
-      : analyzeIndicatorsData(
-          data,
-          perd === UrlTaPerdOptions.Hour
-            ? IndicatorsDateTimeType.DateTime
-            : IndicatorsDateTimeType.Date,
-        );
-  }, [data, id, perd]);
+      ? analyzeNasdaqIndicatorsData(historyData, timeType)
+      : analyzeIndicatorsData(historyData, timeType);
+  }, [historyData, id, perd]);
+  const historyUpdatedAt = historySuccess?.key === historyKey ? historySuccess.updatedAt : undefined;
+  const now = useFreshnessNow(historyUpdatedAt, 30_000, marketSession);
+  const historyState = useMemo(() => deriveMarketResourceState({ enabled: Boolean(id && perd), hasData: deals.length > 0, resolved: historyData !== undefined, isLoading, isValidating, error, updatedAt: historyUpdatedAt, marketSession, staleAfterMs: 30_000, now }), [id, perd, deals.length, historyData, isLoading, isValidating, error, historyUpdatedAt, marketSession, now]);
+  const { t } = useTranslation();
+  const latest = deals.at(-1);
+  const periodLabel = t(`Pages.Detail.summary.${perd === UrlTaPerdOptions.Hour ? "hour" : perd === UrlTaPerdOptions.Day ? "day" : "week"}`);
+  const chartSummary = t("a11y.chartSummary", {
+    title: getChartTitle(CHART_CONFIG[current], t),
+    period: periodLabel,
+    count: deals.length,
+    latest: latest
+      ? t("Pages.Detail.summary.latest", { open: latest.o, high: latest.h, low: latest.l, close: latest.c })
+      : t("Pages.Detail.summary.noLatest"),
+  });
 
   return (
-    <ThemeProvider theme={darkTheme}>
-      <PageContainer ref={pageRef}>
-        <DealsContext.Provider value={deals}>
-          <AnimatePresence custom={direction(current)} mode="wait">
-            <motion.div
-              key={slides[current].id}
-              custom={direction(current)}
-              variants={slideVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Suspense fallback={<div>Loading...</div>}>
-                {slides[current].content}
-              </Suspense>
-            </motion.div>
-          </AnimatePresence>
+    <ThemeProvider theme={analysisTheme}>
+      <PageContainer>
+          <DealsContext.Provider value={deals}>
+          <ChartViewport ref={viewportRef} tabIndex={0} aria-label={t("Pages.Detail.GlassBar.navigation")} aria-describedby="detail-chart-summary" onWheel={handleWheel}>
+            <Box id="detail-chart-summary" aria-live="polite" aria-atomic="true" sx={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" }}>
+              {chartSummary}
+            </Box>
+            {historyState.phase !== "ready" ? <Box sx={{ position: "absolute", inset: 0, zIndex: 2, display: "grid", placeItems: "center", px: 2 }}><MarketDataStatus state={historyState} retry={mutate} /></Box> : null}
+            <AnimatePresence custom={direction(current)} mode="wait">
+              <motion.div
+                key={slides[current].id}
+                custom={direction(current)}
+                variants={reduceMotion ? undefined : slideVariants}
+                initial={reduceMotion ? false : "initial"}
+                animate="animate"
+                exit="exit"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Suspense fallback={<Box role="status">{t("app.loading")}</Box>}>
+                  {slides[current].content}
+                </Suspense>
+              </motion.div>
+            </AnimatePresence>
+            {shouldShowDetailFreshness(slides[current].id, historyState.phase) ? <Box sx={{ position: "absolute", top: 4, right: 8, zIndex: 3 }}><MarketDataStatus state={historyState} retry={mutate} compact /></Box> : null}
+          </ChartViewport>
 
           <GlassBar
             perd={perd}
             setPerd={setPerd}
-            isCollapsed={isCollapsed}
-            setIsCollapsed={setIsCollapsed}
             current={current}
             goToSlide={goToSlide}
-            pageRef={pageRef}
             onOpenDoc={() => setIsDocOpen(true)}
-            currentId={slides[current]?.id || ""}
+            currentId={slides[current].id}
           />
 
-          <DocModal
-            open={isDocOpen}
-            onClose={() => setIsDocOpen(false)}
-            title={
-              docMap[slides[current]?.id as keyof typeof docMap]?.title || "文件"
-            }
-            markdown={
-              docMap[slides[current]?.id as keyof typeof docMap]?.content || ""
-            }
-          />
+          {isDocOpen ? (
+            <Suspense fallback={<DocModalLoading onClose={() => setIsDocOpen(false)} />}>
+              <DocModal
+                open
+                onClose={() => setIsDocOpen(false)}
+                title={getChartTitle(CHART_CONFIG[current], t)}
+                markdown={docMap[slides[current].id as keyof typeof docMap]?.content || ""}
+              />
+            </Suspense>
+          ) : null}
         </DealsContext.Provider>
       </PageContainer>
     </ThemeProvider>
