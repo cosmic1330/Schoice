@@ -265,7 +265,7 @@ const FullscreenVerticalCarousel: React.FC = () => {
   const now = useFreshnessNow(historyUpdatedAt, 30_000, marketSession);
   const historyState = useMemo(() => deriveMarketResourceState({ enabled: Boolean(id && perd), hasData: deals.length > 0, resolved: historyData !== undefined, isLoading, isValidating, error, updatedAt: historyUpdatedAt, marketSession, staleAfterMs: 30_000, now }), [id, perd, deals.length, historyData, isLoading, isValidating, error, historyUpdatedAt, marketSession, now]);
   const { t } = useTranslation();
-  const latest = deals.at(-1);
+  const latest = deals[deals.length - 1];
   const periodLabel = t(`Pages.Detail.summary.${perd === UrlTaPerdOptions.Hour ? "hour" : perd === UrlTaPerdOptions.Day ? "day" : "week"}`);
   const chartSummary = t("a11y.chartSummary", {
     title: getChartTitle(CHART_CONFIG[current], t),

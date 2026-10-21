@@ -22,19 +22,19 @@ export default function InvestorPositionsSection({
           colorRule="negative_red"
         />
         <MetricItem
-          label={`近二週外資 ${investorPositions.recent_w1_name}`}
+          label={`近二週外資 ${investorPositions.recent_w2_name}`}
           value={investorPositions.recent_w2_foreign_ratio}
           suffix="%"
           colorRule="negative_red"
         />
         <MetricItem
-          label={`近三週外資 ${investorPositions.recent_w1_name}`}
+          label={`近三週外資 ${investorPositions.recent_w3_name}`}
           value={investorPositions.recent_w3_foreign_ratio}
           suffix="%"
           colorRule="negative_red"
         />
         <MetricItem
-          label={`近四週外資 ${investorPositions.recent_w1_name}`}
+          label={`近四週外資 ${investorPositions.recent_w4_name}`}
           value={investorPositions.recent_w4_foreign_ratio}
           suffix="%"
           colorRule="negative_red"

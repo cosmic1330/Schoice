@@ -9,6 +9,8 @@ source:
   - src/pages/Login/Content.tsx
   - src/pages/Register/Content.tsx
   - src/store/Cloud.store.ts
+  - mcp/strategyRepository.ts
+  - mcp/server.ts
   - src/pages/Schoice/Setting/DeleteAccount.tsx
   - supabase/functions/delete-account/index.ts
 verified: "2026-10-02"
@@ -27,6 +29,15 @@ There is no Google OAuth, deep-link plugin, or system-browser callback flow in t
 ## Authorization boundary
 
 Frontend operations pass the authenticated user ID when reading or mutating user-owned Supabase rows. Database authorization must still be enforced by Supabase policies; client-side filtering is not a security boundary. `superbase_schema.sql`, deployed migrations, and the live Supabase project must be reviewed together before changing authorization behavior.
+
+The App-managed MCP endpoint has no MCP connection token and accepts only
+loopback requests with validated Host/Origin headers. For Supabase-backed tools,
+the App synchronizes its short-lived user access token to a private local
+session file. The MCP server verifies that Supabase token, derives the user ID,
+and exposes no caller-controlled `user_id`. `create_strategy` writes the same `user_prompts` representation as
+`Cloud.store`, so AI-created strategies appear in the desktop application after
+its cloud state reloads. Service-role credentials are not permitted in MCP
+configuration.
 
 ## Account deletion
 

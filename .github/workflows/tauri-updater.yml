@@ -56,6 +56,11 @@ jobs:
         with:
           node-version: lts/*
 
+      - name: 📦 安裝 Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.1.23
+
       - name: 🦀 安裝 Rust
         uses: dtolnay/rust-toolchain@stable
         with:

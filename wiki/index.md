@@ -3,7 +3,7 @@ okf_version: "0.2"
 type: index
 title: Schoice Knowledge Base
 status: active
-verified: "2026-10-02"
+verified: "2026-10-20"
 ---
 
 # Schoice Knowledge Base
@@ -16,6 +16,7 @@ Schoice is a Tauri 2 desktop stock-screening application. React renders the UI, 
 
 - [System overview](architecture/system-overview.md) — runtime layers, routing, state boundaries, persistence, and cross-window sync.
 - [Build and release](architecture/build-and-release.md) — local commands, environment inputs, packaging, signing, and CI release flow.
+- [MCP server](architecture/mcp-server.md) — AI tool boundary, App-managed loopback HTTP transport, and user authentication.
 
 ## Core Concepts
 
@@ -27,6 +28,7 @@ Schoice is a Tauri 2 desktop stock-screening application. React renders the UI, 
 
 - [ADR-0001: Local-first market data and cloud user data](decisions/0001-local-first-market-data.md)
 - [ADR-0002: Dedicated sync worker window](decisions/0002-dedicated-sync-worker-window.md)
+- [ADR-0003: App-managed local MCP server with shared domain services](decisions/0003-local-stdio-mcp-server.md)
 
 ## Development Conventions
 

@@ -1,4 +1,5 @@
 import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
+import { invoke } from "@tauri-apps/api/core";
 import {
   createContext,
   ReactNode,
@@ -115,6 +116,18 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       reload(user.id);
     }
   }, [user]);
+
+  useEffect(() => {
+    void invoke("set_mcp_session", {
+      session: {
+        supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+        supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        supabaseAccessToken: session?.access_token ?? null,
+      },
+    }).catch((error) => {
+      console.error("Failed to synchronize the MCP session", error);
+    });
+  }, [session?.access_token]);
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };

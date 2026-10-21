@@ -1,5 +1,42 @@
 # 策略系統說明 (Strategy System)
 
+## MCP server
+
+The local MCP server exposes these AI tools:
+
+- `get_strategy_capabilities`
+- `validate_strategy`
+- `list_strategies`
+- `create_strategy`
+- `search_stocks`
+- `screen_stocks`
+- `get_stock_detail`
+- `get_stock_history`
+
+The desktop app automatically starts a tokenless, loopback-only Streamable HTTP
+endpoint at `http://127.0.0.1:37621/mcp`. The server accepts only the literal
+`127.0.0.1` Host/Origin and is stopped with the app. `create_strategy` displays
+an approval dialog in Schoice before writing.
+
+For development and verification:
+
+```bash
+pnpm mcp:typecheck
+pnpm mcp:test
+pnpm mcp:http
+pnpm mcp
+```
+
+`search_stocks`, inline validation, capability discovery, and inline screening
+work from the installed Schoice SQLite database without Supabase configuration.
+Set `SCHOICE_DATABASE_PATH` only when the database is outside the normal Tauri
+application data directory.
+
+`list_strategies`, `create_strategy`, validation by `strategy_id`, and screening
+by `strategy_id` use the active Schoice Supabase session. This is cloud-user
+authentication, not an MCP connection token. Never use a Supabase service-role
+key. See [MCP server architecture](wiki/architecture/mcp-server.md).
+
 本系統允許使用者建立自定義選股策略，透過組合多個條件（Prompts）來進行資料篩選。
 
 ### StorePrompt 結構

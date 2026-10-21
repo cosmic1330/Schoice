@@ -1,56 +1,13 @@
 import Database from "@tauri-apps/plugin-sql";
 import { supabase } from "../tools/supabase";
 import { FundamentalPrompts } from "../types";
+import { FUNDAMENTAL_INDICATORS } from "../domain/strategy/fundamentalCatalog";
 
 export class StockFundamentalQueryBuilder {
   private db: Database | null = null;
 
-  protected mapping: Record<string, { key: string; table: string }> = {
-    // financial_metric
-    本益比: { key: "pe", table: "financial_metric" },
-    股價淨值比: { key: "pb", table: "financial_metric" },
-    殖利率: { key: "dividend_yield", table: "financial_metric" },
-    營業毛利率: { key: "gross_profit_margin", table: "financial_metric" },
-    營業利益率: { key: "operating_margin", table: "financial_metric" },
-    稅前淨利率: { key: "pre_tax_profit_margin", table: "financial_metric" },
-    資產報酬率: { key: "roa", table: "financial_metric" },
-    股東權益報酬率: { key: "roe", table: "financial_metric" },
-    每股淨值: { key: "book_value_per_share", table: "financial_metric" },
-
-    // recent_fundamental (EPS)
-    EPS近一季: { key: "eps_recent_q1", table: "recent_fundamental" },
-    EPS近二季: { key: "eps_recent_q2", table: "recent_fundamental" },
-    EPS近三季: { key: "eps_recent_q3", table: "recent_fundamental" },
-    EPS近四季: { key: "eps_recent_q4", table: "recent_fundamental" },
-    EPS近一年: { key: "eps_recent_y1", table: "recent_fundamental" },
-    EPS近二年: { key: "eps_recent_y2", table: "recent_fundamental" },
-    EPS近三年: { key: "eps_recent_y3", table: "recent_fundamental" },
-    EPS近四年: { key: "eps_recent_y4", table: "recent_fundamental" },
-
-    // recent_fundamental (Revenue)
-    "營收近一月(月增率)": { key: "revenue_recent_m1_mom", table: "recent_fundamental" },
-    "營收近一月(年增率)": { key: "revenue_recent_m1_yoy", table: "recent_fundamental" },
-    "營收近一月(累計年增率)": { key: "revenue_recent_m1_yoy_acc", table: "recent_fundamental" },
-    "營收近二月(月增率)": { key: "revenue_recent_m2_mom", table: "recent_fundamental" },
-    "營收近二月(年增率)": { key: "revenue_recent_m2_yoy", table: "recent_fundamental" },
-    "營收近二月(累計年增率)": { key: "revenue_recent_m2_yoy_acc", table: "recent_fundamental" },
-    "營收近三月(月增率)": { key: "revenue_recent_m3_mom", table: "recent_fundamental" },
-    "營收近三月(年增率)": { key: "revenue_recent_m3_yoy", table: "recent_fundamental" },
-    "營收近三月(累計年增率)": { key: "revenue_recent_m3_yoy_acc", table: "recent_fundamental" },
-    "營收近四月(月增率)": { key: "revenue_recent_m4_mom", table: "recent_fundamental" },
-    "營收近四月(年增率)": { key: "revenue_recent_m4_yoy", table: "recent_fundamental" },
-    "營收近四月(累計年增率)": { key: "revenue_recent_m4_yoy_acc", table: "recent_fundamental" },
-
-    // investor_positions
-    近一週外資持股比例: { key: "recent_w1_foreign_ratio", table: "investor_positions" },
-    近一週大戶持股比例: { key: "recent_w1_big_investor_ratio", table: "investor_positions" },
-    近二週外資持股比例: { key: "recent_w2_foreign_ratio", table: "investor_positions" },
-    近二週大戶持股比例: { key: "recent_w2_big_investor_ratio", table: "investor_positions" },
-    近三週外資持股比例: { key: "recent_w3_foreign_ratio", table: "investor_positions" },
-    近三週大戶持股比例: { key: "recent_w3_big_investor_ratio", table: "investor_positions" },
-    近四週外資持股比例: { key: "recent_w4_foreign_ratio", table: "investor_positions" },
-    近四週大戶持股比例: { key: "recent_w4_big_investor_ratio", table: "investor_positions" },
-  };
+  protected mapping: Record<string, { key: string; table: string }> =
+    FUNDAMENTAL_INDICATORS;
 
   protected operatorMapping: Record<string, string> = {
     小於: "<",

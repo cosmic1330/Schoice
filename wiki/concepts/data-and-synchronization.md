@@ -16,6 +16,7 @@ source:
   - src-tauri/src/commands/database.rs
   - src/store/SyncDashboard.store.ts
   - src/classes/StockFundamentalQueryBuilder.ts
+  - mcp/stockDetailService.ts
 verified: "2026-10-17"
 ---
 
@@ -44,6 +45,12 @@ The `/detail/:id` analysis workspace intentionally uses separate paths for separ
 - TDCC holder bands are read from the existing Supabase `tdcc_holder` table through `src/api/tdccApi.ts`.
 
 These paths are not interchangeable. In particular, do not make Detail history depend on the chip-data command or duplicate the native market-history subsystem from another application without an explicit architecture decision.
+
+The local MCP server exposes the synchronized SQLite subset through
+`get_stock_detail` and `get_stock_history`. This is intentionally not a claim of
+parity with every Detail slide: MCP responses mark TDCC and FinMind chip sections
+as unavailable locally until those external paths receive an explicit MCP auth,
+cache, and failure contract.
 
 ## Synchronization worker protocol
 

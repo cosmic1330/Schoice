@@ -10,13 +10,21 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "app": "tauri dev",
-    "package": "tauri build"
+    "package": "tauri build",
+    "mcp": "node --import tsx mcp/index.ts",
+    "mcp:http": "bun mcp/http.ts",
+    "mcp:sidecar:build": "node scripts/build-mcp-sidecar.mjs",
+    "build:desktop": "node scripts/build-desktop.mjs",
+    "dev:desktop": "node scripts/dev-desktop.mjs",
+    "mcp:typecheck": "tsc -p tsconfig.mcp.json",
+    "mcp:test": "node --import tsx --test mcp/server.test.ts src/domain/strategy/validation.test.ts"
   },
   "dependencies": {
     "@ch20026103/anysis": "0.0.20-alpha.0",
     "@ch20026103/backtest-lib": "0.0.3-alpha1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@modelcontextprotocol/server": "^2.3.1",
     "@mui/icons-material": "^7.3.1",
     "@mui/material": "^7.3.1",
     "@supabase/supabase-js": "^2.54.0",
@@ -32,6 +40,7 @@
     "@tauri-apps/plugin-sql": "^2.3.0",
     "@tauri-apps/plugin-store": "^2.4.1",
     "@tauri-apps/plugin-updater": "^2.9.0",
+    "better-sqlite3": "^13.0.3",
     "cheerio": "^1.1.2",
     "framer-motion": "^12.23.12",
     "i18next": "^25.3.4",
@@ -50,14 +59,19 @@
     "recharts": "^2.15.4",
     "remark-gfm": "^4.0.1",
     "swr": "^2.3.6",
+    "zod": "^4.6.7",
     "zustand": "^5.0.7"
   },
   "devDependencies": {
+    "@modelcontextprotocol/client": "^2.3.1",
     "@tauri-apps/cli": "2.9.6",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/lodash-es": "^4.17.12",
+    "@types/node": "^26.6.5",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
+    "tsx": "^4.23.15",
     "typescript": "~5.8.3",
     "vite": "^7.0.4"
   }

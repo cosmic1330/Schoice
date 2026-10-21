@@ -1,4 +1,5 @@
 mod commands;
+mod mcp_sidecar;
 mod sqlite;
 use std::fs;
 use tauri::Manager;
@@ -146,6 +147,9 @@ pub fn run() {
                 .build(),
         )
         .setup(|app| {
+            if let Err(error) = mcp_sidecar::start(app) {
+                log::error!("Failed to start local MCP sidecar: {error}");
+            }
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 update(handle).await.unwrap();
@@ -155,6 +159,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             get_db_size,
+            mcp_sidecar::set_mcp_session,
             commands::chip::get_chip_data,
             commands::database::execute_sql_transaction
         ])
