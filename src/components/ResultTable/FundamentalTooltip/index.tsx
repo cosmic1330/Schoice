@@ -20,6 +20,8 @@ interface FundamentalTooltipProps {
   row: StockTableType;
 }
 
+const SECTION_LABELS = ["估值指標", "營收與 EPS", "投資人持倉", "集保戶數"];
+
 export default function FundamentalTooltip({ row }: FundamentalTooltipProps) {
   const { db } = useContext(DatabaseContext);
   const [financialMetrics, setFinancialMetrics] =
@@ -29,77 +31,81 @@ export default function FundamentalTooltip({ row }: FundamentalTooltipProps) {
   const [investorPositions, setInvestorPositions] = useState<any>(null);
   const [tdccHolder, setTdccHolder] =
     useState<TdccHolderTableType | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [pendingSections, setPendingSections] = useState<string[]>(SECTION_LABELS);
+  const [failedSections, setFailedSections] = useState<string[]>([]);
 
   useEffect(() => {
     let isCurrentRequest = true;
 
-    const fetchData = async () => {
-      setLoading(true);
-      setFinancialMetrics(null);
-      setRecentFundamental(null);
-      setInvestorPositions(null);
-      setTdccHolder(null);
+    setPendingSections(SECTION_LABELS);
+    setFailedSections([]);
+    setFinancialMetrics(null);
+    setRecentFundamental(null);
+    setInvestorPositions(null);
+    setTdccHolder(null);
 
-      const fetchTable = async (table: string): Promise<any> => {
-        // 1. Try Local First
-        if (db) {
-          try {
-            const localData: any[] = await db.select(
-              `SELECT * FROM ${table} WHERE stock_id = ?`,
-              [row.stock_id]
-            );
-            if (localData && localData.length > 0) {
-              return localData[0];
-            }
-          } catch (e) {
-            console.warn(`[Tooltip] Local fetch failed for ${table}:`, e);
-          }
-        }
-
-        // 2. Fallback to Cloud
+    const fetchTable = async (table: string): Promise<any> => {
+      // 1. Try Local First
+      if (db) {
         try {
-          const { data, error } = await supabase
-            .from(table)
-            .select("*")
-            .eq("stock_id", row.stock_id)
-            .maybeSingle();
-
-          if (error) throw error;
-          return data;
+          const localData: any[] = await db.select(
+            `SELECT * FROM ${table} WHERE stock_id = ?`,
+            [row.stock_id],
+          );
+          if (localData && localData.length > 0) {
+            return localData[0];
+          }
         } catch (e) {
-          console.error(`[Tooltip] Cloud fetch failed for ${table}:`, e);
-          return null;
+          console.warn(`[Tooltip] Local fetch failed for ${table}:`, e);
         }
-      };
+      }
 
+      // 2. Fallback to Cloud
+      if (!isCurrentRequest) return null;
+      const { data, error } = await supabase
+        .from(table)
+        .select("*")
+        .eq("stock_id", row.stock_id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    };
+
+    // Publish each section as soon as it is ready; remote data must not gate
+    // rendering of sections already available in SQLite.
+    const loadSection = async <T,>(
+      label: string,
+      request: () => Promise<T>,
+      apply: (data: T) => void,
+    ) => {
       try {
-        const [financialData, recentData, investorData, tdccData] =
-          await Promise.all([
-            fetchTable("financial_metric"),
-            fetchTable("recent_fundamental"),
-            fetchTable("investor_positions"),
-            getTdccHolder(row.stock_id).catch((error) => {
-              console.error("[Tooltip] TDCC fetch failed:", error);
-              return null;
-            }),
-          ]);
-
-        if (!isCurrentRequest) return;
-        setFinancialMetrics(financialData);
-        setRecentFundamental(recentData);
-        setInvestorPositions(investorData);
-        setTdccHolder(tdccData);
+        const data = await request();
+        if (isCurrentRequest) apply(data);
       } catch (error) {
         if (isCurrentRequest) {
-          console.error("Error fetching tooltip data:", error);
+          console.error(`[Tooltip] ${label} fetch failed:`, error);
+          setFailedSections((sections) => [...sections, label]);
         }
       } finally {
-        if (isCurrentRequest) setLoading(false);
+        if (isCurrentRequest) {
+          setPendingSections((sections) =>
+            sections.filter((name) => name !== label),
+          );
+        }
       }
     };
 
-    fetchData();
+    void loadSection(
+      "估值指標", () => fetchTable("financial_metric"), setFinancialMetrics,
+    );
+    void loadSection(
+      "營收與 EPS", () => fetchTable("recent_fundamental"), setRecentFundamental,
+    );
+    void loadSection(
+      "投資人持倉", () => fetchTable("investor_positions"), setInvestorPositions,
+    );
+    void loadSection("集保戶數", () => getTdccHolder(row.stock_id), setTdccHolder);
     return () => {
       isCurrentRequest = false;
     };
@@ -137,8 +143,19 @@ export default function FundamentalTooltip({ row }: FundamentalTooltipProps) {
         {tdccHolder && <TdccHolderSection holder={tdccHolder} />}
       </Grid>
 
-      {/* 如果沒有資料的提示 */}
-      {!hasData && !loading && (
+      {pendingSections.length > 0 && (
+        <Typography variant="caption" role="status" sx={{ display: "block", mt: 1, opacity: 0.7 }}>
+          載入中：{pendingSections.join("、")}
+        </Typography>
+      )}
+      {failedSections.length > 0 && (
+        <Typography variant="caption" sx={{ display: "block", mt: 1, opacity: 0.7 }}>
+          暫時無法載入：{failedSections.join("、")}
+        </Typography>
+      )}
+
+      {/* Only report no data once all sections finished successfully. */}
+      {!hasData && pendingSections.length === 0 && failedSections.length === 0 && (
         <Box sx={{ textAlign: "center", py: 3 }}>
           <Typography variant="body2" color="text.secondary">
             暫無財務數據

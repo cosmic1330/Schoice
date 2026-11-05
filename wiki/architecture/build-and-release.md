@@ -30,7 +30,7 @@ pnpm package
 - `pnpm app` runs `tauri dev`; Vite uses fixed port `1420` and fails rather than selecting another port.
 - `pnpm package` runs the Tauri build and configured desktop bundlers.
 
-There is currently no repository test script. Do not claim automated test coverage without adding and running an explicit test command.
+Targeted tests are available through `pnpm mcp:test`, `pnpm sync:test`, and `cargo test --manifest-path src-tauri/Cargo.toml --lib`. These do not replace platform-specific desktop UI validation.
 
 ## Environment inputs
 

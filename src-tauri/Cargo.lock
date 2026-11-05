@@ -4487,6 +4487,7 @@ dependencies = [
  "dashmap",
  "log",
  "reqwest",
+ "rfd",
  "serde",
  "serde_json",
  "sqlx",
@@ -4503,6 +4504,7 @@ dependencies = [
  "tauri-plugin-sql",
  "tauri-plugin-store",
  "tauri-plugin-updater",
+ "tempfile",
  "tokio",
 ]
 

@@ -12,6 +12,7 @@ source:
   - src/pages/Detail/index.tsx
   - src-tauri/src/commands/chip.rs
   - src-tauri/src/lib.rs
+  - src-tauri/src/sqlite/recovery.rs
 verified: "2026-10-02"
 ---
 
@@ -46,7 +47,11 @@ Before adding state, choose the narrowest owner. Do not mirror the same authorit
 
 `useDatabase` loads `sqlite:schoice.db` through the Tauri SQL plugin. Schema history is defined by ordered migrations in `src-tauri/src/sqlite/migrations.rs`; the latest migration, not prose documentation, defines the installed schema.
 
-Database migrations are registered by the Tauri builder in `src-tauri/src/lib.rs`. A migration failure prevents normal startup and enters the existing recovery path, so migration edits are high-risk and should be verified against both a new and an existing database.
+Before the SQL plugin preloads the database or the MCP sidecar starts, the `database-recovery` plugin runs the same migrations against `app_config_dir()/schoice.db`, matching the SQL plugin's path. The preflight closes its SQLite pool on both success and failure. The SQL plugin retains migration registration and subsequently verifies the already-applied history.
+
+Migration failures offer an explicit native backup-and-rebuild action. Recovery first builds and migrates a replacement database in a unique `schoice-recovery-*` directory alongside the database. Only after validation succeeds does it move the original database and any `-wal`, `-shm`, and `-journal` files into that directory and install the replacement. File-operation failures attempt to restore files already moved; any restoration failures report the backup location. Backups are retained, never automatically deleted. Cancelling or failed recovery stops startup; successful recovery continues with an empty market database that requires synchronization. Open/permission errors are reported separately and do not offer a reset.
+
+Recovery uses synchronous `rfd` native dialogs before the event loop starts, with the same backend/features already used by the dialog plugin. Do not use Tauri `blocking_show` in this startup hook: it dispatches to the main event loop and can deadlock. No shell commands or platform-specific database paths are used. Migration changes should be verified against both a new and an existing database; recovery regression tests run with `cargo test --manifest-path src-tauri/Cargo.toml sqlite::recovery::tests --lib`.
 
 ## Cross-window synchronization
 

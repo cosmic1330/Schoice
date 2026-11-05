@@ -128,13 +128,36 @@ export default memo(function ResultTableRow({
       <TableCell sx={{ width: 100 }}>
         <Tooltip
           placement="top-start"
+          leaveDelay={300}
           title={<FundamentalTooltip row={row} />}
           slotProps={{
             popper: {
+              modifiers: [
+                {
+                  name: "flip",
+                  options: {
+                    fallbackPlacements: [
+                      "bottom-start",
+                      "right-start",
+                      "left-start",
+                    ],
+                  },
+                },
+                {
+                  name: "preventOverflow",
+                  options: { altAxis: true, padding: 12 },
+                },
+              ],
               sx: {
                 "& .MuiTooltip-tooltip": {
-                  width: "auto",
-                  maxWidth: "none",
+                  boxSizing: "border-box",
+                  width: "min(480px, calc(100vw - 24px))",
+                  maxWidth: "calc(100vw - 24px)",
+                  maxHeight: "calc(100vh - 24px)",
+                  overflowX: "hidden",
+                  overflowY: "auto",
+                  overscrollBehavior: "contain",
+                  scrollbarGutter: "stable",
                 },
               },
             },

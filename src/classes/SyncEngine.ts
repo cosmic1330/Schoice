@@ -27,8 +27,6 @@ import {
   SkillsTableType,
   StockTableType,
   TaListType,
-  TimeSharingDealTableOptions,
-  TimeSharingSkillsTableOptions,
   UrlTaPerdOptions,
   UrlType,
 } from "../types";
@@ -637,7 +635,7 @@ export default class SyncEngine {
     // 2. Any date >= the 5th most recent date in DB (Safe buffer)
     // 3. Avoid persisting an unfinished daily candle while the market is open.
     // Weekly candles are intentionally kept: the provider updates the same
-    // (stock_id, t) row during the week and saveDeals/saveSkills replace it.
+    // (stock_id, t) row during the week and saveWeeklyBatch replaces it.
     let thresholdT = "";
     const bufferSize = perd === UrlTaPerdOptions.Week ? 5 : 3;
 
@@ -682,8 +680,7 @@ export default class SyncEngine {
         skills,
       );
     } else {
-      await this.dbHelper.saveDeals(deals, dealTable);
-      await this.dbHelper.saveSkills(skills, skillTable);
+      await this.dbHelper.saveDailyBatch(deals, skills);
     }
   }
 
@@ -721,14 +718,7 @@ export default class SyncEngine {
       ta,
       missing.map((m) => String(m.t)),
     );
-    await this.dbHelper.saveTimeSharingDeals(
-      deals,
-      TimeSharingDealTableOptions.HourlyDeal,
-    );
-    await this.dbHelper.saveTimeSharingSkills(
-      skills,
-      TimeSharingSkillsTableOptions.HourlySkills,
-    );
+    await this.dbHelper.saveHourlyBatch(deals, skills);
   }
 
   // --- Support methods for calculation (Internalized logic from SqliteDataManager) ---

@@ -81,12 +81,30 @@ export default class SyncDatabaseHelper {
   /**
    * Batch execution helper
    */
-  private async executeBatch(sqlBase: string, entries: string[], batchSize: number = 200) {
+  private buildBatch(sqlBase: string, entries: string[], batchSize: number = 200): string[] {
+    const statements: string[] = [];
     for (let i = 0; i < entries.length; i += batchSize) {
       const chunk = entries.slice(i, i + batchSize);
       const sql = `${sqlBase} ${chunk.join(", ")}`;
-      await this.db.execute(sql);
+      statements.push(sql);
     }
+    return statements;
+  }
+
+  async saveDailyBatch(deals: DealTableType[], skills: SkillsTableType[]) {
+    const statements = [
+      ...this.buildDeals(deals, DealTableOptions.DailyDeal),
+      ...this.buildSkills(skills, SkillsTableOptions.DailySkills),
+    ];
+    if (statements.length) await invoke("execute_sql_transaction", { statements });
+  }
+
+  async saveHourlyBatch(deals: TimeSharingDealTableType[], skills: TimeSharingSkillsTableType[]) {
+    const statements = [
+      ...this.buildTimeSharingDeals(deals, TimeSharingDealTableOptions.HourlyDeal),
+      ...this.buildTimeSharingSkills(skills, TimeSharingSkillsTableOptions.HourlySkills),
+    ];
+    if (statements.length) await invoke("execute_sql_transaction", { statements });
   }
 
   /**
@@ -190,53 +208,42 @@ export default class SyncDatabaseHelper {
   /**
    * Save deal data in bulk.
    */
-  async saveDeals(deals: DealTableType[], table: DealTableOptions) {
-    if (deals.length === 0) return;
-    try {
-      const entries = deals.map(d => 
-        `('${d.stock_id}', '${d.t}', ${this.sqlSafe(d.c)}, ${this.sqlSafe(d.o)}, ${this.sqlSafe(d.h)}, ${this.sqlSafe(d.l)}, ${this.sqlSafe(d.v)})`
-      );
-      const sqlBase = `INSERT OR REPLACE INTO ${table} (stock_id, t, c, o, h, l, v) VALUES`;
-      await this.executeBatch(sqlBase, entries);
-    } catch (e) {
-      error(`[SyncDB] SaveDeals error: ${e}`);
-    }
+  private buildDeals(deals: DealTableType[], table: DealTableOptions): string[] {
+    const entries = deals.map(d =>
+      `('${d.stock_id}', '${d.t}', ${this.sqlSafe(d.c)}, ${this.sqlSafe(d.o)}, ${this.sqlSafe(d.h)}, ${this.sqlSafe(d.l)}, ${this.sqlSafe(d.v)})`
+    );
+    const sqlBase = `INSERT OR REPLACE INTO ${table} (stock_id, t, c, o, h, l, v) VALUES`;
+    return this.buildBatch(sqlBase, entries);
   }
 
   /**
    * Save skills data in bulk.
    */
-  async saveSkills(skills: SkillsTableType[], table: SkillsTableOptions) {
-    if (skills.length === 0) return;
-    try {
-      const columns = ["stock_id", "t", "ma5", "ma5_ded", "ma10", "ma10_ded", "ma20", "ma20_ded", "ma30", "ma30_ded", "ma50", "ma50_ded", "ma60", "ma60_ded", "ma120", "ma120_ded", "ma240", "ma240_ded", "ema5", "ema10", "ema20", "ema60", "ema120", "ema200", "macd", "dif", "osc", "k", "d", "j", "rsi5", "rsi10", "bollUb", "bollMa", "bollLb", "obv", "obv_ma5", "obv_ma10", "obv_ma20", "obv_ma60", "obv_ema5", "obv_ema10", "obv_ema20", "obv_ema60", "mfi", "tenkan", "kijun", "senkouA", "senkouB", "chikou", "di_plus", "di_minus", "adx", "cmf", "cmf_ema5", "turnover_rate"];
-      
-      const entries = skills.map(s => {
-        const values = [
-          `'${s.stock_id}'`, `'${s.t}'`, 
-          this.sqlSafe(s.ma5), this.sqlSafe(s.ma5_ded), this.sqlSafe(s.ma10), this.sqlSafe(s.ma10_ded),
-          this.sqlSafe(s.ma20), this.sqlSafe(s.ma20_ded), this.sqlSafe(s.ma30), this.sqlSafe(s.ma30_ded),
-          this.sqlSafe(s.ma50), this.sqlSafe(s.ma50_ded), this.sqlSafe(s.ma60), this.sqlSafe(s.ma60_ded),
-          this.sqlSafe(s.ma120), this.sqlSafe(s.ma120_ded), this.sqlSafe(s.ma240), this.sqlSafe(s.ma240_ded),
-          this.sqlSafe(s.ema5), this.sqlSafe(s.ema10), this.sqlSafe(s.ema20), this.sqlSafe(s.ema60), this.sqlSafe(s.ema120), this.sqlSafe(s.ema200),
-          this.sqlSafe(s.macd), this.sqlSafe(s.dif), this.sqlSafe(s.osc), 
-          this.sqlSafe(s.k), this.sqlSafe(s.d), this.sqlSafe(s.j), 
-          this.sqlSafe(s.rsi5), this.sqlSafe(s.rsi10),
-          this.sqlSafe(s.bollUb), this.sqlSafe(s.bollMa), this.sqlSafe(s.bollLb),
-          this.sqlSafe(s.obv), this.sqlSafe(s.obv_ma5), this.sqlSafe(s.obv_ma10), this.sqlSafe(s.obv_ma20), this.sqlSafe(s.obv_ma60),
-          this.sqlSafe(s.obv_ema5), this.sqlSafe(s.obv_ema10), this.sqlSafe(s.obv_ema20), this.sqlSafe(s.obv_ema60),
-          this.sqlSafe(s.mfi), this.sqlSafe(s.tenkan), this.sqlSafe(s.kijun), this.sqlSafe(s.senkouA), this.sqlSafe(s.senkouB), this.sqlSafe(s.chikou),
-          this.sqlSafe(s.di_plus), this.sqlSafe(s.di_minus), this.sqlSafe(s.adx), this.sqlSafe(s.cmf), this.sqlSafe(s.cmf_ema5),
-          this.sqlSafe(s.turnover_rate)
-        ];
-        return `(${values.join(", ")})`;
-      });
+  private buildSkills(skills: SkillsTableType[], table: SkillsTableOptions): string[] {
+    const columns = ["stock_id", "t", "ma5", "ma5_ded", "ma10", "ma10_ded", "ma20", "ma20_ded", "ma30", "ma30_ded", "ma50", "ma50_ded", "ma60", "ma60_ded", "ma120", "ma120_ded", "ma240", "ma240_ded", "ema5", "ema10", "ema20", "ema60", "ema120", "ema200", "macd", "dif", "osc", "k", "d", "j", "rsi5", "rsi10", "bollUb", "bollMa", "bollLb", "obv", "obv_ma5", "obv_ma10", "obv_ma20", "obv_ma60", "obv_ema5", "obv_ema10", "obv_ema20", "obv_ema60", "mfi", "tenkan", "kijun", "senkouA", "senkouB", "chikou", "di_plus", "di_minus", "adx", "cmf", "cmf_ema5", "turnover_rate"];
+    const entries = skills.map(s => {
+      const values = [
+        `'${s.stock_id}'`, `'${s.t}'`,
+        this.sqlSafe(s.ma5), this.sqlSafe(s.ma5_ded), this.sqlSafe(s.ma10), this.sqlSafe(s.ma10_ded),
+        this.sqlSafe(s.ma20), this.sqlSafe(s.ma20_ded), this.sqlSafe(s.ma30), this.sqlSafe(s.ma30_ded),
+        this.sqlSafe(s.ma50), this.sqlSafe(s.ma50_ded), this.sqlSafe(s.ma60), this.sqlSafe(s.ma60_ded),
+        this.sqlSafe(s.ma120), this.sqlSafe(s.ma120_ded), this.sqlSafe(s.ma240), this.sqlSafe(s.ma240_ded),
+        this.sqlSafe(s.ema5), this.sqlSafe(s.ema10), this.sqlSafe(s.ema20), this.sqlSafe(s.ema60), this.sqlSafe(s.ema120), this.sqlSafe(s.ema200),
+        this.sqlSafe(s.macd), this.sqlSafe(s.dif), this.sqlSafe(s.osc),
+        this.sqlSafe(s.k), this.sqlSafe(s.d), this.sqlSafe(s.j),
+        this.sqlSafe(s.rsi5), this.sqlSafe(s.rsi10),
+        this.sqlSafe(s.bollUb), this.sqlSafe(s.bollMa), this.sqlSafe(s.bollLb),
+        this.sqlSafe(s.obv), this.sqlSafe(s.obv_ma5), this.sqlSafe(s.obv_ma10), this.sqlSafe(s.obv_ma20), this.sqlSafe(s.obv_ma60),
+        this.sqlSafe(s.obv_ema5), this.sqlSafe(s.obv_ema10), this.sqlSafe(s.obv_ema20), this.sqlSafe(s.obv_ema60),
+        this.sqlSafe(s.mfi), this.sqlSafe(s.tenkan), this.sqlSafe(s.kijun), this.sqlSafe(s.senkouA), this.sqlSafe(s.senkouB), this.sqlSafe(s.chikou),
+        this.sqlSafe(s.di_plus), this.sqlSafe(s.di_minus), this.sqlSafe(s.adx), this.sqlSafe(s.cmf), this.sqlSafe(s.cmf_ema5),
+        this.sqlSafe(s.turnover_rate)
+      ];
+      return `(${values.join(", ")})`;
+    });
 
-      const sqlBase = `INSERT OR REPLACE INTO ${table} (${columns.join(", ")}) VALUES`;
-      await this.executeBatch(sqlBase, entries, 50); // Small batch for very wide table
-    } catch (e) {
-      error(`[SyncDB] SaveSkills error: ${e}`);
-    }
+    const sqlBase = `INSERT OR REPLACE INTO ${table} (${columns.join(", ")}) VALUES`;
+    return this.buildBatch(sqlBase, entries, 50);
   }
 
   /**
@@ -380,34 +387,24 @@ export default class SyncDatabaseHelper {
   /**
    * Bulk Save TimeSharing Deals
    */
-  async saveTimeSharingDeals(deals: TimeSharingDealTableType[], table: TimeSharingDealTableOptions) {
-    if (deals.length === 0) return;
-    try {
-      const entries = deals.map(d => 
-        `('${d.stock_id}', '${d.ts}', ${this.sqlSafe(d.c)}, ${this.sqlSafe(d.o)}, ${this.sqlSafe(d.h)}, ${this.sqlSafe(d.l)}, ${this.sqlSafe(d.v)})`
-      );
-      const sqlBase = `INSERT OR REPLACE INTO ${table} (stock_id, ts, c, o, h, l, v) VALUES`;
-      await this.executeBatch(sqlBase, entries);
-    } catch (e) {
-      error(`[SyncDB] SaveTimeSharingDeals error: ${e}`);
-    }
+  private buildTimeSharingDeals(deals: TimeSharingDealTableType[], table: TimeSharingDealTableOptions): string[] {
+    const entries = deals.map(d =>
+      `('${d.stock_id}', '${d.ts}', ${this.sqlSafe(d.c)}, ${this.sqlSafe(d.o)}, ${this.sqlSafe(d.h)}, ${this.sqlSafe(d.l)}, ${this.sqlSafe(d.v)})`
+    );
+    const sqlBase = `INSERT OR REPLACE INTO ${table} (stock_id, ts, c, o, h, l, v) VALUES`;
+    return this.buildBatch(sqlBase, entries);
   }
 
   /**
    * Bulk Save TimeSharing Skills
    */
-  async saveTimeSharingSkills(skills: TimeSharingSkillsTableType[], table: TimeSharingSkillsTableOptions) {
-    if (skills.length === 0) return;
-    try {
-      const entries = skills.map(s => {
-        // ... Similar mapping to saveSkills but for time-sharing columns
-        return `('${s.stock_id}', '${s.ts}', ${this.sqlSafe(s.ma5)}, ${this.sqlSafe(s.ma5_ded)}, ${this.sqlSafe(s.ma10)}, ${this.sqlSafe(s.ma10_ded)}, ${this.sqlSafe(s.ma20)}, ${this.sqlSafe(s.ma20_ded)}, ${this.sqlSafe(s.ma30)}, ${this.sqlSafe(s.ma30_ded)}, ${this.sqlSafe(s.ma50)}, ${this.sqlSafe(s.ma50_ded)}, ${this.sqlSafe(s.ma60)}, ${this.sqlSafe(s.ma60_ded)}, ${this.sqlSafe(s.ma120)}, ${this.sqlSafe(s.ma120_ded)}, ${this.sqlSafe(s.ma240)}, ${this.sqlSafe(s.ma240_ded)}, ${this.sqlSafe(s.ema5)}, ${this.sqlSafe(s.ema10)}, ${this.sqlSafe(s.ema20)}, ${this.sqlSafe(s.ema60)}, ${this.sqlSafe(s.ema120)}, ${this.sqlSafe(s.ema200)}, ${this.sqlSafe(s.macd)}, ${this.sqlSafe(s.dif)}, ${this.sqlSafe(s.osc)}, ${this.sqlSafe(s.k)}, ${this.sqlSafe(s.d)}, ${this.sqlSafe(s.j)}, ${this.sqlSafe(s.rsi5)}, ${this.sqlSafe(s.rsi10)}, ${this.sqlSafe(s.bollUb)}, ${this.sqlSafe(s.bollMa)}, ${this.sqlSafe(s.bollLb)}, ${this.sqlSafe(s.obv)}, ${this.sqlSafe(s.obv_ma5)}, ${this.sqlSafe(s.obv_ma10)}, ${this.sqlSafe(s.obv_ma20)}, ${this.sqlSafe(s.obv_ma60)}, ${this.sqlSafe(s.obv_ema5)}, ${this.sqlSafe(s.obv_ema10)}, ${this.sqlSafe(s.obv_ema20)}, ${this.sqlSafe(s.obv_ema60)}, ${this.sqlSafe(s.mfi)}, ${this.sqlSafe(s.tenkan)}, ${this.sqlSafe(s.kijun)}, ${this.sqlSafe(s.senkouA)}, ${this.sqlSafe(s.senkouB)}, ${this.sqlSafe(s.chikou)}, ${this.sqlSafe(s.di_plus)}, ${this.sqlSafe(s.di_minus)}, ${this.sqlSafe(s.adx)}, ${this.sqlSafe(s.cmf)}, ${this.sqlSafe(s.cmf_ema5)}, ${this.sqlSafe(s.turnover_rate)})`;
-      });
-      const sqlBase = `INSERT OR REPLACE INTO ${table} (stock_id, ts, ma5, ma5_ded, ma10, ma10_ded, ma20, ma20_ded, ma30, ma30_ded, ma50, ma50_ded, ma60, ma60_ded, ma120, ma120_ded, ma240, ma240_ded, ema5, ema10, ema20, ema60, ema120, ema200, macd, dif, osc, k, d, j, rsi5, rsi10, bollUb, bollMa, bollLb, obv, obv_ma5, obv_ma10, obv_ma20, obv_ma60, obv_ema5, obv_ema10, obv_ema20, obv_ema60, mfi, tenkan, kijun, senkouA, senkouB, chikou, di_plus, di_minus, adx, cmf, cmf_ema5, turnover_rate) VALUES`;
-      await this.executeBatch(sqlBase, entries, 50);
-    } catch (e) {
-      error(`[SyncDB] SaveTimeSharingSkills error: ${e}`);
-    }
+  private buildTimeSharingSkills(skills: TimeSharingSkillsTableType[], table: TimeSharingSkillsTableOptions): string[] {
+    const entries = skills.map(s => {
+      // ... Similar mapping to saveSkills but for time-sharing columns
+      return `('${s.stock_id}', '${s.ts}', ${this.sqlSafe(s.ma5)}, ${this.sqlSafe(s.ma5_ded)}, ${this.sqlSafe(s.ma10)}, ${this.sqlSafe(s.ma10_ded)}, ${this.sqlSafe(s.ma20)}, ${this.sqlSafe(s.ma20_ded)}, ${this.sqlSafe(s.ma30)}, ${this.sqlSafe(s.ma30_ded)}, ${this.sqlSafe(s.ma50)}, ${this.sqlSafe(s.ma50_ded)}, ${this.sqlSafe(s.ma60)}, ${this.sqlSafe(s.ma60_ded)}, ${this.sqlSafe(s.ma120)}, ${this.sqlSafe(s.ma120_ded)}, ${this.sqlSafe(s.ma240)}, ${this.sqlSafe(s.ma240_ded)}, ${this.sqlSafe(s.ema5)}, ${this.sqlSafe(s.ema10)}, ${this.sqlSafe(s.ema20)}, ${this.sqlSafe(s.ema60)}, ${this.sqlSafe(s.ema120)}, ${this.sqlSafe(s.ema200)}, ${this.sqlSafe(s.macd)}, ${this.sqlSafe(s.dif)}, ${this.sqlSafe(s.osc)}, ${this.sqlSafe(s.k)}, ${this.sqlSafe(s.d)}, ${this.sqlSafe(s.j)}, ${this.sqlSafe(s.rsi5)}, ${this.sqlSafe(s.rsi10)}, ${this.sqlSafe(s.bollUb)}, ${this.sqlSafe(s.bollMa)}, ${this.sqlSafe(s.bollLb)}, ${this.sqlSafe(s.obv)}, ${this.sqlSafe(s.obv_ma5)}, ${this.sqlSafe(s.obv_ma10)}, ${this.sqlSafe(s.obv_ma20)}, ${this.sqlSafe(s.obv_ma60)}, ${this.sqlSafe(s.obv_ema5)}, ${this.sqlSafe(s.obv_ema10)}, ${this.sqlSafe(s.obv_ema20)}, ${this.sqlSafe(s.obv_ema60)}, ${this.sqlSafe(s.mfi)}, ${this.sqlSafe(s.tenkan)}, ${this.sqlSafe(s.kijun)}, ${this.sqlSafe(s.senkouA)}, ${this.sqlSafe(s.senkouB)}, ${this.sqlSafe(s.chikou)}, ${this.sqlSafe(s.di_plus)}, ${this.sqlSafe(s.di_minus)}, ${this.sqlSafe(s.adx)}, ${this.sqlSafe(s.cmf)}, ${this.sqlSafe(s.cmf_ema5)}, ${this.sqlSafe(s.turnover_rate)})`;
+    });
+    const sqlBase = `INSERT OR REPLACE INTO ${table} (stock_id, ts, ma5, ma5_ded, ma10, ma10_ded, ma20, ma20_ded, ma30, ma30_ded, ma50, ma50_ded, ma60, ma60_ded, ma120, ma120_ded, ma240, ma240_ded, ema5, ema10, ema20, ema60, ema120, ema200, macd, dif, osc, k, d, j, rsi5, rsi10, bollUb, bollMa, bollLb, obv, obv_ma5, obv_ma10, obv_ma20, obv_ma60, obv_ema5, obv_ema10, obv_ema20, obv_ema60, mfi, tenkan, kijun, senkouA, senkouB, chikou, di_plus, di_minus, adx, cmf, cmf_ema5, turnover_rate) VALUES`;
+    return this.buildBatch(sqlBase, entries, 50);
   }
 
   /**

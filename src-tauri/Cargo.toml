@@ -39,3 +39,7 @@ tauri-plugin-process = "2"
 tauri-plugin-fs = "2"
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"
+rfd = { version = "0.15", default-features = false, features = ["tokio", "gtk3", "common-controls-v6"] }
+
+[dev-dependencies]
+tempfile = "3"

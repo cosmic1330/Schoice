@@ -17,7 +17,8 @@
     "build:desktop": "node scripts/build-desktop.mjs",
     "dev:desktop": "node scripts/dev-desktop.mjs",
     "mcp:typecheck": "tsc -p tsconfig.mcp.json",
-    "mcp:test": "node --import tsx --test mcp/server.test.ts src/domain/strategy/validation.test.ts"
+    "mcp:test": "node --import tsx --test mcp/server.test.ts src/domain/strategy/validation.test.ts",
+    "sync:test": "node --import tsx --test src/classes/SyncDatabaseHelper.test.ts"
   },
   "dependencies": {
     "@ch20026103/anysis": "0.0.20-alpha.0",
